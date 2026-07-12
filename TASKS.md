@@ -10,15 +10,15 @@
 - [x] **Monorepo scaffold** — npm workspaces (packages/shared/types · server · client), ESLint/Prettier/tsconfig.base, concurrently root `dev` script — CRITICAL
 - [x] **Deployment infra** — docker-compose dev/staging/prod, nginx, multi-stage Dockerfiles, deploy scripts — CRITICAL
 - [ ] **Docker env** — postgres + api + client compose validated end-to-end, .env from template, dev up — CRITICAL
-- [~] **Full Drizzle schema** — all M1–M11 entities drafted in chat (M12 is aggregation-only, no tables) — needs pasting into repo — CRITICAL
+- [~] **Full Drizzle schema** — committed in repo; full completeness/consistency audit still pending — CRITICAL
 - [ ] Pre-flight: Puppeteer PDF render on real invoice/BL template — HIGH
 - [ ] Pre-flight: **Mongo→PG migration spike** on sample Beta data — HIGH
-- [~] Seed: catalog service-types + feature flags + settings defaults + counters (idempotent) — drafted in chat, needs pasting — HIGH
+- [~] Seed: catalog service-types + feature flags + settings defaults + counters (idempotent) — implemented, needs runtime verification — HIGH
 - [x] ~~Seed: super_admin (owner) account~~ — superseded: no env-var seed, first-run bootstrap instead (see Sprint 1)
 
 ## Sprint 1 – Auth & Settings (M1, M2) | 2 weeks
 
-> Architecture mirrors fredpatch/sicot-monorepo `start/`, `modules/auth`, `modules/parametres`, `middleware/` — adapted to PrestiX's numeric-level RBAC. **Code drafted in chat 2026-07-12 — not yet pasted into repo, not typechecked, not run.** Marked [~] = drafted, needs Fred to commit + verify.
+> Architecture mirrors fredpatch/sicot-monorepo `start/`, `modules/auth`, `modules/parametres`, `middleware/` — adapted to PrestiX's numeric-level RBAC. **Backend foundation is committed in repo as of 2026-07-12.** Remaining [~] items are implemented but still awaiting full validation/typecheck/runtime verification.
 
 - [~] **Settings redesigned as key-value table** (`settings`: key/value/type/module/description) replacing single-row `global_settings` — generic admin UI, matches commission-catalog pattern
 - [~] **Bootstrap module** (`start/`) — `GET /api/bootstrap/status`, `POST /api/bootstrap/init`; first-run creates super_admin with no OTP, no env-var password
@@ -31,7 +31,7 @@
 - [~] Data-driven commission-type catalog + feature flags; idempotent seed — HIGH
 - [~] Self-lockout guard (≥1 active super_admin, count-based) — HIGH — **deviation from SICOT**: SICOT blocks deactivating any super_admin unconditionally; PrestiX uses the stricter/more correct count-based rule per M1 feasibility decision
 - [ ] Client: first-run check (`GET /api/bootstrap/status`) → setup screen vs login screen — HIGH (not started, client work)
-- [ ] **Paste drafted code into repo, `npm install` (cookie-parser, @types/cookie-parser), typecheck, run** — CRITICAL next step
+- [ ] **Validation pass:** fix tsconfig deprecations option, fix `db:seed` failure, run typecheck, and complete docker smoke checks — CRITICAL next step
 
 ## Sprint 2 – Party & Credit ledger (M3) | 2 weeks
 
@@ -130,8 +130,6 @@
 
 ## Waiting On
 
-- [ ] `EPARGNE_INSCRIPTION_FEE` amount — Lucrèce (owner)
-- [ ] `prm` printed label confirmation — Lucrèce (client)
 - [ ] Access to legacy Beta prod data for migration — owner/hosting
 
 ## Done
