@@ -1,19 +1,21 @@
 ## Task
 
-Monorepo scaffold (Sprint 0, item 2)
+Sync exploration-cache with HEAD implementation (post commit a54ce04).
 
-## Acceptance criteria
+## Remaining Sprint 0 items (unordered, awaiting priority call)
 
-- npm workspaces resolve across packages/shared/types, packages/server, packages/client
-- `npm run dev:server` boots Express on :3000 with /health
-- `npm run dev:client` boots Vite on :5173
+- Docker env validation (postgres+api up, /api/health reachable)
+- Drizzle schema audit vs M1–M11 feasibility spec
+- Puppeteer PDF pre-flight
+- Mongo→PG migration spike
+- Verify parameters-seed.service.ts covers catalog service-types + settings defaults correctly
 
-## Files involved
+## Immediate next technical check (after cache sync)
 
-- package.json (root)
-- packages/server/src/index.ts
-- packages/client/src/main.tsx
+- Run server typecheck and resolve errors if any
+- Run docker compose smoke test and confirm GET /api/health
+- Validate bootstrap and auth happy path with cookies
 
-## Approach
+## Note
 
-Scaffold matches fredpatch/sicot-monorepo convention.
+Previous version of this file listed "Monorepo scaffold" as active task — stale. That item is done (verified via git log, commit bc459bc).

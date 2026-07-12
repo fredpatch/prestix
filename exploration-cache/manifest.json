@@ -1,6 +1,27 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-12",
-  "currentSprint": "Sprint 0",
-  "files": []
+  "currentSprint": "Sprint 0 (close-out)",
+  "files": [
+    "index.md",
+    "quick-ref.md",
+    "active-session/blockers.md",
+    "active-session/context.md",
+    "active-session/current-task.md",
+    "active-session/next-actions.md",
+    "active-session/sprint-0.md",
+    "project/overview.md",
+    "project/architecture.md",
+    "project/database-schema.md",
+    "project/decisions.md",
+    "sessions/2026-07-12.md",
+    "tasks/backlog.md",
+    "tasks/sprint-0.md",
+    "technical/brand-reference.md",
+    "technical/cheat-sheet.md",
+    "technical/conventions.md",
+    "technical/deployment-checklist.md",
+    "technical/gotchas.md",
+    "technical/patterns.md"
+  ]
 }
