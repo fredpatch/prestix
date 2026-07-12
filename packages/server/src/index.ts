@@ -57,6 +57,7 @@ import authRoutes from "./modules/auth/routes/auth.routes.js";
 import usersRoutes from "./modules/users/routes/users.routes.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "./db/index.js";
+import { seedCommissionTypes, seedCounters, seedFeatureFlags } from "./db/seed.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
@@ -96,4 +97,7 @@ app.listen(PORT, async () => {
 
   // Seed default settings if they don't exist yet
   await seedDefaultSettings();
+  await seedFeatureFlags();
+  await seedCommissionTypes();
+  await seedCounters();
 });

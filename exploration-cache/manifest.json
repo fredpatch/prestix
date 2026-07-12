@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-12",
-  "currentSprint": "Sprint 0 (close-out)",
+  "currentSprint": "Sprint 1 (validation)",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -22,6 +22,7 @@
     "technical/conventions.md",
     "technical/deployment-checklist.md",
     "technical/gotchas.md",
-    "technical/patterns.md"
+    "technical/patterns.md",
+    "technical/mongo-pg-migration-mapping.md"
   ]
 }

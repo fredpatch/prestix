@@ -1,4 +1,5 @@
-- TypeScript validation blocked: `npm run typecheck -w packages/server` fails with TS5103 (invalid `ignoreDeprecations` value in tsconfig).
-- Docker smoke test blocked: Docker daemon unreachable (`//./pipe/dockerDesktopLinuxEngine` not available), so compose could not start `postgres` and `api`.
-- Database seed blocked: `npm run db:seed` from `packages/server` exited with code 1; failure details still need to be captured and triaged.
-- Beta prod data access — owner/hosting — needed by Sprint 11, not urgent yet.
+- Beta prod data access — owner/hosting — still required for Sprint 11 migration dry-run.
+- Open business decisions for migration backfill remain pending:
+  - Company-type party fields existence in real data
+  - Credit decision-window backfill policy for legacy available credit
+  - Epargne inscription-fee/status backfill policy for legacy savings

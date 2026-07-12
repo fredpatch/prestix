@@ -9,11 +9,11 @@
 - [x] **Kick-off with Lucrèce** — `EPARGNE_INSCRIPTION_FEE` = 5000 XAF; `prm` = Premium confirmed — CRITICAL
 - [x] **Monorepo scaffold** — npm workspaces (packages/shared/types · server · client), ESLint/Prettier/tsconfig.base, concurrently root `dev` script — CRITICAL
 - [x] **Deployment infra** — docker-compose dev/staging/prod, nginx, multi-stage Dockerfiles, deploy scripts — CRITICAL
-- [ ] **Docker env** — postgres + api + client compose validated end-to-end, .env from template, dev up — CRITICAL
-- [~] **Full Drizzle schema** — committed in repo; full completeness/consistency audit still pending — CRITICAL
-- [ ] Pre-flight: Puppeteer PDF render on real invoice/BL template — HIGH
-- [ ] Pre-flight: **Mongo→PG migration spike** on sample Beta data — HIGH
-- [~] Seed: catalog service-types + feature flags + settings defaults + counters (idempotent) — implemented, needs runtime verification — HIGH
+- [x] **Docker env** — postgres + api + client compose validated end-to-end, migrations auto-apply on boot — CRITICAL
+- [x] **Full Drizzle schema** — M1–M11 committed, audited vs feasibility spec; 3 gaps found and fixed (credit_lots FK, savings_accounts currency, penalties grace snapshot) — CRITICAL
+- [x] Pre-flight: Puppeteer PDF render on real invoice/BL template — Alpine/Chromium fixed, legacy template ported and validated against real sample — HIGH
+- [x] Pre-flight: **Mongo→PG migration spike** — schema-mapping done (see `exploration-cache/technical/mongo-pg-migration-mapping.md`); data dry-run deferred to Sprint 11 pending Beta prod access — HIGH
+- [x] Seed: catalog service-types + feature flags + settings defaults + counters (idempotent) — verified correct against M2/M10 spec, auto-runs on boot — HIGH
 - [x] ~~Seed: super_admin (owner) account~~ — superseded: no env-var seed, first-run bootstrap instead (see Sprint 1)
 
 ## Sprint 1 – Auth & Settings (M1, M2) | 2 weeks
@@ -131,6 +131,9 @@
 ## Waiting On
 
 - [ ] Access to legacy Beta prod data for migration — owner/hosting
+- [ ] Company-type party fields decision — do real clients include COMPANY-type parties? (Sprint 2/M3)
+- [ ] Credit-lot decision-window backfill rule for pre-existing legacy credit — Lucrèce (Sprint 11)
+- [ ] Épargne inscription-fee/status backfill rule for legacy savings — Lucrèce (Sprint 11)
 
 ## Done
 

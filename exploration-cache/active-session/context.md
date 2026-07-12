@@ -1,11 +1,11 @@
 ## Where we left off
 
-Sprint 0 baseline is in place and key Sprint 1 backend modules are now committed.
-Latest cache commit 1a5cb75 captured backend validation blockers.
+Sprint 0 is now closed and key Sprint 1 backend modules are committed.
+Recent infrastructure and pre-flight work moved prior blockers to resolved state.
 
 ## What's in scope today
 
-Post-sync backend validation results capture.
+Cache sync after schema/infra/pre-flight updates.
 
 ## State of the codebase
 
@@ -15,14 +15,15 @@ Client remains mostly scaffold-level (placeholder App/Login, axios stub).
 
 Validation snapshot (2026-07-12):
 
-- Server typecheck currently fails (TS5103: invalid `ignoreDeprecations` value).
-- Docker compose services (`postgres`, `api`) could not be started because Docker daemon is not reachable.
-- `npm run db:seed` from `packages/server` failed (exit 1), root cause not yet captured in cache.
-- `npm run format` from repo root passed.
-- API health probe pending until Docker/runtime is available.
+- Docker stack is up in dev context (validated by successful `docker compose exec api ...` pre-flight run).
+- Puppeteer PDF pre-flight passed (`docker compose exec api npm run preflight:pdf`, exit 0).
+- Drizzle schema gaps found during audit were fixed.
+- Mongo->PG migration schema mapping spike documented in cache technical notes.
+- `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
 
 ## Key constraints active right now
 
 - npm workspaces, run scripts from within each package
 - Windows MINGW64 dev environment
 - Health check is /api/health (not /health)
+- Migration dry-run is blocked until Beta production data access is available

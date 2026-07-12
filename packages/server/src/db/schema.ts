@@ -467,7 +467,6 @@ export const savingsAccounts = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (t) => ({
-    partyIdx: uniqueIndex("savings_accounts_party_idx").on(t.partyId),
     partyCurrencyIdx: uniqueIndex("savings_accounts_party_currency_idx").on(t.partyId, t.currency),
   }),
 );

@@ -1,6 +1,9 @@
 # ── Base ──────────────────────────────────────────
 FROM node:20-alpine AS base
 WORKDIR /app
+RUN apk add --no-cache chromium nss freetype freetype-dev harfbuzz ca-certificates ttf-freefont
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 COPY package.json package-lock.json ./
 COPY packages/server/package.json ./packages/server/
 COPY packages/shared/types/package.json ./packages/shared/types/

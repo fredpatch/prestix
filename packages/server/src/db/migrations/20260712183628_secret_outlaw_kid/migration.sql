@@ -1,0 +1,1 @@
+DROP INDEX "savings_accounts_party_idx";

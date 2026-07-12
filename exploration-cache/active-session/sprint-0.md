@@ -1,21 +1,16 @@
-# Sprint 0 — Initialization
+# Sprint 0 — Initialization ✅ CLOSED (2026-07-12)
 
-- [x] Kick-off with Lucrèce (EPARGNE_INSCRIPTION_FEE=5000 XAF, prm=Premium resolved)
-- [x] Monorepo scaffold
-- [x] Deployment infra (docker-compose dev/staging/prod, nginx, Dockerfiles, deploy scripts)
-- [ ] Docker env — compose file exists, never run end-to-end (postgres+api up, /api/health reachable)
-- [~] Full Drizzle schema — committed (packages/server/src/db/schema.ts, enums/tables for M1-M12) — completeness vs feasibility spec NOT verified
-- [ ] Pre-flight: Puppeteer PDF render on real invoice/BL template
-- [ ] Pre-flight: Mongo→PG migration spike on sample Beta data
-- [x] ~~Seed: super_admin~~ — superseded, bootstrap flow instead (packages/server/src/start/)
-- [~] Seed: settings defaults — committed and executed at server startup (start/services/parameters-seed.service.ts) — scope/correctness NOT verified
+All items closed. See exploration-cache/tasks/sprint-0.md for the canonical checklist
+(these two files should be merged into one — noted as cleanup debt).
 
-## Implemented ahead of Sprint 0 close-out
+## Open decisions carried into later sprints
 
-- Bootstrap module: /api/bootstrap/status and /api/bootstrap/init
-- Auth module: /api/auth/login, /refresh, /set-password, /logout, /me
-- Users module: admin-protected CRUD-lite + activation + OTP reset
-- Settings module: admin/super_admin read/update routes
-- Middleware: cookie-based JWT auth + RBAC role-level guards
+- Company-type party schema fields — needed before Sprint 2 (M3) if real clients include companies
+- Credit-lot decision-window backfill rule — needed before Sprint 11
+- Épargne inscription-fee/status backfill rule — needed before Sprint 11
 
-> Note: as of 2026-07-12, Sprint 1 (auth/users/settings/bootstrap modules) is also already committed in the repo, ahead of Sprint 0 closing. Not yet typechecked or run.
+## Next up
+
+Sprint 1 — Auth & Settings (M1, M2). Note: Sprint 1 auth/users/settings/bootstrap modules
+are already committed in the repo, ahead of Sprint 0 closing — typechecked and running,
+confirmed this session.

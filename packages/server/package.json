@@ -9,6 +9,7 @@
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "preflight:pdf": "tsx src/scripts/preflight-pdf.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

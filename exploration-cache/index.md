@@ -23,4 +23,4 @@ See `tasks/backlog.md` and `tasks/sprint-0.md`
 
 ## Technical
 
-See `technical/` — cheat-sheet, conventions, gotchas, patterns.
+See `technical/` — cheat-sheet, conventions, gotchas, patterns, migration mapping notes.

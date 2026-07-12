@@ -18,7 +18,7 @@ const MODULES = [
   "papeterie", // ships hidden — V2
 ];
 
-async function seedFeatureFlags() {
+export async function seedFeatureFlags() {
   for (const moduleCode of MODULES) {
     const existing = await db
       .select()
@@ -91,7 +91,7 @@ const COMMISSION_TYPES: Array<{
   },
 ];
 
-async function seedCommissionTypes() {
+export async function seedCommissionTypes() {
   for (const type of COMMISSION_TYPES) {
     const existing = await db
       .select()
@@ -109,7 +109,7 @@ async function seedCommissionTypes() {
   console.log("[seed] commission_type_catalog upserted (idempotent)");
 }
 
-async function seedCounters() {
+export async function seedCounters() {
   for (const counterKey of ["INV", "PRO"]) {
     const existing = await db.select().from(counters).where(eq(counters.counterKey, counterKey));
     if (existing.length > 0) continue;
@@ -128,7 +128,10 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error("[seed] failed:", err);
-  process.exit(1);
-});
+// Only self-run when executed directly (npm run db:seed), not when imported by index.ts
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error("[seed] failed:", err);
+    process.exit(1);
+  });
+}
