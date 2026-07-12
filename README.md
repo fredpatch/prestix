@@ -2,6 +2,7 @@
 
 Travel agency management app for Le Prestigieux (client: Lucrèce BOUTOMBA).
 Greenfield rewrite of `tripwise-monorepo`, modular monolith, PostgreSQL + Drizzle.
+repo : prestix
 
 See `plan.md` and `exploration-cache/` for project state.
 
