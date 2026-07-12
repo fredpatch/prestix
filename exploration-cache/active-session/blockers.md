@@ -1,3 +1,4 @@
 - TypeScript validation blocked: `npm run typecheck -w packages/server` fails with TS5103 (invalid `ignoreDeprecations` value in tsconfig).
 - Docker smoke test blocked: Docker daemon unreachable (`//./pipe/dockerDesktopLinuxEngine` not available), so compose could not start `postgres` and `api`.
+- Database seed blocked: `npm run db:seed` from `packages/server` exited with code 1; failure details still need to be captured and triaged.
 - Beta prod data access — owner/hosting — needed by Sprint 11, not urgent yet.

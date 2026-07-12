@@ -5,6 +5,7 @@ Modular monolith. PostgreSQL + Drizzle. 12 modules (M1-M12), 14 sprints (~24 wee
 Repository canonical name: prestix.
 
 Current implementation snapshot:
+
 - Backend: partial Sprint 1 foundation implemented (bootstrap/auth/users/settings + middleware).
 - Frontend: scaffold stage (placeholder app/login shell, API client stub).
 - Data model: large Drizzle schema file committed, validation against feasibility spec still pending.
