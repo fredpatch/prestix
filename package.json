@@ -1,0 +1,27 @@
+{
+  "name": "prestix",
+  "private": true,
+  "workspaces": [
+    "packages/shared/types",
+    "packages/server",
+    "packages/client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm run dev -w packages/server",
+    "dev:client": "npm run dev -w packages/client",
+    "build": "npm run build -w packages/shared/types && npm run build -w packages/server && npm run build -w packages/client",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "db:generate": "npm run db:generate --workspace=packages/server",
+    "db:migrate": "npm run db:migrate --workspace=packages/server",
+    "db:studio": "npm run db:studio --workspace=packages/server"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.9.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  }
+}

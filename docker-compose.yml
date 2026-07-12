@@ -1,0 +1,47 @@
+version: "3.9"
+
+# ── CORE — always present ──────────────────────────────────────────────────
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432" # exposed for local DB GUI (TablePlus, DBeaver, etc.)
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./packages/server
+      target: dev # multi-stage: dev stage uses ts-node-dev
+    volumes:
+      - ./packages/server:/app
+      - ./packages/shared:/shared
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+    depends_on:
+      - postgres
+
+# ── OPTIONAL — uncomment blocks below if PrestiX ever needs them ──────────
+
+# mailhog:                  # dev only — catches outbound emails locally
+#   image: mailhog/mailhog
+#   ports:
+#     - "1025:1025"         # SMTP
+#     - "8025:8025"         # Web UI at localhost:8025
+
+# redis:                    # add if queues/caching become necessary
+#   image: redis:alpine
+#   ports:
+#     - "6379:6379"
+
+volumes:
+  postgres_dev_data:

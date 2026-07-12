@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  postgres_staging:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}_staging
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    networks:
+      - staging_net
+    # NOT exposed to host — internal only
+
+  api_staging:
+    build:
+      context: ./packages/server
+      target: prod # multi-stage: prod stage compiles TS, runs node
+    ports:
+      - "4000:3000" # host:container — staging API on port 4000
+    environment:
+      NODE_ENV: staging
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres_staging:5432/${DB_NAME}_staging
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+    depends_on:
+      - postgres_staging
+    networks:
+      - staging_net
+
+  client_staging:
+    build:
+      context: ./packages/client
+      target: prod # multi-stage: vite build → nginx serve
+    ports:
+      - "4001:80" # staging frontend on port 4001
+    networks:
+      - staging_net
+
+networks:
+  staging_net:
+    driver: bridge
+
+volumes:
+  postgres_staging_data:

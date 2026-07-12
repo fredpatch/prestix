@@ -1,0 +1,2 @@
+- None currently blocking Sprint 0 technical work.
+- Beta prod data access — owner/hosting — needed by Sprint 11, not urgent yet.

@@ -1,0 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Mulish", "Candara", "Segoe UI", sans-serif;
+
+  --color-brand-blue: #4dd9ff;
+  --color-brand-gold-light: #f5e65e;
+  --color-brand-gold-dark: #a77800;
+  --color-brand-gray: #666666;
+  --color-brand-gray-light: #d9d9d9;
+}
+
+html {
+  font-size: 11px; /* Le Prestigieux charte graphique base size */
+}
+
+body {
+  font-family: var(--font-sans);
+}
