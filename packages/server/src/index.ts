@@ -55,6 +55,8 @@ import bootstrapRoutes from "./start/routes/bootstrap.route.js";
 import settingsRoutes from "./modules/settings/routes/settings.routes.js";
 import authRoutes from "./modules/auth/routes/auth.routes.js";
 import usersRoutes from "./modules/users/routes/users.routes.js";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { db } from "./db/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
@@ -88,6 +90,9 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 app.listen(PORT, async () => {
   console.log(`✅ PRESTIX API démarrée sur http://localhost:${PORT}`);
   console.log(`📋 Environnement : ${process.env.NODE_ENV ?? "development"}`);
+
+  // Apply pending migrations before seeding
+  await migrate(db, { migrationsFolder: "./src/db/migrations" });
 
   // Seed default settings if they don't exist yet
   await seedDefaultSettings();
