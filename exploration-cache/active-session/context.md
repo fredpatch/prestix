@@ -5,13 +5,18 @@ Latest commit a54ce04 updated README with canonical repo name: prestix.
 
 ## What's in scope today
 
-Cache/docs sync against HEAD implementation.
+Post-sync backend validation results capture.
 
 ## State of the codebase
 
 Backend has working Express routes for bootstrap, auth, users, and settings,
 with JWT cookie auth, RBAC middleware, and default settings seed.
 Client remains mostly scaffold-level (placeholder App/Login, axios stub).
+
+Validation snapshot (2026-07-12):
+- Server typecheck currently fails (TS5103: invalid `ignoreDeprecations` value).
+- Docker compose services (`postgres`, `api`) could not be started because Docker daemon is not reachable.
+- API health probe pending until Docker/runtime is available.
 
 ## Key constraints active right now
 

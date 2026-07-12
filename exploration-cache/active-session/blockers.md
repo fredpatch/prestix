@@ -1,2 +1,3 @@
-- None currently blocking Sprint 0 technical work.
+- TypeScript validation blocked: `npm run typecheck -w packages/server` fails with TS5103 (invalid `ignoreDeprecations` value in tsconfig).
+- Docker smoke test blocked: Docker daemon unreachable (`//./pipe/dockerDesktopLinuxEngine` not available), so compose could not start `postgres` and `api`.
 - Beta prod data access — owner/hosting — needed by Sprint 11, not urgent yet.

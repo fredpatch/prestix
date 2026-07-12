@@ -1,6 +1,6 @@
 ## Task
 
-Sync exploration-cache with HEAD implementation (post commit a54ce04).
+Resolve backend validation blockers and re-run smoke checks.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -12,9 +12,15 @@ Sync exploration-cache with HEAD implementation (post commit a54ce04).
 
 ## Immediate next technical check (after cache sync)
 
-- Run server typecheck and resolve errors if any
-- Run docker compose smoke test and confirm GET /api/health
-- Validate bootstrap and auth happy path with cookies
+- Fix TypeScript config (`ignoreDeprecations`) so `npm run typecheck -w packages/server` passes
+- Start Docker daemon and re-run `docker compose up -d postgres api`
+- Confirm GET /api/health then validate bootstrap/auth happy path with cookies
+
+## Last validation run (2026-07-12)
+
+- Typecheck: FAIL (TS5103 invalid `ignoreDeprecations` value)
+- Compose startup: FAIL (Docker daemon unavailable)
+- Health endpoint: NOT RUN (API not up)
 
 ## Note
 
