@@ -154,51 +154,6 @@ export const commissionTypeCatalog = pgTable(
 );
 
 // ─────────────────────────────────────────────────────────────────
-// M3 — Party & Credit ledger
-// ─────────────────────────────────────────────────────────────────
-
-export const parties = pgTable("parties", {
-  id: serial("id").primaryKey(),
-  code: varchar("code", { length: 30 }),
-  fullName: varchar("full_name", { length: 255 }).notNull(),
-  isClient: boolean("is_client").notNull().default(false),
-  isReferrer: boolean("is_referrer").notNull().default(false),
-  phone: varchar("phone", { length: 30 }),
-  email: varchar("email", { length: 255 }),
-  address: text("address"),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// Append-only credit/avoir ledger — dated lots, FIFO consumption
-export const creditLots = pgTable("credit_lots", {
-  id: serial("id").primaryKey(),
-  partyId: integer("party_id")
-    .notNull()
-    .references(() => parties.id),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(), // original lot amount
-  remainingAmount: numeric("remaining_amount", { precision: 12, scale: 2 }).notNull(),
-  sourceInvoiceId: integer("source_invoice_id"), // FK added after invoices table below (see relations note)
-  decisionWindowExpiresAt: timestamp("decision_window_expires_at").notNull(),
-  convertedAt: timestamp("converted_at"), // set when converted to épargne
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Ledger entries against a lot: spend / refund / convert (append-only, audit trail)
-export const creditLotEntries = pgTable("credit_lot_entries", {
-  id: serial("id").primaryKey(),
-  lotId: integer("lot_id")
-    .notNull()
-    .references(() => creditLots.id),
-  entryType: varchar("entry_type", { length: 30 }).notNull(), // 'spend' | 'refund' | 'convert_to_epargne'
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  refType: varchar("ref_type", { length: 50 }), // e.g. 'INVOICE_PAYMENT'
-  refId: varchar("ref_id", { length: 50 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// ─────────────────────────────────────────────────────────────────
 // M4 — Document Engine
 // ─────────────────────────────────────────────────────────────────
 
@@ -291,6 +246,51 @@ export const deliveryNotes = pgTable("delivery_notes", {
 });
 
 // ─────────────────────────────────────────────────────────────────
+// M3 — Party & Credit ledger
+// ─────────────────────────────────────────────────────────────────
+
+export const parties = pgTable("parties", {
+  id: serial("id").primaryKey(),
+  code: varchar("code", { length: 30 }),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  isClient: boolean("is_client").notNull().default(false),
+  isReferrer: boolean("is_referrer").notNull().default(false),
+  phone: varchar("phone", { length: 30 }),
+  email: varchar("email", { length: 255 }),
+  address: text("address"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Append-only credit/avoir ledger — dated lots, FIFO consumption
+export const creditLots = pgTable("credit_lots", {
+  id: serial("id").primaryKey(),
+  partyId: integer("party_id")
+    .notNull()
+    .references(() => parties.id),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(), // original lot amount
+  remainingAmount: numeric("remaining_amount", { precision: 12, scale: 2 }).notNull(),
+  sourceInvoiceId: integer("source_invoice_id").references(() => invoices.id),
+  decisionWindowExpiresAt: timestamp("decision_window_expires_at").notNull(),
+  convertedAt: timestamp("converted_at"), // set when converted to épargne
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Ledger entries against a lot: spend / refund / convert (append-only, audit trail)
+export const creditLotEntries = pgTable("credit_lot_entries", {
+  id: serial("id").primaryKey(),
+  lotId: integer("lot_id")
+    .notNull()
+    .references(() => creditLots.id),
+  entryType: varchar("entry_type", { length: 30 }).notNull(), // 'spend' | 'refund' | 'convert_to_epargne'
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  refType: varchar("ref_type", { length: 50 }), // e.g. 'INVOICE_PAYMENT'
+  refId: varchar("ref_id", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─────────────────────────────────────────────────────────────────
 // M5 — Payments & Échéancier
 // ─────────────────────────────────────────────────────────────────
 
@@ -341,6 +341,7 @@ export const penalties = pgTable("penalties", {
     .notNull()
     .references(() => installments.id),
   amountXaf: numeric("amount_xaf", { precision: 12, scale: 2 }).notNull(), // snapshot of setting at accrual time
+  graceWeeks: integer("grace_weeks").notNull().default(1), // snapshot of PENALTY_GRACE at accrual time,
   accruedAt: timestamp("accrued_at").defaultNow().notNull(),
   voidedAt: timestamp("voided_at"), // set on invoice cancellation
   voidedReason: text("voided_reason"),
@@ -459,6 +460,7 @@ export const savingsAccounts = pgTable(
     partyId: integer("party_id")
       .notNull()
       .references(() => parties.id),
+    currency: varchar("currency", { length: 3 }).notNull().default("XAF"),
     inscriptionFeeAmount: numeric("inscription_fee_amount", { precision: 12, scale: 2 }).notNull(), // snapshot at enroll
     subscriptionSource: varchar("subscription_source", { length: 20 }).notNull(), // 'direct' | 'credit_conversion'
     sourceCreditLotId: integer("source_credit_lot_id").references(() => creditLots.id),
@@ -466,6 +468,7 @@ export const savingsAccounts = pgTable(
   },
   (t) => ({
     partyIdx: uniqueIndex("savings_accounts_party_idx").on(t.partyId),
+    partyCurrencyIdx: uniqueIndex("savings_accounts_party_currency_idx").on(t.partyId, t.currency),
   }),
 );
 
