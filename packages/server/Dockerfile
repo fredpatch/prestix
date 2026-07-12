@@ -1,25 +1,28 @@
 # ── Base ──────────────────────────────────────────
 FROM node:20-alpine AS base
 WORKDIR /app
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY packages/server/package.json ./packages/server/
+COPY packages/shared/types/package.json ./packages/shared/types/
 RUN npm ci
 
 # ── Dev ───────────────────────────────────────────
 FROM base AS dev
 COPY . .
-CMD ["npm", "run", "dev"]     # ts-node-dev with --respawn
+WORKDIR /app/packages/server
+CMD ["npm", "run", "dev"]
 
 # ── Build ─────────────────────────────────────────
 FROM base AS build
 COPY . .
-RUN npm run build             # tsc → dist/
+RUN npm run build -w packages/shared/types && npm run build -w packages/server
 
 # ── Prod ──────────────────────────────────────────
 FROM node:20-alpine AS prod
 WORKDIR /app
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/packages/server/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
-COPY package*.json ./
+COPY --from=build /app/packages/server/package.json ./
 ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

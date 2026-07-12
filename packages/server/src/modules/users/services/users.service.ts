@@ -20,7 +20,9 @@ async function activeSuperAdminCount(): Promise<number> {
   return result?.total ?? 0;
 }
 
-export async function listUsers(filters: UserFilters): Promise<{ data: UserView[]; total: number }> {
+export async function listUsers(
+  filters: UserFilters,
+): Promise<{ data: UserView[]; total: number }> {
   const page = filters.page ?? 1;
   const pageSize = filters.pageSize ?? 20;
   const offset = (page - 1) * pageSize;
@@ -199,7 +201,12 @@ export async function resetOTP(id: number, adminId: number): Promise<{ emailSent
     console.error("[email] Failed to send OTP (reset):", error);
   }
 
-  await logAudit({ userId: adminId, action: "OTP_RESET", entityType: "users", entityId: String(id) });
+  await logAudit({
+    userId: adminId,
+    action: "OTP_RESET",
+    entityType: "users",
+    entityId: String(id),
+  });
 
   return { emailSent };
 }

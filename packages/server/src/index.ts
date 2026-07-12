@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
-import morgan from 'morgan';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
+import morgan from "morgan";
 import { seedDefaultSettings } from "./start/services/parameters-seed.service.js";
 
 const app = express();
@@ -15,9 +15,9 @@ const PORT = process.env.PORT ?? 3000;
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
     credentials: true, // indispensable pour que les cookies soient envoyés
-  })
+  }),
 );
 
 // ── Cookies ────────────────────────────────────────────────────────────────
@@ -36,18 +36,18 @@ const limiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { message: 'Trop de tentatives de connexion, réessayez dans 15 minutes.' },
+  message: { message: "Trop de tentatives de connexion, réessayez dans 15 minutes." },
 });
 
 // ── Body parsing ───────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // ── Logging ───────────────────────────────────────────────────────────────
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 } else {
-  app.use(morgan('combined'));
+  app.use(morgan("combined"));
 }
 
 // Routes
@@ -57,10 +57,10 @@ import authRoutes from "./modules/auth/routes/auth.routes.js";
 import usersRoutes from "./modules/users/routes/users.routes.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
-app.use('/api/bootstrap', bootstrapRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', usersRoutes);
+app.use("/api/bootstrap", bootstrapRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

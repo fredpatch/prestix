@@ -34,7 +34,10 @@ export async function list(req: Request, res: Response): Promise<void> {
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ message: "Invalid ID." }); return; }
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Invalid ID." });
+      return;
+    }
     res.json(await usersService.getUser(id));
   } catch (error) {
     handleUsersError(res, error);
@@ -69,7 +72,10 @@ export async function create(req: Request, res: Response): Promise<void> {
 export async function update(req: Request, res: Response): Promise<void> {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ message: "Invalid ID." }); return; }
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Invalid ID." });
+      return;
+    }
 
     const { role, active, email } = req.body;
     if (role === undefined && active === undefined && email === undefined) {
@@ -96,7 +102,10 @@ export async function update(req: Request, res: Response): Promise<void> {
 export async function toggleActivation(req: Request, res: Response): Promise<void> {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ message: "Invalid ID." }); return; }
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Invalid ID." });
+      return;
+    }
 
     const { active } = req.body;
     if (typeof active !== "boolean") {
@@ -118,11 +127,16 @@ export async function toggleActivation(req: Request, res: Response): Promise<voi
 export async function resetOTP(req: Request, res: Response): Promise<void> {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ message: "Invalid ID." }); return; }
+    if (isNaN(id)) {
+      res.status(400).json({ message: "Invalid ID." });
+      return;
+    }
 
     const { emailSent } = await usersService.resetOTP(id, req.user!.userId);
     res.json({
-      message: emailSent ? "OTP reset and emailed." : "OTP reset, but email failed — check SMTP config.",
+      message: emailSent
+        ? "OTP reset and emailed."
+        : "OTP reset, but email failed — check SMTP config.",
       emailSent,
     });
   } catch (error) {

@@ -68,25 +68,28 @@ export const creditUnderfeePolicyEnum = pgEnum("credit_underfee_policy", [
 // M1 — Auth
 // ─────────────────────────────────────────────────────────────────
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: varchar("email", { length: 255 }).notNull(),
-  passwordHash: varchar("password_hash", { length: 255 }),
-  fullName: varchar("full_name", { length: 255 }).notNull(),
-  role: roleEnum("role").notNull().default("agent"),
-  active: boolean("active").notNull().default(true),
-  activatedAt: timestamp("activated_at"),
-  firstLogin: boolean("first_login").notNull().default(true), // OTP required until password set
-  otpHash: varchar("otp_hash", { length: 255 }),
-  otpExpiresAt: timestamp("otp_expires_at"),
-  failedAttempts: integer("failed_attempts").notNull().default(0),
-  lockedUntil: timestamp("locked_until"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (t) => ({
-  emailIdx: uniqueIndex("users_email_idx").on(t.email),
-}));
-
+export const users = pgTable(
+  "users",
+  {
+    id: serial("id").primaryKey(),
+    email: varchar("email", { length: 255 }).notNull(),
+    passwordHash: varchar("password_hash", { length: 255 }),
+    fullName: varchar("full_name", { length: 255 }).notNull(),
+    role: roleEnum("role").notNull().default("agent"),
+    active: boolean("active").notNull().default(true),
+    activatedAt: timestamp("activated_at"),
+    firstLogin: boolean("first_login").notNull().default(true), // OTP required until password set
+    otpHash: varchar("otp_hash", { length: 255 }),
+    otpExpiresAt: timestamp("otp_expires_at"),
+    failedAttempts: integer("failed_attempts").notNull().default(0),
+    lockedUntil: timestamp("locked_until"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    emailIdx: uniqueIndex("users_email_idx").on(t.email),
+  }),
+);
 
 export const auditLog = pgTable("audit_log", {
   id: serial("id").primaryKey(),

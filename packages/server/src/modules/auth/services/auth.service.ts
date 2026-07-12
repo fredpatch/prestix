@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { db } from "../../../db/index.js";
 import { users, auditLog } from "../../../db/schema.js";
 import { eq } from "drizzle-orm";
@@ -65,7 +65,12 @@ export async function login(params: {
     }
 
     await resetFailedAttempts(user.id);
-    await logAudit({ userId: user.id, action: "OTP_VALIDATED", entityType: "users", entityId: String(user.id) });
+    await logAudit({
+      userId: user.id,
+      action: "OTP_VALIDATED",
+      entityType: "users",
+      entityId: String(user.id),
+    });
 
     const tempAccessToken = signAccessToken({
       userId: user.id,
@@ -91,7 +96,12 @@ export async function login(params: {
   }
 
   await resetFailedAttempts(user.id);
-  await logAudit({ userId: user.id, action: "LOGIN", entityType: "users", entityId: String(user.id) });
+  await logAudit({
+    userId: user.id,
+    action: "LOGIN",
+    entityType: "users",
+    entityId: String(user.id),
+  });
 
   return {
     firstLogin: false,
@@ -119,7 +129,12 @@ export async function setPassword(params: {
     .where(eq(users.id, userId))
     .returning();
 
-  await logAudit({ userId: user.id, action: "PASSWORD_SET", entityType: "users", entityId: String(user.id) });
+  await logAudit({
+    userId: user.id,
+    action: "PASSWORD_SET",
+    entityType: "users",
+    entityId: String(user.id),
+  });
 
   try {
     await sendAccountActivatedEmail({
@@ -156,5 +171,10 @@ export async function generateAndSendOTP(userId: number): Promise<void> {
 
   await sendOTPEmail({ to: user.email, fullName: user.fullName, otp });
 
-  await logAudit({ userId: user.id, action: "OTP_GENERATED", entityType: "users", entityId: String(user.id) });
+  await logAudit({
+    userId: user.id,
+    action: "OTP_GENERATED",
+    entityType: "users",
+    entityId: String(user.id),
+  });
 }

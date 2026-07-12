@@ -21,10 +21,7 @@ export async function handleFailedLogin(userId: number, currentAttempts: number)
 }
 
 export async function resetFailedAttempts(userId: number): Promise<void> {
-  await db
-    .update(users)
-    .set({ failedAttempts: 0, lockedUntil: null })
-    .where(eq(users.id, userId));
+  await db.update(users).set({ failedAttempts: 0, lockedUntil: null }).where(eq(users.id, userId));
 }
 
 export function buildTokens(user: { id: number; email: string; role: string }): AuthTokens {

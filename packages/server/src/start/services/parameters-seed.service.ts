@@ -51,7 +51,7 @@ const DEFAULTS = [
     module: "M2",
     description: "Default invoice due date offset when full-payment mode is chosen",
   },
-   {
+  {
     key: "otp_expiration_minutes",
     value: "15",
     type: "integer" as const,

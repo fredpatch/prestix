@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const OTP_LENGTH = 6;
 const SALT_ROUNDS = 10;
@@ -9,7 +9,7 @@ export function generateOTP(): string {
   // crypto.randomInt est cryptographiquement sûr — pas Math.random()
   const otp = crypto.randomInt(0, 10 ** OTP_LENGTH);
   // Pad avec des zéros si nécessaire (ex: 000123)
-  return otp.toString().padStart(OTP_LENGTH, '0');
+  return otp.toString().padStart(OTP_LENGTH, "0");
 }
 
 // ── Hash de l'OTP pour stockage en BDD ───────────────────────────────────
