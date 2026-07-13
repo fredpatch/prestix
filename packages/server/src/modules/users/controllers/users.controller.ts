@@ -9,6 +9,7 @@ function handleUsersError(res: Response, error: unknown): void {
     EMAIL_ALREADY_EXISTS: 409,
     LAST_SUPER_ADMIN: 403,
     ACCOUNT_INACTIVE: 400,
+    ONLY_SUPER_ADMIN_MANAGES_ADMINS: 403,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[users]", error);

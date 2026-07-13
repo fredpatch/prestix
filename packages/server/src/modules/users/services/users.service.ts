@@ -114,6 +114,16 @@ export async function updateUser(id: number, params: UpdateUserParams): Promise<
     if (taken) throw new Error("EMAIL_ALREADY_EXISTS");
   }
 
+  // Promoting into admin/super_admin, or editing an existing admin/super_admin at all,
+  // is super_admin-only (M1: "only super_admin manages admins").
+  if (
+    (params.role !== undefined && ADMIN_MANAGED_ROLES.has(params.role)) ||
+    ADMIN_MANAGED_ROLES.has(existing.role)
+  ) {
+    const [actor] = await db.select().from(users).where(eq(users.id, params.updatedByUserId));
+    if (actor?.role !== "super_admin") throw new Error("ONLY_SUPER_ADMIN_MANAGES_ADMINS");
+  }
+
   // Demoting the last active super_admin is blocked, same guard as deactivation below.
   if (
     params.role !== undefined &&
