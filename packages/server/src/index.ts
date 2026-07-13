@@ -60,6 +60,8 @@ import { db } from "./db/index.js";
 import { seedCommissionTypes, seedCounters, seedFeatureFlags } from "./db/seed.js";
 import featureFlagsRoutes from "./modules/feature-flags/routes/feature-flags.routes.js";
 import commissionCatalogRoutes from "./modules/commission-catalog/routes/commission-catalog.routes.js";
+import partyRoutes from "./modules/party/routes/party.routes.js";
+import creditRoutes from "./modules/credit/routes/credit.routes.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
@@ -68,6 +70,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/feature-flags", featureFlagsRoutes);
 app.use("/api/commission-catalog", commissionCatalogRoutes);
+app.use("/api/parties", partyRoutes);
+app.use("/api/credit", creditRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

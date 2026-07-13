@@ -1,7 +1,7 @@
 // authorize(level) — 4-level RBAC with upward inheritance (agent1/manager2/admin3/super_admin4).
 // Sprint 1.
 import { Request, Response, NextFunction } from "express";
-import { roleLevel, type roleEnum } from "@/db/schema.js";
+import { roleLevel, type roleEnum } from "./../db/schema.js";
 
 type Role = (typeof roleEnum.enumValues)[number];
 
@@ -35,3 +35,4 @@ export function requireRole(...roles: Role[]) {
 export const requireAdmin = requireRole("admin");
 export const requireSuperAdmin = requireRole("super_admin");
 export const requireAgent = requireRole("agent");
+export const requireManager = requireRole("manager");

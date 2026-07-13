@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks after Sprint 1 closure and prepare Sprint 2 kickoff.
+Sync cache/tasks after Sprint 2 Party/Credit backend draft and prepare validation/UI follow-up.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,8 +8,9 @@ Sync cache/tasks after Sprint 1 closure and prepare Sprint 2 kickoff.
 
 ## Immediate next technical check (after cache sync)
 
-- Define Sprint 2 implementation order for Party + Credit ledger backend modules.
-- Create Sprint 2 execution checklist (schema invariants, APIs, UI dependencies, migration impact).
+- Smoke-test authenticated Party endpoints: list/search/create/update/activation.
+- Smoke-test authenticated Credit endpoints: balance/lots/entries/refund error paths.
+- Start Party UI + quick-add integration once backend smoke is clean.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -21,4 +22,4 @@ Sync cache/tasks after Sprint 1 closure and prepare Sprint 2 kickoff.
 
 ## Note
 
-Sprint 1 status moved to closed in `TASKS.md` (2026-07-13). Active focus shifts to Sprint 2 planning/execution.
+Sprint 2 backend draft is now in repo for Party and Credit/Avoir. Server typecheck passes; tracking keeps the affected tasks at `[~]` until API smoke and UI integration are complete.

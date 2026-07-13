@@ -1,5 +1,5 @@
 // JWT verification middleware — Sprint 1.
-import { verifyAccessToken } from "@/utils/jwt.js";
+import { verifyAccessToken } from "./../utils/jwt.js";
 import { Request, NextFunction, Response } from "express";
 
 // ── Noms des cookies ──────────────────────────────────────────────────────

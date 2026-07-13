@@ -7,6 +7,13 @@
 - Sprint 1 backend foundation committed (bootstrap/auth/users/settings + JWT cookie auth + RBAC)
 - Documentation and exploration cache synchronized with repository state
 
+## Sprint 2 (2026-07-13)
+
+- Added Party backend draft: list/search/filter, create/update, manager+ activation toggle, audit logging, and `/api/parties` route mount.
+- Added Credit/Avoir backend draft: derived balance, dated lots, FIFO spend service, manager+ refund action, expired-unconverted lot query, and `/api/credit` route mount.
+- Added `requireManager` RBAC helper for Sprint 2 money/activation actions.
+- Validation: `npm run typecheck -w packages/server` passes; API smoke still pending for Party/Credit endpoints.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)
