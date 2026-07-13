@@ -6,7 +6,16 @@
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM"],
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
 }
