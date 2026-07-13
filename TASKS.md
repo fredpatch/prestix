@@ -30,7 +30,7 @@
 - [~] Financial params as settings rows (penalty, grace, credit window, underfee policy, inscription fee, OTP expiry, lockout) — HIGH
 - [~] Data-driven commission-type catalog + feature flags; idempotent seed — HIGH
 - [~] Self-lockout guard (≥1 active super_admin, count-based) — HIGH — **deviation from SICOT**: SICOT blocks deactivating any super_admin unconditionally; PrestiX uses the stricter/more correct count-based rule per M1 feasibility decision
-- [ ] Client: first-run check (`GET /api/bootstrap/status`) → setup screen vs login screen — HIGH (not started, client work)
+- [~] Client: first-run check (`GET /api/bootstrap/status`) → setup screen vs login screen — HIGH (implemented route gating + bootstrap/login screens; needs full runtime validation)
 - [ ] **Validation pass:** fix tsconfig deprecations option, fix `db:seed` failure, run typecheck, and complete docker smoke checks — CRITICAL next step
 
 ## Sprint 2 – Party & Credit ledger (M3) | 2 weeks

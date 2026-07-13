@@ -1,3 +1,23 @@
 {
-  "app.title": "PrestiX"
+  "app.title": "PrestiX",
+  "auth.title": "Sign in to your workspace",
+  "auth.email": "Email address",
+  "auth.otp": "OTP code",
+  "auth.password": "Password",
+  "auth.newPassword": "New password",
+  "auth.confirmPassword": "Confirm password",
+  "auth.connexion": "Sign in",
+  "auth.premiereConnexion": "First login: set your password to continue.",
+  "common.loading": "Loading...",
+  "common.required": "Required",
+  "bootstrap.bannerTitle": "System initialization",
+  "bootstrap.bannerDescription": "This form only appears once, to create the first Super Admin account.",
+  "bootstrap.fullName": "Full name",
+  "bootstrap.email": "Email address",
+  "bootstrap.submit": "Initialize system",
+  "bootstrap.submitting": "Initializing...",
+  "bootstrap.successTitle": "System initialized",
+  "bootstrap.successDescription": "The Super Admin account was created successfully.",
+  "bootstrap.successTitulaire": "Account holder",
+  "bootstrap.successCta": "Go to login"
 }
