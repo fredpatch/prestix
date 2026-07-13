@@ -191,6 +191,20 @@ export const proformas = pgTable(
   }),
 );
 
+export const proformaLines = pgTable("proforma_lines", {
+  id: serial("id").primaryKey(),
+  proformaId: integer("proforma_id")
+    .notNull()
+    .references(() => proformas.id),
+  lineType: varchar("line_type", { length: 20 }).notNull(),
+  description: varchar("description", { length: 255 }).notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+  discount: numeric("discount", { precision: 12, scale: 2 }).notNull().default("0"),
+  lineTotal: numeric("line_total", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const invoices = pgTable(
   "invoices",
   {

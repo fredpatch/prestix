@@ -63,6 +63,10 @@ import commissionCatalogRoutes from "./modules/commission-catalog/routes/commiss
 import partyRoutes from "./modules/party/routes/party.routes.js";
 import creditRoutes from "./modules/credit/routes/credit.routes.js";
 import partyHistoryRoutes from "./modules/party-history/routes/party-history.routes.js";
+import proformaRoutes from "./modules/documents/routes/proforma.routes.js";
+import invoiceRoutes from "./modules/documents/routes/invoice.routes.js";
+import deliveryNoteRoutes from "./modules/documents/routes/delivery-note.routes.js";
+import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
@@ -74,6 +78,9 @@ app.use("/api/commission-catalog", commissionCatalogRoutes);
 app.use("/api/parties", partyRoutes);
 app.use("/api/parties", partyHistoryRoutes);
 app.use("/api/credit", creditRoutes);
+app.use("/api/proformas", proformaRoutes);
+app.use("/api/invoices", invoiceRoutes);
+app.use("/api/delivery-notes", deliveryNoteRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
@@ -110,4 +117,7 @@ app.listen(PORT, async () => {
   await seedFeatureFlags();
   await seedCommissionTypes();
   await seedCounters();
+
+  // Register cron jobs
+  registerJobs();
 });
