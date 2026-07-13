@@ -9,4 +9,4 @@ HEAD implementation status:
 - Mounted modules: bootstrap, auth, users, settings, party, party-history, credit
 - Cross-cutting middleware: authenticate.ts (JWT cookies), authorize.ts (role-level RBAC)
 - Health endpoint: GET /api/health
-- Client UI layer still scaffold-level; backend is currently ahead of frontend integration
+- Client UI layer includes Sprint 1 admin screens and Sprint 2 Party list/detail draft; backend remains ahead for later document/payment/epargne data sources

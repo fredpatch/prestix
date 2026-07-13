@@ -8,6 +8,8 @@ import BootstrapPage from "./pages/BootstrapPage";
 import Layout from "./components/layouts/Layout";
 import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
+import PartyDetailPage from "./pages/party/PartyDetailPage";
+import PartiesPage from "./pages/PartiesPage";
 
 interface AuthUser {
   id: number;
@@ -133,6 +135,8 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<DashboardPlaceholder />} />
+          <Route path="/parties" element={<PartiesPage />} />
+          <Route path="/parties/:id" element={<PartyDetailPage />} />
           <Route
             path="/users"
             element={

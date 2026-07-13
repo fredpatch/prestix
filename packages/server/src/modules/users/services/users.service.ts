@@ -6,7 +6,7 @@ import { sendOTPEmail } from "../../../utils/mailer.js";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { toUserView } from "./users.helpers.js";
 import type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
-import { getIntValue } from "@/modules/settings/services/settings.service.js";
+import { getIntValue } from "../../../modules/settings/services/settings.service.js";
 
 export type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
 

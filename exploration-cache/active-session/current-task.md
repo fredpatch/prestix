@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks after Sprint 2 Party/Credit/History backend draft and prepare validation/UI follow-up.
+Sync cache/tasks after Sprint 2 Party frontend draft and prepare validation follow-up.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -11,7 +11,7 @@ Sync cache/tasks after Sprint 2 Party/Credit/History backend draft and prepare v
 - Smoke-test authenticated Party endpoints: list/search/create/update/activation.
 - Smoke-test authenticated Credit endpoints: balance/lots/entries/refund error paths.
 - Smoke-test authenticated Party History endpoint with separate commercial/epargne pagination params.
-- Start Party UI + quick-add/history integration once backend smoke is clean.
+- Smoke-test client Party list/detail/create/quick-add/history flows against the API.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -23,4 +23,4 @@ Sync cache/tasks after Sprint 2 Party/Credit/History backend draft and prepare v
 
 ## Note
 
-Sprint 2 backend draft is now in repo for Party, Credit/Avoir, and Party History. Server typecheck passes; tracking keeps the affected tasks at `[~]` until API smoke and UI integration are complete.
+Sprint 2 Party frontend draft is now in repo on top of the Party, Credit/Avoir, and Party History backend drafts. Server typecheck and client build pass; tracking keeps the affected tasks at `[~]` until API/client smoke is complete.

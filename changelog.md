@@ -12,8 +12,9 @@
 - Added Party backend draft: list/search/filter, create/update, manager+ activation toggle, audit logging, and `/api/parties` route mount.
 - Added Credit/Avoir backend draft: derived balance, dated lots, FIFO spend service, manager+ refund action, expired-unconverted lot query, and `/api/credit` route mount.
 - Added Party History backend scaffold: agent+ `/api/parties/:id/history` route with separate commercial and épargne pagination contracts, ready to fill from M4 invoices and M11 savings.
+- Added Party client draft: nav/routes, Parties list with search/role filter, create + quick-add dialogs, Party detail page with credit balance/lots and history placeholder tabs.
 - Added `requireManager` RBAC helper for Sprint 2 money/activation actions.
-- Validation: `npm run typecheck -w packages/server` passes; API smoke still pending for Party/Credit/History endpoints.
+- Validation: server typecheck and client build pass; API/client smoke still pending for Party/Credit/History flows.
 
 ## Validation Notes (2026-07-12)
 
