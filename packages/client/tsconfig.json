@@ -10,8 +10,7 @@
     "allowImportingTsExtensions": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "baseUrl": ".",
-    "composite": true,
+    "composite": false,
     "paths": {
       "@/*": ["./src/*"]
     }

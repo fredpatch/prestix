@@ -82,7 +82,7 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
     .toUpperCase();
 
   return (
-    <div className="flex h-screen bg-neutral-50 overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       <motion.aside
         animate={{ width: sidebarOpen ? 180 : 45 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
@@ -146,7 +146,7 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
       </motion.aside>
 
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <header className="bg-white border-b border-neutral-200 flex items-center justify-between px-6 h-[57px] flex-shrink-0">
+        <header className="bg-card border-b border-border flex items-center justify-between px-6 h-[57px] flex-shrink-0">
           <h1 className="text-brand-gold-dark font-semibold text-sm truncate">PrestiX</h1>
 
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
@@ -155,33 +155,35 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
               size="icon"
               onClick={toggleTheme}
               title={theme === "dark" ? "Mode clair" : "Mode sombre"}
-              className="text-neutral-500 hover:text-brand-gold-dark"
+              className="text-muted-foreground hover:text-brand-gold-dark"
             >
               {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             </Button>
 
-            <div className="w-px h-5 bg-neutral-200 mx-1" />
+            <div className="w-px h-5 bg-border mx-1" />
 
             <div className="flex items-center gap-2.5 px-1.5">
               <div className="text-right">
-                <p className="text-[12px] font-semibold text-neutral-800 leading-tight">
+                <p className="text-[12px] font-semibold text-foreground leading-tight">
                   {userFullName}
                 </p>
-                <p className="text-[10px] text-neutral-500 capitalize leading-tight">{userRole}</p>
+                <p className="text-[10px] text-muted-foreground capitalize leading-tight">
+                  {userRole}
+                </p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-brand-gold-dark text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 select-none">
                 {initials || "—"}
               </div>
             </div>
 
-            <div className="w-px h-5 bg-neutral-200 mx-1" />
+            <div className="w-px h-5 bg-border mx-1" />
 
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="h-8 px-2.5 gap-1.5 text-neutral-500 hover:text-red-600 hover:bg-red-50"
+              className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50"
             >
               {loggingOut ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />}
               <span className="text-[11px]">Déconnexion</span>
