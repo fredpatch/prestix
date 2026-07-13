@@ -6,6 +6,8 @@ import api from "./lib/axios";
 import LoginPage from "./pages/auth/LoginPage";
 import BootstrapPage from "./pages/BootstrapPage";
 import Layout from "./components/layouts/Layout";
+import SettingsPage from "./pages/SettingsPage";
+import UsersPage from "./pages/UsersPage";
 
 interface AuthUser {
   id: number;
@@ -135,8 +137,7 @@ export default function App() {
             path="/users"
             element={
               <AdminRoute>
-                Commented out until Sprint 2+ admin pages are ready.
-                {/* <UsersPage /> */}
+                <UsersPage />
               </AdminRoute>
             }
           />
@@ -144,8 +145,7 @@ export default function App() {
             path="/settings"
             element={
               <AdminRoute>
-                Commented out until Sprint 2+ admin pages are ready.
-                {/* <SettingsPage /> */}
+                <SettingsPage />
               </AdminRoute>
             }
           />
