@@ -44,21 +44,21 @@
 
 ## Sprint 2 – Party & Credit ledger (M3) | 2 weeks
 
-- [~] **Parties: isClient/isReferrer flags, contact, search** — CRITICAL — backend module/routes mounted (`/api/parties`), client list/search/filter/detail flow drafted; pending API/client smoke
+- [~] **Parties: isClient/isReferrer flags, contact, search** — CRITICAL — backend module/routes mounted (`/api/parties`), client list/search/filter/detail/edit flow drafted; pending API/client smoke
 - [~] **Credit/avoir ledger** — append-only, dated lots, derived balance — CRITICAL — backend service/routes mounted (`/api/credit`), FIFO spend/refund/expired-lot query drafted; server typecheck clean, pending API smoke and M5/M11 wiring
 - [~] Party history scaffold — commercial vs épargne separate, distinct pagination — HIGH — backend response contract/routes mounted (`/api/parties/:id/history`), client detail tabs drafted with placeholders until M4 invoices and M11 savings transactions exist; pending API/client smoke
 - [~] Party quick-add (for use in commissions later) — HIGH — agent+ create endpoint and client quick-add/create dialogs drafted; pending smoke in downstream commission/document flows
-- [~] Party UI + stats (build fresh — legacy stubs) — HIGH — Parties nav/list/detail drafted with credit balance/lots and placeholder receivables/epargne stat cards; pending runtime polish and smoke
+- [~] Party UI + stats (build fresh — legacy stubs) — HIGH — Parties nav/list/detail/edit drafted with credit balance/lots and placeholder receivables/epargne stat cards; pending runtime polish and smoke
 
 ## Sprint 3 – Document Engine (M4) | 2 weeks
 
-- [ ] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL
-- [ ] **Counters table (row-locked, continuous serial)** INV-/PRO- — CRITICAL
-- [ ] **issue() = one atomic transaction; requestId idempotency** — CRITICAL
-- [ ] Draft-only mutation guard; snapshots at creation — CRITICAL
-- [ ] Proforma 48h expiry cron (auto Expirée, block invoice from expired) — HIGH
-- [ ] Cancellation (admin+, reason, audited) + hooks: penalty-void (S5), stock-reverse (S7) — HIGH
-- [ ] BL after full payment, no payment recap — MEDIUM
+- [~] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL — backend services/controllers/routes mounted for `/api/proformas`, `/api/invoices`, `/api/delivery-notes`; `proforma_lines` schema added; pending migrations/API smoke
+- [~] **Counters table (row-locked, continuous serial)** INV-/PRO- — CRITICAL — `getNextNumber(tx, "INV"|"PRO")` row-locks seeded counters and formats `KEY-YYYYMM-####`; pending concurrency smoke
+- [~] **issue() = one atomic transaction; requestId idempotency** — CRITICAL — invoice issue flow allocates number, stores requestId, sets due date/status inside transaction; ticket/stock hooks left TODO for S6/S7
+- [~] Draft-only mutation guard; snapshots at creation — CRITICAL — draft guards and party snapshots implemented for proforma/invoice creation/promotion; pending API smoke
+- [~] Proforma 48h expiry cron (auto Expirée, block invoice from expired) — HIGH — cron registered every 15 minutes and promotion blocks expired/cancelled proformas; pending runtime smoke
+- [~] Cancellation (admin+, reason, audited) + hooks: penalty-void (S5), stock-reverse (S7) — HIGH — admin route, reason guard, audit, optional credit-lot refund path drafted; penalty/stock hooks deferred
+- [~] BL after full payment, no payment recap — MEDIUM — BL endpoint/service drafted for issued invoices; full-payment gate deferred until M5 payment status exists
 
 ## Sprint 4 – Paiements & Échéancier (M5) | 2 weeks
 

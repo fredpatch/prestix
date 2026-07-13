@@ -13,8 +13,18 @@
 - Added Credit/Avoir backend draft: derived balance, dated lots, FIFO spend service, manager+ refund action, expired-unconverted lot query, and `/api/credit` route mount.
 - Added Party History backend scaffold: agent+ `/api/parties/:id/history` route with separate commercial and épargne pagination contracts, ready to fill from M4 invoices and M11 savings.
 - Added Party client draft: nav/routes, Parties list with search/role filter, create + quick-add dialogs, Party detail page with credit balance/lots and history placeholder tabs.
+- Added Party edit dialog on the Party detail page, wired to the existing party update API.
 - Added `requireManager` RBAC helper for Sprint 2 money/activation actions.
 - Validation: server typecheck and client build pass; API/client smoke still pending for Party/Credit/History flows.
+
+## Sprint 3 (2026-07-13)
+
+- Added document-engine backend draft: proforma, invoice, delivery-note controllers/routes/services and API mounts.
+- Added `proforma_lines` schema and document line snapshots for proforma/invoice flows.
+- Added row-locked counter allocation for continuous `PRO-` and `INV-` numbers.
+- Added invoice draft creation, line add/remove, proforma promotion, issue with `requestId` idempotency, admin cancellation with audit, and BL scaffold.
+- Added proforma 48h expiry cron registration in the server job registry.
+- Validation: server typecheck/build and client build pass; API smoke still pending for document routes.
 
 ## Validation Notes (2026-07-12)
 

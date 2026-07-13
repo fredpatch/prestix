@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks after Sprint 2 Party frontend draft and prepare validation follow-up.
+Sync cache/tasks/changelog after commits `23cb752` and `6612e92` (Party edit dialog + Sprint 3 document backend draft), then validate and commit the documentation sync.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,10 +8,10 @@ Sync cache/tasks after Sprint 2 Party frontend draft and prepare validation foll
 
 ## Immediate next technical check (after cache sync)
 
-- Smoke-test authenticated Party endpoints: list/search/create/update/activation.
-- Smoke-test authenticated Credit endpoints: balance/lots/entries/refund error paths.
-- Smoke-test authenticated Party History endpoint with separate commercial/epargne pagination params.
-- Smoke-test client Party list/detail/create/quick-add/history flows against the API.
+- Run server typecheck/build after document route mounts and job registration.
+- Smoke-test authenticated document endpoints: proforma create/list/get, invoice draft/line/issue/cancel, BL create/get.
+- Smoke-test proforma expiry cron registration and expired-proforma promotion guard.
+- Smoke-test Party edit dialog against the update API.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -23,4 +23,4 @@ Sync cache/tasks after Sprint 2 Party frontend draft and prepare validation foll
 
 ## Note
 
-Sprint 2 Party frontend draft is now in repo on top of the Party, Credit/Avoir, and Party History backend drafts. Server typecheck and client build pass; tracking keeps the affected tasks at `[~]` until API/client smoke is complete.
+Since `35fc581`, the repo has Party edit UI (`23cb752`) and the Sprint 3 document-engine backend draft (`6612e92`). Server typecheck/build and client build pass; tracking keeps Sprint 3 tasks at `[~]` until API smoke is complete.
