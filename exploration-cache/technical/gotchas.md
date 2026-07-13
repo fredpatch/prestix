@@ -10,7 +10,13 @@ Run scripts from within the target package (e.g. packages/server), not the monor
 
 ### TS5103 on `ignoreDeprecations`
 
-`npm run typecheck -w packages/server` can fail when TypeScript version and tsconfig `ignoreDeprecations` value are incompatible. Keep tsconfig aligned with the installed `typescript` version before using typecheck as a quality gate.
+`npm run typecheck -w packages/server` can fail when TypeScript version and tsconfig `ignoreDeprecations` value are incompatible. Keep tsconfig aligned with the installed `typescript` version before using typecheck as a quality gate. Correct value for TS 5.5–5.9 is `"5.0"`.
+
+**Recurring regression (Sprint 1):** this value reverted from the fix back to the broken `"6.0"` twice during Sprint 1, likely from pasting a stale local copy of `tsconfig.base.json` that predates the fix. If typecheck suddenly fails with TS5103 again, check this value first before assuming new code broke something.
+
+### `composite: true` breaks JSON imports in the client
+
+`packages/client/tsconfig.json` inherits `composite: true` from `tsconfig.base.json` (needed for the server/shared-types project-reference build chain). The client doesn't need it — it's a leaf package nothing references — and `composite: true` causes TS6307 errors on JSON module imports (e.g. `i18n/en.json`). Client tsconfig explicitly sets `"composite": false` to override the inherited value.
 
 ## [Category: Docker Runtime]
 

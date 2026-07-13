@@ -16,23 +16,31 @@
 - [x] Seed: catalog service-types + feature flags + settings defaults + counters (idempotent) — verified correct against M2/M10 spec, auto-runs on boot — HIGH
 - [x] ~~Seed: super_admin (owner) account~~ — superseded: no env-var seed, first-run bootstrap instead (see Sprint 1)
 
-## Sprint 1 – Auth & Settings (M1, M2) | 2 weeks
+## Sprint 1 – Auth & Settings (M1, M2) ✅ CLOSED (2026-07-13) | 2 weeks
 
-> Architecture mirrors fredpatch/sicot-monorepo `start/`, `modules/auth`, `modules/parametres`, `middleware/` — adapted to PrestiX's numeric-level RBAC. **Backend foundation is committed in repo as of 2026-07-12.** Remaining [~] items are implemented but still awaiting full validation/typecheck/runtime verification.
+> Architecture mirrors fredpatch/sicot-monorepo `start/`, `modules/auth`, `modules/parametres`, `middleware/`, `components/layouts/Layout` — adapted to PrestiX's numeric-level RBAC, email-based login (not matricule), and gold brand palette. Backend audited against M1/M2 spec; frontend built and runtime-tested end-to-end (bootstrap → login → users → settings). Typecheck clean across server/client/shared-types.
 
-- [~] **Settings redesigned as key-value table** (`settings`: key/value/type/module/description) replacing single-row `global_settings` — generic admin UI, matches commission-catalog pattern
-- [~] **Bootstrap module** (`start/`) — `GET /api/bootstrap/status`, `POST /api/bootstrap/init`; first-run creates super_admin with no OTP, no env-var password
-- [~] **Auth: users, 4-level roles, JWT + bcrypt** — access (15min) + refresh (7d) tokens in httpOnly cookies — CRITICAL
-- [~] **OTP activation + password reset flow** (Nodemailer) — admin creates account → OTP email → user sets password — CRITICAL
-- [~] `authorize(level)` middleware (agent1/manager2/admin3/super_admin4) — CRITICAL
-- [~] Audit log (append-only) on all mutations — `logAudit()` in `auth.service.ts`, used across auth/users/settings/bootstrap — CRITICAL
-- [ ] Settings: appearance (client-local) — HIGH (server-side business defaults done via key-value table above)
-- [~] Financial params as settings rows (penalty, grace, credit window, underfee policy, inscription fee, OTP expiry, lockout) — HIGH
-- [~] Data-driven commission-type catalog + feature flags; idempotent seed — HIGH
-- [~] Self-lockout guard (≥1 active super_admin, count-based) — HIGH — **deviation from SICOT**: SICOT blocks deactivating any super_admin unconditionally; PrestiX uses the stricter/more correct count-based rule per M1 feasibility decision
-- [~] Client: first-run check (`GET /api/bootstrap/status`) → setup screen vs login screen — HIGH (implemented route gating + bootstrap/login screens; admin guarded routes now wired)
-- [~] Client admin screens (Users + Settings) with guarded navigation — HIGH (initial CRUD/toggles wired to Sprint 1 APIs; runtime/typecheck validation still pending)
-- [ ] **Validation pass:** fix tsconfig deprecations option, fix `db:seed` failure, run typecheck, and complete docker smoke checks — CRITICAL next step
+- [x] **Settings redesigned as key-value table** (`settings`: key/value/type/module/description) — CRUD wired, admin+ read / super_admin write
+- [x] **Bootstrap module** (`start/`) — `GET /api/bootstrap/status`, `POST /api/bootstrap/init`; runtime-tested, first super_admin created successfully
+- [x] **Auth: users, 4-level roles, JWT + bcrypt** — access (15min) + refresh (7d) tokens in httpOnly cookies — CRITICAL
+- [x] **OTP activation + password reset flow** (Nodemailer) — admin creates account → OTP email → user sets password — CRITICAL
+- [x] `authorize(level)` middleware (agent1/manager2/admin3/super_admin4) — CRITICAL
+- [x] Audit log (append-only) on all mutations — CRITICAL
+- [x] Settings: appearance (client-local) — `ThemeProvider`, localStorage, applied immediately, no backend call; Layout + Button retrofitted to semantic tokens — HIGH. Remaining pages (Login/Bootstrap/Settings/Users card surfaces) still hardcoded, not dark-mode aware — tracked for a later hardening pass, not blocking.
+- [x] Financial params as settings rows — HIGH
+- [x] Data-driven commission-type catalog + feature flags; idempotent seed — HIGH — CRUD routes built and runtime-tested (create type, toggle module)
+- [x] Self-lockout guard (≥1 active super_admin, count-based) — HIGH — deviation from SICOT confirmed correct per M1 decision
+- [x] Client: first-run check → bootstrap vs login screen — HIGH — runtime-tested
+- [x] Client admin screens (Users + Settings) with guarded navigation — HIGH — runtime-tested (create/edit/deactivate user, toggle flags, create commission type)
+- [x] **Validation pass:** typecheck clean (server + client + shared-types), docker smoke-tested — CRITICAL
+
+### Bugs found and fixed during Sprint 1 audit/testing
+
+- Privilege escalation: admin could create/promote users to admin/super_admin (`users.service.ts` — actor-role guard added to both `createUser` and `updateUser`)
+- OTP expiry setting bypassed on 2 of 3 issuing paths (hardcoded const vs settings-driven — unified)
+- `EditUserDialog` didn't sync state when target user changed — Save button appeared to force an email edit
+- `tsconfig.base.json ignoreDeprecations` reverted to invalid value twice during the sprint — now fixed and verified via direct typecheck run
+- `packages/client/tsconfig.json composite: true` broke JSON module imports (i18n) — disabled, client is a leaf package
 
 ## Sprint 2 – Party & Credit ledger (M3) | 2 weeks
 

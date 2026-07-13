@@ -1,20 +1,19 @@
 ## Where we left off
 
-Sprint 0 is closed and Sprint 1 backend foundations are in place.
-Client-side Sprint 1 wiring advanced with bootstrap gating, first-run init screen,
-auth flow polish, and initial settings management screens.
+Sprint 1 is now closed in task tracking after end-to-end runtime checks and
+typecheck cleanup.
 
 ## What's in scope today
 
-Cache/task sync after Sprint 1 client implementation updates.
+Cache/task sync after Sprint 1 closure and transition to Sprint 2 planning.
 
 ## State of the codebase
 
 Backend has working Express routes for bootstrap, auth, users, and settings,
 with JWT cookie auth, RBAC middleware, and default settings seed.
 Client now includes bootstrap-status route gating in App routing, a dedicated
-bootstrap initialization page, upgraded login/set-password UX, and a settings page
-that consumes settings/feature-flags/commission-catalog APIs.
+bootstrap initialization page, upgraded login/set-password UX, settings management,
+and users management screens behind guarded admin routes.
 
 Validation snapshot (2026-07-13):
 
@@ -24,6 +23,7 @@ Validation snapshot (2026-07-13):
 - Mongo->PG migration schema mapping spike documented in cache technical notes.
 - `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
 - `packages/client` dependencies installed successfully (`npm i`, exit 0).
+- `ignoreDeprecations` regression was fixed and pushed; Sprint 1 validation gate marked closed in `TASKS.md`.
 
 ## Key constraints active right now
 

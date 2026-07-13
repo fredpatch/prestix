@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks with latest Sprint 1 client admin wiring, then proceed to validation.
+Sync cache/tasks after Sprint 1 closure and prepare Sprint 2 kickoff.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,8 +8,8 @@ Sync cache/tasks with latest Sprint 1 client admin wiring, then proceed to valid
 
 ## Immediate next technical check (after cache sync)
 
-- Run Sprint 1 validation pass (typecheck + route smoke checks for bootstrap/auth/users/settings).
-- Verify newly wired admin pages (users/settings) and guarded navigation behavior.
+- Define Sprint 2 implementation order for Party + Credit ledger backend modules.
+- Create Sprint 2 execution checklist (schema invariants, APIs, UI dependencies, migration impact).
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -21,5 +21,4 @@ Sync cache/tasks with latest Sprint 1 client admin wiring, then proceed to valid
 
 ## Note
 
-Previous versions of this file focused on Sprint 0 closure and scaffold validation. Focus is now Sprint 1 client/backend validation and route hardening.
-Latest client delta includes real `/users` and `/settings` route mounting behind `AdminRoute` and a first users-management screen wired to API endpoints.
+Sprint 1 status moved to closed in `TASKS.md` (2026-07-13). Active focus shifts to Sprint 2 planning/execution.
