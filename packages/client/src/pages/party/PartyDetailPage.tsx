@@ -6,12 +6,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
 import { creditApi, type CreditLot } from "@/lib/credit.api";
 import { useAuth } from "@/App";
+import { EditPartyDialog } from "./EditPartyDialog";
 
 export default function PartyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const partyId = parseInt(id!);
   const { user } = useAuth();
 
+  const [editing, setEditing] = useState(false);
   const [party, setParty] = useState<Party | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditLots, setCreditLots] = useState<CreditLot[]>([]);
@@ -93,18 +95,25 @@ export default function PartyDetailPage() {
         </div>
 
         {canManage && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleActivation}
-            disabled={actionLoading}
-            className={
-              party.active ? "text-red-500 hover:bg-red-50" : "text-emerald-600 hover:bg-emerald-50"
-            }
-          >
-            {actionLoading ? <Loader2 size={13} className="animate-spin" /> : <Power size={13} />}
-            {party.active ? "Désactiver" : "Activer"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+              <Pencil size={13} /> Modifier
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleActivation}
+              disabled={actionLoading}
+              className={
+                party.active
+                  ? "text-red-500 hover:bg-red-50"
+                  : "text-emerald-600 hover:bg-emerald-50"
+              }
+            >
+              {actionLoading ? <Loader2 size={13} className="animate-spin" /> : <Power size={13} />}
+              {party.active ? "Désactiver" : "Activer"}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -199,6 +208,12 @@ export default function PartyDetailPage() {
           </p>
         </TabsContent>
       </Tabs>
+
+      <EditPartyDialog
+        party={editing ? party : null}
+        onClose={() => setEditing(false)}
+        onUpdated={load}
+      />
     </div>
   );
 }
