@@ -6,10 +6,11 @@ import { sendOTPEmail } from "../../../utils/mailer.js";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { toUserView } from "./users.helpers.js";
 import type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
+import { getIntValue } from "@/modules/settings/services/settings.service.js";
 
 export type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
 
-const OTP_VALIDITY_MINUTES = 15;
+const ADMIN_MANAGED_ROLES = new Set(["admin", "super_admin"]); // Roles that can be managed by admins (not self-service).
 
 // Count of currently active super_admins — the self-lockout guard checks against this.
 async function activeSuperAdminCount(): Promise<number> {
@@ -63,9 +64,14 @@ export async function createUser(
   const [existing] = await db.select().from(users).where(eq(users.email, params.email));
   if (existing) throw new Error("EMAIL_ALREADY_EXISTS");
 
+  if (ADMIN_MANAGED_ROLES.has(params.role)) {
+    const [actor] = await db.select().from(users).where(eq(users.id, params.createdByUserId));
+    if (actor?.role !== "super_admin") throw new Error("ONLY_SUPER_ADMIN_MANAGES_ADMINS");
+  }
+
   const otp = generateOTP();
   const otpHash = await hashOTP(otp);
-  const expiresAt = otpExpiresAt(OTP_VALIDITY_MINUTES);
+  const expiresAt = otpExpiresAt(await getIntValue("otp_expiration_minutes", 15));
 
   const [newUser] = await db
     .insert(users)
@@ -178,7 +184,7 @@ export async function resetOTP(id: number, adminId: number): Promise<{ emailSent
 
   const otp = generateOTP();
   const otpHash = await hashOTP(otp);
-  const expiresAt = otpExpiresAt(OTP_VALIDITY_MINUTES);
+  const expiresAt = otpExpiresAt(await getIntValue("otp_expiration_minutes", 15));
 
   await db
     .update(users)
