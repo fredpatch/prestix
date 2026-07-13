@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
   Dialog,
@@ -39,9 +39,13 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (targetUser && email !== targetUser.email && role === "agent" && targetUser.role !== "agent") {
-    // sync local state when a different target user is opened
-  }
+  useEffect(() => {
+    if (targetUser) {
+      setEmail(targetUser.email);
+      setRole(targetUser.role);
+      setError(null);
+    }
+  }, [targetUser]);
 
   const isManagedAdmin = targetUser && ["admin", "super_admin"].includes(targetUser.role);
   const canEditRole = user?.role === "super_admin" || !isManagedAdmin;

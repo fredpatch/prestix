@@ -9,12 +9,15 @@ import {
   ChevronRight,
   LogOut,
   Loader2,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { authApi } from "@/lib/auth.api";
 import api from "@/lib/axios";
+import { useTheme } from "@/lib/theme";
 
 interface NavItem {
   to: string;
@@ -37,6 +40,7 @@ interface LayoutProps {
 
 export default function Layout({ userRole, userFullName }: LayoutProps) {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [enabledModules, setEnabledModules] = useState<Set<string> | null>(null);
@@ -146,6 +150,18 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
           <h1 className="text-brand-gold-dark font-semibold text-sm truncate">PrestiX</h1>
 
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Mode clair" : "Mode sombre"}
+              className="text-neutral-500 hover:text-brand-gold-dark"
+            >
+              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            </Button>
+
+            <div className="w-px h-5 bg-neutral-200 mx-1" />
+
             <div className="flex items-center gap-2.5 px-1.5">
               <div className="text-right">
                 <p className="text-[12px] font-semibold text-neutral-800 leading-tight">
