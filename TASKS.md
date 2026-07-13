@@ -46,7 +46,7 @@
 
 - [~] **Parties: isClient/isReferrer flags, contact, search** — CRITICAL — backend module/routes mounted (`/api/parties`), audit logging + activation guard drafted; server typecheck clean, pending API smoke and UI integration
 - [~] **Credit/avoir ledger** — append-only, dated lots, derived balance — CRITICAL — backend service/routes mounted (`/api/credit`), FIFO spend/refund/expired-lot query drafted; server typecheck clean, pending API smoke and M5/M11 wiring
-- [ ] Party history scaffold — commercial vs épargne separate, distinct pagination — HIGH
+- [~] Party history scaffold — commercial vs épargne separate, distinct pagination — HIGH — backend response contract/routes mounted (`/api/parties/:id/history`), placeholder data until M4 invoices and M11 savings transactions exist; pending API smoke/UI
 - [~] Party quick-add (for use in commissions later) — HIGH — agent+ create endpoint drafted, UI still pending
 - [ ] Party UI + stats (build fresh — legacy stubs) — HIGH
 

@@ -62,6 +62,7 @@ import featureFlagsRoutes from "./modules/feature-flags/routes/feature-flags.rou
 import commissionCatalogRoutes from "./modules/commission-catalog/routes/commission-catalog.routes.js";
 import partyRoutes from "./modules/party/routes/party.routes.js";
 import creditRoutes from "./modules/credit/routes/credit.routes.js";
+import partyHistoryRoutes from "./modules/party-history/routes/party-history.routes.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
@@ -71,6 +72,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/feature-flags", featureFlagsRoutes);
 app.use("/api/commission-catalog", commissionCatalogRoutes);
 app.use("/api/parties", partyRoutes);
+app.use("/api/parties", partyHistoryRoutes);
 app.use("/api/credit", creditRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
