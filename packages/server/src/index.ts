@@ -58,12 +58,16 @@ import usersRoutes from "./modules/users/routes/users.routes.js";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "./db/index.js";
 import { seedCommissionTypes, seedCounters, seedFeatureFlags } from "./db/seed.js";
+import featureFlagsRoutes from "./modules/feature-flags/routes/feature-flags.routes.js";
+import commissionCatalogRoutes from "./modules/commission-catalog/routes/commission-catalog.routes.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
 app.use("/api/bootstrap", bootstrapRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/feature-flags", featureFlagsRoutes);
+app.use("/api/commission-catalog", commissionCatalogRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
