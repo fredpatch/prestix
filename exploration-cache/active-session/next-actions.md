@@ -1,5 +1,5 @@
-1. Validate server and client builds after document référent/migration changes
-2. Apply/check `20260714090648_damp_ravenous` and `20260714132909_cooing_mathemanic` migrations in dev/staging stack
-3. API smoke document routes with/without `referrerPartyId`: proforma create/list/get/promote, invoice draft/detail
-4. Client smoke référent selection/display on `/proformas`, `/proformas/:id`, `/invoices`, `/invoices/:id`
+1. Apply/check payment-related schema migration in dev/staging stack
+2. API smoke invoice issue payment plans: full and <=3 installments, sum validation, idempotency retry
+3. API smoke payments: FIFO allocation, target installment override, overpayment change/credit, payment status recompute
+4. API smoke admin reschedule and invoice cancel-to-credit from real paid rows
 5. Keep migration/backfill decisions open: company parties, credit window, epargne backfill

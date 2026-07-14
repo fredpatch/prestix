@@ -66,6 +66,7 @@ import partyHistoryRoutes from "./modules/party-history/routes/party-history.rou
 import proformaRoutes from "./modules/documents/routes/proforma.routes.js";
 import invoiceRoutes from "./modules/documents/routes/invoice.routes.js";
 import deliveryNoteRoutes from "./modules/documents/routes/delivery-note.routes.js";
+import paymentRoutes from "./modules/documents/routes/payment.routes.js";
 import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ app.use("/api/credit", creditRoutes);
 app.use("/api/proformas", proformaRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/delivery-notes", deliveryNoteRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

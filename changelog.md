@@ -36,6 +36,17 @@
 - Added optional document référent support in proforma/invoice create/detail screens, with filtered référent search and `referrer_party_id` migration (`20260714132909_cooing_mathemanic`).
 - Validation: server typecheck/build and client build pass after référent changes; migration application and API/client smoke still pending.
 
+## Sprint 4 (2026-07-14)
+
+- Added payment backend draft: payment service/controller/routes mounted at `/api/payments`.
+- Added invoice `paymentStatus` tracking and payment-plan creation during invoice issue.
+- Added installment creation for full-payment or <=3-installment plans, with total-sum validation.
+- Added FIFO payment allocation with optional target installment override, per-installment status updates, and invoice-level payment status recompute.
+- Added overpayment handling with required change-vs-credit choice and credit-lot creation for credit overpayments.
+- Added admin+ installment reschedule flow with forward-only guard, reason/audit, and invoice final due-date adjustment.
+- Updated invoice cancellation to compute already-paid amounts from payment rows and move paid money to credit.
+- Validation: server typecheck/build pass; payment migration/API smoke still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)

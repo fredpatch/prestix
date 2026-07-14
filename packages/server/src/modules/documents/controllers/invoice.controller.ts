@@ -16,6 +16,8 @@ function handleError(res: Response, error: unknown): void {
     DISCOUNT_REQUIRES_MANAGER: 403,
     ONLY_ISSUED_INVOICES_CAN_BE_CANCELLED: 400,
     CANCEL_REASON_REQUIRED: 400,
+    INVALID_INSTALLMENT_COUNT: 400,
+    INSTALLMENTS_MUST_SUM_TO_TOTAL: 400,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[invoice]", error);
@@ -93,15 +95,20 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
 export async function issue(req: Request, res: Response): Promise<void> {
   try {
     const invoiceId = parseInt(req.params.id);
-    const { requestId } = req.body;
+    const { requestId, paymentPlan } = req.body;
     if (!requestId) {
       res.status(400).json({ message: "requestId est requis (idempotence)." });
+      return;
+    }
+    if (!paymentPlan) {
+      res.status(400).json({ message: "paymentPlan est requis." });
       return;
     }
     const invoice = await invoiceService.issueInvoice({
       invoiceId,
       requestId,
       userId: req.user!.userId,
+      paymentPlan,
     });
     res.json(invoice);
   } catch (error) {

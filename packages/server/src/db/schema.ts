@@ -218,6 +218,7 @@ export const invoices = pgTable(
     referrerPartyId: integer("referrer_party_id").references(() => parties.id),
     partySnapshot: jsonb("party_snapshot").notNull(),
     status: documentStatusEnum("status").notNull().default("draft"),
+    paymentStatus: installmentStatusEnum("payment_status").notNull().default("unpaid"),
     requestId: varchar("request_id", { length: 100 }), // issue() idempotency key
     totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull().default("0"),
     totalDiscount: numeric("total_discount", { precision: 12, scale: 2 }).notNull().default("0"),

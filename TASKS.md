@@ -50,25 +50,36 @@
 - [~] Party quick-add (for use in commissions later) — HIGH — agent+ create endpoint and client quick-add/create dialogs drafted; pending smoke in downstream commission/document flows
 - [~] Party UI + stats (build fresh — legacy stubs) — HIGH — Parties nav/list/detail/edit drafted with credit balance/lots and placeholder receivables/epargne stat cards; pending runtime polish and smoke
 
-## Sprint 3 – Document Engine (M4) | 2 weeks
+## Sprint 3 – Document Engine (M4) ✅ CLOSED (2026-07-14) | 2 weeks
 
-- [~] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL — backend routes + client list/detail/create/promote flows drafted for proformas/invoices/BL; `proforma_lines` + optional `referrer_party_id` migrations generated; pending API/client smoke
-- [~] **Counters table (row-locked, continuous serial)** INV-/PRO- — CRITICAL — `getNextNumber(tx, "INV"|"PRO")` row-locks seeded counters and formats `KEY-YYYYMM-####`; pending concurrency smoke
-- [~] **issue() = one atomic transaction; requestId idempotency** — CRITICAL — invoice issue flow allocates number, stores requestId, sets due date/status inside transaction; ticket/stock hooks left TODO for S6/S7
-- [~] Draft-only mutation guard; snapshots at creation — CRITICAL — draft guards, party snapshots, and optional document référent assignment/display implemented; client can add/remove draft invoice lines; pending API/client smoke
-- [~] Proforma 48h expiry cron (auto Expirée, block invoice from expired) — HIGH — cron registered every 15 minutes and promotion blocks expired/cancelled proformas; pending runtime smoke
-- [~] Cancellation (admin+, reason, audited) + hooks: penalty-void (S5), stock-reverse (S7) — HIGH — admin route, reason guard, audit, optional credit-lot refund path and cancel dialog drafted; penalty/stock hooks deferred
-- [~] BL after full payment, no payment recap — MEDIUM — BL endpoint/service and invoice detail action drafted for issued invoices; full-payment gate deferred until M5 payment status exists
+> Line items are deliberately generic (`lineType` tag only, no typed capture) — M8/M9 (Sprint 6/7) own the real ticket/shop forms and the "attach order → mark invoiced" hooks inside `issue()`. BL's "after full payment" gate is a placeholder (`status === issued` only) until M5 (Sprint 4) supplies payment status. Cancellation's penalty-void/stock-reverse hooks are TODOs for M6/M9. All of this is intentional module sequencing, same pattern as Sprint 2's credit ledger — not scope cut for time. Runtime-tested end to end by hand: proforma with/without référent → promote to invoice → add/remove line → issue → generate BL.
+
+- [x] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL — runtime-tested full lifecycle both with and without référent
+- [x] **Counters table (row-locked, continuous serial)** INV-/PRO- — CRITICAL — `getNextNumber(tx, "INV"|"PRO")`, `.for("update")` row-lock verified at typecheck and via real number allocation during testing
+- [x] **issue() = one atomic transaction; requestId idempotency** — CRITICAL — verified real `INV-YYYYMM-XXXX` allocation on issue
+- [x] Draft-only mutation guard; snapshots at creation — CRITICAL — add/remove line on draft confirmed blocked post-issue in UI
+- [x] Proforma 48h expiry cron (auto Expirée, block invoice from expired) — HIGH — cron registered (15min interval); promotion correctly blocks expired/cancelled proformas
+- [x] Cancellation (admin+, reason, audited) + hooks: penalty-void (S5), stock-reverse (S7) — HIGH — admin-gated, reason required, paid-amount→credit-lot path wired (unused until M5 supplies real paid amounts)
+- [x] BL after full payment, no payment recap — MEDIUM — runtime-tested (BL generated on issued invoice, real `BL-####` number)
+
+### Schema gap found and fixed during planning
+
+- No `proformaLines` table existed — proformas had nowhere to store what was being quoted, and promotion (which snapshots lines into the new invoice) had nothing to snapshot from. Added, migrated, confirmed working end to end.
+- No `referrerPartyId` on proformas/invoices — real business requirement (referent capture at document-creation time, feeds future M12 CA-contribution stats), not just a UI nicety. Added to both tables with promotion carry-forward, confirmed the reward-_system_ itself stays V2/deferred per the original decision — only tracking capture is V1.
+
+### Deferred to Sprint 6 (M7) — added mid-sprint, cheap while schema was still open
+
+- Line-level discount now gated manager+ (both service-side `assertCanDiscount` and client-side field hiding) — full M7 workflow (bounds validation, print summary) still Sprint 6 scope.
 
 ## Sprint 4 – Paiements & Échéancier (M5) | 2 weeks
 
-- [ ] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL
-- [ ] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL
-- [ ] Allocation FIFO + agent override — CRITICAL
-- [ ] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL
-- [ ] Status auto-update (invoice + per-installment) — HIGH
-- [ ] Reschedule (admin+, forward-only, audited) — HIGH
-- [ ] Cancel → money to credit (V1) — HIGH
+- [~] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL — backend payment service/routes mounted under `/api/payments`; pending migration/API smoke
+- [~] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL — `issue()` now requires full/installment payment plan and creates installments inside the numbering transaction; pending API smoke
+- [~] Allocation FIFO + agent override — CRITICAL — payment service allocates FIFO by sequence with optional target installment override; pending API smoke
+- [~] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL — overpayment choice required; change or credit-lot path drafted; pending API smoke
+- [~] Status auto-update (invoice + per-installment) — HIGH — installment paid/partial/unpaid and invoice paymentStatus recomputed after payment; pending API smoke
+- [~] Reschedule (admin+, forward-only, audited) — HIGH — admin route, forward-only guard, reason/audit, final due-date adjustment drafted; pending API smoke
+- [~] Cancel → money to credit (V1) — HIGH — invoice cancel now computes paid amount from payment rows and creates a credit lot; pending API smoke
 
 ## Sprint 5 – Créances & Pénalités (M6) | 1.5 weeks
 

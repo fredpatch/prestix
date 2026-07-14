@@ -41,15 +41,20 @@ export interface CreateDraftInvoiceParams {
   createdByUserId: number;
 }
 
+export interface PaymentPlanInput {
+  mode: "full" | "installments";
+  installments?: { expectedDate: string; expectedAmount: number }[]; // required if mode === "installments"
+}
+
 export interface IssueInvoiceParams {
   invoiceId: number;
   requestId: string;
   userId: number;
+  paymentPlan: PaymentPlanInput;
 }
 
 export interface CancelInvoiceParams {
   invoiceId: number;
   reason: string;
   userId: number;
-  paidAmountToCredit?: number; // supplied by M5 (Sprint 4) once payments exist
 }

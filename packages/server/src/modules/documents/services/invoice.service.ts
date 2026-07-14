@@ -7,6 +7,8 @@ import {
   parties,
   roleLevel,
   users,
+  installments,
+  payments,
 } from "../../../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
@@ -295,11 +297,47 @@ export async function issueInvoice(params: IssueInvoiceParams): Promise<InvoiceV
   if (lines.length === 0) throw new Error("INVOICE_HAS_NO_LINES");
 
   const dueDateOffsetDays = await getIntValue("default_due_date_offset_days", 30);
+  const totalAmount = parseFloat(invoice.totalAmount);
+
+  // M5: payment mode chosen at issue, installments created inside the SAME
+  // transaction as numbering — not a separate step.
+  if (params.paymentPlan.mode === "installments") {
+    const planInstallments = params.paymentPlan.installments ?? [];
+    if (planInstallments.length === 0 || planInstallments.length > 3) {
+      throw new Error("INVALID_INSTALLMENT_COUNT"); // MAX_INSTALLMENTS = 3, at least 1 (the avance)
+    }
+    const sum = planInstallments.reduce((s: any, i: any) => s + i.expectedAmount, 0);
+    if (Math.abs(sum - totalAmount) > 0.01) {
+      throw new Error("INSTALLMENTS_MUST_SUM_TO_TOTAL"); // Σ = invoice total, enforced at issue
+    }
+  }
 
   const result = await db.transaction(async (tx: any) => {
     const number = await getNextNumber(tx, "INV");
     const issuedAt = new Date();
-    const dueDate = new Date(issuedAt.getTime() + dueDateOffsetDays * 24 * 60 * 60 * 1000);
+
+    let dueDate: Date;
+    let installmentRows: { sequence: number; expectedDate: string; expectedAmount: number }[];
+
+    if (params.paymentPlan.mode === "full") {
+      dueDate = new Date(issuedAt.getTime() + dueDateOffsetDays * 24 * 60 * 60 * 1000);
+      installmentRows = [
+        {
+          sequence: 1,
+          expectedDate: dueDate.toISOString().split("T")[0],
+          expectedAmount: totalAmount,
+        },
+      ];
+    } else {
+      const planInstallments = params.paymentPlan.installments!;
+      installmentRows = planInstallments.map((inst, i) => ({
+        sequence: i + 1,
+        expectedDate: inst.expectedDate,
+        expectedAmount: inst.expectedAmount,
+      }));
+      // Invoice final due date = last échéance (M5 spec)
+      dueDate = new Date(planInstallments[planInstallments.length - 1].expectedDate);
+    }
 
     const [updated] = await tx
       .update(invoices)
@@ -312,6 +350,15 @@ export async function issueInvoice(params: IssueInvoiceParams): Promise<InvoiceV
       })
       .where(eq(invoices.id, params.invoiceId))
       .returning();
+
+    await tx.insert(installments).values(
+      installmentRows.map((row) => ({
+        invoiceId: params.invoiceId,
+        sequence: row.sequence,
+        expectedDate: row.expectedDate,
+        expectedAmount: row.expectedAmount.toFixed(2),
+      })),
+    );
 
     // TODO (Sprint 6 / M8, Sprint 7 / M9): inside THIS transaction —
     //   - mark each attached ticket/shop order `invoiced`
@@ -342,6 +389,20 @@ export async function cancelInvoice(params: CancelInvoiceParams): Promise<Invoic
   if (invoice.status !== "issued") throw new Error("ONLY_ISSUED_INVOICES_CAN_BE_CANCELLED");
   if (!params.reason?.trim()) throw new Error("CANCEL_REASON_REQUIRED");
 
+  // M5 now exists — compute the REAL paid amount instead of relying on the
+  // caller to supply it. Sum every payment row's amountApplied across every
+  // installment on this invoice.
+  const invoiceInstallments = await db
+    .select()
+    .from(installments)
+    .where(eq(installments.invoiceId, params.invoiceId));
+  const installmentIds = invoiceInstallments.map((i) => i.id);
+  let totalPaid = 0;
+  for (const id of installmentIds) {
+    const rows = await db.select().from(payments).where(eq(payments.installmentId, id));
+    totalPaid += rows.reduce((sum, p) => sum + parseFloat(p.amountApplied), 0);
+  }
+
   const [updated] = await db
     .update(invoices)
     .set({
@@ -353,12 +414,11 @@ export async function cancelInvoice(params: CancelInvoiceParams): Promise<Invoic
     .where(eq(invoices.id, params.invoiceId))
     .returning();
 
-  // Paid money → credit/avoir (V1 rule). Nothing to route yet in Sprint 3 — no
-  // payments exist until M5 (Sprint 4) supplies paidAmountToCredit.
-  if (params.paidAmountToCredit && params.paidAmountToCredit > 0) {
+  // Paid money → credit/avoir (V1 rule) — now computed for real, not passed in.
+  if (totalPaid > 0) {
     await createCreditLot({
       partyId: invoice.partyId,
-      amount: params.paidAmountToCredit,
+      amount: totalPaid,
       sourceInvoiceId: invoice.id,
       userId: params.userId,
     });
