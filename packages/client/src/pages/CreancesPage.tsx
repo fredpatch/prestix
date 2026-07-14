@@ -1,20 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { creanceApi, type CreanceRow } from "@/lib/creance.api";
+import { useAuth } from "@/App";
+import { Button } from "@/components/ui/button";
 
 export default function CreancesPage() {
+  const { user } = useAuth();
   const [rows, setRows] = useState<CreanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyOverdue, setOnlyOverdue] = useState(true);
+  const [accruing, setAccruing] = useState(false);
+  const [accrueResult, setAccrueResult] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     setLoading(true);
     creanceApi.list(onlyOverdue).then((res) => {
       setRows(res.data);
       setLoading(false);
     });
-  }, [onlyOverdue]);
+  }
+
+  useEffect(load, [onlyOverdue]);
+
+  const canAccrueNow = user && user.role === "super_admin";
+
+  async function handleAccrueNow() {
+    setAccruing(true);
+    setAccrueResult(null);
+    try {
+      const res = await creanceApi.accrueNow();
+      setAccrueResult(`${res.data.inserted} pénalité(s) accumulée(s).`);
+      load();
+    } catch (err: unknown) {
+      setAccrueResult(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Erreur lors du déclenchement.",
+      );
+    } finally {
+      setAccruing(false);
+    }
+  }
 
   const totalPrincipal = rows.reduce((sum, r) => sum + parseFloat(r.principalDue), 0);
   const totalPenalty = rows.reduce((sum, r) => sum + parseFloat(r.penaltyDue), 0);
@@ -38,6 +64,16 @@ export default function CreancesPage() {
           En retard uniquement
         </label>
       </div>
+
+      {canAccrueNow && (
+        <div className="flex items-center gap-3 mb-4">
+          <Button size="sm" variant="outline" onClick={handleAccrueNow} disabled={accruing}>
+            {accruing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            Déclencher l'accumulation maintenant
+          </Button>
+          {accrueResult && <span className="text-[11.5px] text-neutral-500">{accrueResult}</span>}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">

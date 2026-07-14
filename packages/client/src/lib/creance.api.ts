@@ -20,4 +20,6 @@ export interface CreanceRow {
 export const creanceApi = {
   list: (onlyOverdue = false) =>
     api.get<CreanceRow[]>("/creances", { params: { overdue: onlyOverdue } }),
+
+  accrueNow: () => api.post<{ inserted: number }>("/creances/accrue-now"),
 };
