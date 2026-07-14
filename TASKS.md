@@ -100,8 +100,8 @@
 
 ## Sprint 5 – Créances & Pénalités (M6) | 1.5 weeks
 
-- [~] **Penalty accrual cron: +2500/week accumulating, per-échéance, snapshot** — CRITICAL — backend service and daily cron drafted; uses settings-backed named constants and snapshots grace weeks on the first active row; pending dedicated tests and runtime smoke
-- [ ] **Dedicated test suite** (named constants) — CRITICAL — still pending
+- [~] **Penalty accrual cron: +2500/week accumulating, per-échéance, snapshot** — CRITICAL — backend service and daily cron drafted; accrual count extracted into pure named-constant function with unit coverage; pending runtime smoke
+- [x] **Dedicated test suite** (named constants) — CRITICAL — Vitest accrual-count suite added and passing (8 cases: grace boundary, weekly cadence, no cap, longer grace, midnight normalization)
 - [ ] **Cross-compare gate** vs legacy Beta on sample data — CRITICAL
 - [~] Payment allocation: agent chooses principal/penalty (+UI warn) — HIGH — backend accepts `allocationTarget`, splits principal vs penalty rows, keeps principal status separate, and invoice payment dialog now exposes principal/penalty priority with warning; runtime smoke pending
 - [~] Créances view; overdue = receivables aggregation (single source) — HIGH — `/api/creances` backend route and client page drafted with principal/penalty due aggregation, overdue filter, nav, and invoice links; runtime smoke pending

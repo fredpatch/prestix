@@ -15,9 +15,13 @@
     "format": "prettier --write .",
     "db:generate": "npm run db:generate --workspace=packages/server",
     "db:migrate": "npm run db:migrate --workspace=packages/server",
-    "db:studio": "npm run db:studio --workspace=packages/server"
+    "db:studio": "npm run db:studio --workspace=packages/server",
+    "preflight:pdf": "npm run preflight:pdf -w packages/server",
+    "typecheck": "npm run typecheck -w packages/server && tsc --noEmit -p packages/client/tsconfig.json",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "vitest": "^2.1.1",
     "@types/node": "^26.1.1",
     "@types/pg": "^8.20.0",
     "concurrently": "^8.2.2",

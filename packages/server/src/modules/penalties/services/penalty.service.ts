@@ -13,6 +13,30 @@ const PENALTY_ACCRUAL_PERIOD_DAYS = 7; // one full week
 const DEFAULT_PENALTY_AMOUNT_XAF = 2500;
 const DEFAULT_PENALTY_GRACE_DAYS = 7;
 
+// Pure, DB-free — the exact rule under test: how many weekly penalty rows
+// SHOULD exist for an échéance by `today`, given when it was due and the
+// grace period. Extracted specifically so this can be unit-tested without a
+// database — this is the one calculation that must never silently drift.
+export function computeExpectedAccrualCount(
+  expectedDate: Date,
+  graceWeeks: number,
+  today: Date,
+): number {
+  const anchor = new Date(expectedDate);
+  anchor.setHours(0, 0, 0, 0);
+  anchor.setDate(anchor.getDate() + graceWeeks * PENALTY_ACCRUAL_PERIOD_DAYS);
+
+  const normalizedToday = new Date(today);
+  normalizedToday.setHours(0, 0, 0, 0);
+
+  if (normalizedToday < anchor) return 0;
+
+  const daysSinceAnchor = Math.floor(
+    (normalizedToday.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  return Math.floor(daysSinceAnchor / PENALTY_ACCRUAL_PERIOD_DAYS) + 1;
+}
+
 function toView(p: typeof penalties.$inferSelect): PenaltyView {
   return {
     id: p.id,
@@ -75,19 +99,14 @@ export async function accrueOverduePenalties(): Promise<number> {
       amountXaf = rates.amountXaf;
     }
 
-    const expectedDate = new Date(installment.expectedDate);
-    const anchor = new Date(expectedDate);
-    anchor.setDate(anchor.getDate() + graceWeeks * PENALTY_ACCRUAL_PERIOD_DAYS);
-
-    if (today < anchor) continue; // still within grace, nothing to accrue yet
-
-    const daysSinceAnchor = Math.floor(
-      (today.getTime() - anchor.getTime()) / (1000 * 60 * 60 * 24),
+    const weeksThatShouldHaveAccrued = computeExpectedAccrualCount(
+      new Date(installment.expectedDate),
+      graceWeeks,
+      today,
     );
-    const weeksThatShouldHaveAccrued =
-      Math.floor(daysSinceAnchor / PENALTY_ACCRUAL_PERIOD_DAYS) + 1;
 
     const missing = weeksThatShouldHaveAccrued - existingRows.length;
+
     if (missing <= 0) continue; // already caught up (cron ran today already, or nothing new)
 
     for (let i = 0; i < missing; i++) {

@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks/changelog after Sprint 5 penalties/creances client draft, then validate, commit, and push.
+Sync cache/tasks/changelog after Sprint 5 penalties test pass, then validate, commit, and push.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,7 +8,7 @@ Sync cache/tasks/changelog after Sprint 5 penalties/creances client draft, then 
 
 ## Immediate next technical check (after cache sync)
 
-- Smoke-test client build output after creances page/nav/API wiring and penalty-aware payment UI updates.
+- Keep penalty accrual unit tests green after extracting `computeExpectedAccrualCount`.
 - Smoke-test `/creances` with and without the overdue toggle.
 - Smoke-test penalty accrual on overdue unpaid/partial installments and confirm paid installments do not accrue.
 - Smoke-test payment recording with `allocationTarget: "penalty"` and verify principal status remains principal-only.
@@ -23,4 +23,4 @@ Sync cache/tasks/changelog after Sprint 5 penalties/creances client draft, then 
 
 ## Note
 
-Sprint 5 penalties/creances draft now has backend and initial client coverage: penalty accrual service, daily cron registration, `/api/creances`, invoice-cancel penalty voiding, penalty-first payment allocation, penalty totals on installment views, `/creances` route/nav, and invoice payment allocation controls. Server typecheck/build and client build pass; runtime smoke and dedicated tests are still pending.
+Sprint 5 penalties/creances draft now has backend, initial client coverage, and dedicated accrual-count unit tests: penalty accrual service, daily cron registration, `/api/creances`, invoice-cancel penalty voiding, penalty-first payment allocation, penalty totals on installment views, `/creances` route/nav, invoice payment allocation controls, and 8 Vitest cases for the weekly accrual rule. Server typecheck/build, client build, and `npm test` pass; runtime smoke and legacy Beta cross-compare are still pending.

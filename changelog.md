@@ -57,7 +57,9 @@
 - Extended payment recording with principal-vs-penalty allocation support and exposed penalty accrued/paid/due totals on installment views.
 - Added creances client draft: `/creances` route/nav entry, creance API wrapper, overdue toggle, principal/penalty totals, and invoice links.
 - Added penalty-aware invoice payment UI: installment penalty due display and principal-vs-penalty allocation choice with warning.
-- Validation: server typecheck/build pass from backend draft; client build passes for this UI draft with the existing Vite chunk-size warning; dedicated penalty tests, penalty/creance API/client smoke, and legacy Beta cross-compare still pending.
+- Added penalty accrual unit coverage: extracted accrual-count calculation into a pure helper and covered grace boundary, weekly cadence, no-cap accumulation, longer grace, and midnight normalization with Vitest.
+- Fixed payment record controller forwarding for `allocationTarget` so principal-vs-penalty allocation reaches the service.
+- Validation: root typecheck, server build, and client build pass; `npm test` passes (8 penalty tests) after elevated rerun for Windows `spawn EPERM`; penalty/creance API/client smoke and legacy Beta cross-compare still pending.
 
 ## Validation Notes (2026-07-12)
 

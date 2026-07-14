@@ -23,7 +23,9 @@ function handleError(res: Response, error: unknown): void {
 export async function record(req: Request, res: Response): Promise<void> {
   try {
     const invoiceId = parseInt(req.params.invoiceId);
-    const { amountTendered, method, targetInstallmentId, overpaymentChoice } = req.body;
+    const { amountTendered, method, targetInstallmentId, overpaymentChoice, allocationTarget } =
+      req.body;
+
     if (typeof amountTendered !== "number" || !method) {
       res.status(400).json({ message: "amountTendered et method sont requis." });
       return;
@@ -35,6 +37,7 @@ export async function record(req: Request, res: Response): Promise<void> {
       targetInstallmentId,
       overpaymentChoice,
       agentId: req.user!.userId,
+      allocationTarget,
     });
     res.status(201).json(rows);
   } catch (error) {
