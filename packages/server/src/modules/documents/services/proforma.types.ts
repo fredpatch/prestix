@@ -20,6 +20,7 @@ export interface ProformaView {
   id: number;
   number: string;
   partyId: number;
+  referrerPartyId?: number;
   partySnapshot: Record<string, unknown>;
   status: "draft" | "issued" | "expired" | "cancelled";
   expiresAt?: Date;
@@ -29,6 +30,7 @@ export interface ProformaView {
 
 export interface CreateProformaParams {
   partyId: number;
+  referrerPartyId?: number;
   lines: ProformaLineInput[];
   createdByUserId: number;
 }

@@ -6,6 +6,7 @@ export interface Invoice {
   number?: string;
   proformaId?: number;
   partyId: number;
+  referrerPartyId?: number;
   partySnapshot: { fullName?: string; phone?: string; email?: string };
   status: "draft" | "issued" | "expired" | "cancelled";
   totalAmount: string;
@@ -21,8 +22,8 @@ export interface Invoice {
 export const invoiceApi = {
   list: (partyId?: number) => api.get<Invoice[]>("/invoices", { params: { partyId } }),
   getById: (id: number) => api.get<Invoice>(`/invoices/${id}`),
-  createDraft: (partyId: number, lines: DocumentLineInput[]) =>
-    api.post<Invoice>("/invoices", { partyId, lines }),
+  createDraft: (partyId: number, lines: DocumentLineInput[], referrerPartyId?: number) =>
+    api.post<Invoice>("/invoices", { partyId, referrerPartyId, lines }),
   promoteFromProforma: (proformaId: number) =>
     api.post<Invoice>(`/invoices/from-proforma/${proformaId}`),
   addLine: (invoiceId: number, line: DocumentLineInput) =>

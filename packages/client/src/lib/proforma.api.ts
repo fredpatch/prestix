@@ -22,6 +22,7 @@ export interface Proforma {
   id: number;
   number: string;
   partyId: number;
+  referrerPartyId?: number;
   partySnapshot: { fullName?: string; phone?: string; email?: string };
   status: "draft" | "issued" | "expired" | "cancelled";
   expiresAt?: string;
@@ -32,6 +33,6 @@ export interface Proforma {
 export const proformaApi = {
   list: (partyId?: number) => api.get<Proforma[]>("/proformas", { params: { partyId } }),
   getById: (id: number) => api.get<Proforma>(`/proformas/${id}`),
-  create: (partyId: number, lines: DocumentLineInput[]) =>
-    api.post<Proforma>("/proformas", { partyId, lines }),
+  create: (partyId: number, lines: DocumentLineInput[], referrerPartyId?: number) =>
+    api.post<Proforma>("/proformas", { partyId, referrerPartyId, lines }),
 };

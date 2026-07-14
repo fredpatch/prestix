@@ -6,9 +6,11 @@ import { partyApi, type Party } from "@/lib/party.api";
 interface PartySelectProps {
   value: Party | null;
   onChange: (party: Party | null) => void;
+  filterReferrer?: boolean;
+  placeholder?: string;
 }
 
-export function PartySelect({ value, onChange }: PartySelectProps) {
+export function PartySelect({ value, onChange, filterReferrer, placeholder }: PartySelectProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Party[]>([]);
   const [open, setOpen] = useState(false);
@@ -20,10 +22,12 @@ export function PartySelect({ value, onChange }: PartySelectProps) {
       return;
     }
     const timeout = setTimeout(() => {
-      partyApi.list({ search: query, active: true }).then((res) => setResults(res.data.data));
+      partyApi
+        .list({ search: query, active: true, isReferrer: filterReferrer || undefined })
+        .then((res) => setResults(res.data.data));
     }, 200);
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [query, filterReferrer]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -59,7 +63,7 @@ export function PartySelect({ value, onChange }: PartySelectProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
-          placeholder="Rechercher une partie..."
+          placeholder={placeholder ?? "Rechercher une partie..."}
           className="pl-8"
         />
       </div>

@@ -178,6 +178,7 @@ export const proformas = pgTable(
     partyId: integer("party_id")
       .notNull()
       .references(() => parties.id),
+    referrerPartyId: integer("referrer_party_id").references(() => parties.id),
     partySnapshot: jsonb("party_snapshot").notNull(),
     status: documentStatusEnum("status").notNull().default("draft"),
     expiresAt: timestamp("expires_at"), // set at issue, 48h expiry
@@ -214,6 +215,7 @@ export const invoices = pgTable(
     partyId: integer("party_id")
       .notNull()
       .references(() => parties.id),
+    referrerPartyId: integer("referrer_party_id").references(() => parties.id),
     partySnapshot: jsonb("party_snapshot").notNull(),
     status: documentStatusEnum("status").notNull().default("draft"),
     requestId: varchar("request_id", { length: 100 }), // issue() idempotency key

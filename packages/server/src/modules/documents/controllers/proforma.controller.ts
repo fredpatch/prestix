@@ -33,7 +33,8 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const { partyId, lines } = req.body;
+    const { partyId, referrerPartyId, lines } = req.body;
+
     if (!partyId || !Array.isArray(lines)) {
       res.status(400).json({ message: "partyId et lines sont requis." });
       return;
@@ -42,6 +43,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       partyId,
       lines,
       createdByUserId: req.user!.userId,
+      referrerPartyId,
     });
     res.status(201).json(proforma);
   } catch (error) {

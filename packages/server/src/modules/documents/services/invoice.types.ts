@@ -21,6 +21,7 @@ export interface InvoiceView {
   number?: string;
   proformaId?: number;
   partyId: number;
+  referrerPartyId?: number;
   partySnapshot: Record<string, unknown>;
   status: "draft" | "issued" | "expired" | "cancelled";
   totalAmount: string;
@@ -35,6 +36,7 @@ export interface InvoiceView {
 
 export interface CreateDraftInvoiceParams {
   partyId: number;
+  referrerPartyId?: number;
   lines: InvoiceLineInput[];
   createdByUserId: number;
 }

@@ -28,6 +28,7 @@ async function toView(
     id: p.id,
     number: p.number,
     partyId: p.partyId,
+    referrerPartyId: p.referrerPartyId ?? undefined,
     partySnapshot: p.partySnapshot as Record<string, unknown>,
     status: p.status,
     expiresAt: p.expiresAt ?? undefined,
@@ -66,6 +67,7 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
       .values({
         number,
         partyId: params.partyId,
+        referrerPartyId: params.referrerPartyId,
         partySnapshot: { fullName: party.fullName, phone: party.phone, email: party.email },
         expiresAt,
         createdBy: params.createdByUserId,

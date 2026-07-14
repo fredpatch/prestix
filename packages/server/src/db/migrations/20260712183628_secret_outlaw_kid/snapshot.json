@@ -2,9 +2,7 @@
   "version": "8",
   "dialect": "postgres",
   "id": "c315a87f-00f9-44a5-a218-ad64a74e513c",
-  "prevIds": [
-    "2ff960b4-89c3-4d60-aab8-e2ba1bff700f"
-  ],
+  "prevIds": ["2ff960b4-89c3-4d60-aab8-e2ba1bff700f"],
   "ddl": [
     {
       "values": [
@@ -21,103 +19,61 @@
       "schema": "public"
     },
     {
-      "values": [
-        "HOLD_AND_NOTIFY",
-        "WAIVE_AND_CONVERT"
-      ],
+      "values": ["HOLD_AND_NOTIFY", "WAIVE_AND_CONVERT"],
       "name": "credit_underfee_policy",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "draft",
-        "issued",
-        "expired",
-        "cancelled"
-      ],
+      "values": ["draft", "issued", "expired", "cancelled"],
       "name": "document_status",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "unpaid",
-        "partial",
-        "paid"
-      ],
+      "values": ["unpaid", "partial", "paid"],
       "name": "installment_status",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "cash",
-        "mobile_money",
-        "virement",
-        "credit",
-        "epargne"
-      ],
+      "values": ["cash", "mobile_money", "virement", "credit", "epargne"],
       "name": "payment_method",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "agent",
-        "manager",
-        "admin",
-        "super_admin"
-      ],
+      "values": ["agent", "manager", "admin", "super_admin"],
       "name": "role",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "deposit",
-        "withdraw"
-      ],
+      "values": ["deposit", "withdraw"],
       "name": "savings_txn_nature",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "draft",
-        "recorded"
-      ],
+      "values": ["draft", "recorded"],
       "name": "savings_txn_status",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "integer",
-        "boolean",
-        "text"
-      ],
+      "values": ["integer", "boolean", "text"],
       "name": "setting_type",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "IN",
-        "OUT",
-        "ADJUST"
-      ],
+      "values": ["IN", "OUT", "ADJUST"],
       "name": "stock_movement_type",
       "entityType": "enums",
       "schema": "public"
     },
     {
-      "values": [
-        "economy",
-        "business",
-        "first",
-        "premium"
-      ],
+      "values": ["economy", "business", "first", "premium"],
       "name": "ticket_class",
       "entityType": "enums",
       "schema": "public"
@@ -3061,14 +3017,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "audit_log_user_id_users_id_fkey",
@@ -3078,14 +3030,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "agent_id"
-      ],
+      "columns": ["agent_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "commission_transactions_agent_id_users_id_fkey",
@@ -3095,14 +3043,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "client_party_id"
-      ],
+      "columns": ["client_party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "commission_transactions_client_party_id_parties_id_fkey",
@@ -3112,14 +3056,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "referrer_party_id"
-      ],
+      "columns": ["referrer_party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "commission_transactions_referrer_party_id_parties_id_fkey",
@@ -3129,14 +3069,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "lot_id"
-      ],
+      "columns": ["lot_id"],
       "schemaTo": "public",
       "tableTo": "credit_lots",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "credit_lot_entries_lot_id_credit_lots_id_fkey",
@@ -3146,14 +3082,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "party_id"
-      ],
+      "columns": ["party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "credit_lots_party_id_parties_id_fkey",
@@ -3163,14 +3095,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "source_invoice_id"
-      ],
+      "columns": ["source_invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "credit_lots_source_invoice_id_invoices_id_fkey",
@@ -3180,14 +3108,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_id"
-      ],
+      "columns": ["invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "delivery_notes_invoice_id_invoices_id_fkey",
@@ -3197,14 +3121,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_id"
-      ],
+      "columns": ["invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "installments_invoice_id_invoices_id_fkey",
@@ -3214,14 +3134,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "rescheduled_by"
-      ],
+      "columns": ["rescheduled_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "installments_rescheduled_by_users_id_fkey",
@@ -3231,14 +3147,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_id"
-      ],
+      "columns": ["invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "invoice_lines_invoice_id_invoices_id_fkey",
@@ -3248,14 +3160,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "proforma_id"
-      ],
+      "columns": ["proforma_id"],
       "schemaTo": "public",
       "tableTo": "proformas",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "invoices_proforma_id_proformas_id_fkey",
@@ -3265,14 +3173,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "party_id"
-      ],
+      "columns": ["party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "invoices_party_id_parties_id_fkey",
@@ -3282,14 +3186,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "cancelled_by"
-      ],
+      "columns": ["cancelled_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "invoices_cancelled_by_users_id_fkey",
@@ -3299,14 +3199,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "created_by"
-      ],
+      "columns": ["created_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "invoices_created_by_users_id_fkey",
@@ -3316,14 +3212,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_id"
-      ],
+      "columns": ["invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "payments_invoice_id_invoices_id_fkey",
@@ -3333,14 +3225,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "installment_id"
-      ],
+      "columns": ["installment_id"],
       "schemaTo": "public",
       "tableTo": "installments",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "payments_installment_id_installments_id_fkey",
@@ -3350,14 +3238,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "agent_id"
-      ],
+      "columns": ["agent_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "payments_agent_id_users_id_fkey",
@@ -3367,14 +3251,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_id"
-      ],
+      "columns": ["invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "penalties_invoice_id_invoices_id_fkey",
@@ -3384,14 +3264,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "installment_id"
-      ],
+      "columns": ["installment_id"],
       "schemaTo": "public",
       "tableTo": "installments",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "penalties_installment_id_installments_id_fkey",
@@ -3401,14 +3277,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "party_id"
-      ],
+      "columns": ["party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "proformas_party_id_parties_id_fkey",
@@ -3418,14 +3290,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "created_by"
-      ],
+      "columns": ["created_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "proformas_created_by_users_id_fkey",
@@ -3435,14 +3303,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "party_id"
-      ],
+      "columns": ["party_id"],
       "schemaTo": "public",
       "tableTo": "parties",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "savings_accounts_party_id_parties_id_fkey",
@@ -3452,14 +3316,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "source_credit_lot_id"
-      ],
+      "columns": ["source_credit_lot_id"],
       "schemaTo": "public",
       "tableTo": "credit_lots",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "savings_accounts_source_credit_lot_id_credit_lots_id_fkey",
@@ -3469,14 +3329,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "account_id"
-      ],
+      "columns": ["account_id"],
       "schemaTo": "public",
       "tableTo": "savings_accounts",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "savings_transactions_account_id_savings_accounts_id_fkey",
@@ -3486,14 +3342,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "applied_to_invoice_id"
-      ],
+      "columns": ["applied_to_invoice_id"],
       "schemaTo": "public",
       "tableTo": "invoices",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "savings_transactions_applied_to_invoice_id_invoices_id_fkey",
@@ -3503,14 +3355,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "agent_id"
-      ],
+      "columns": ["agent_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "savings_transactions_agent_id_users_id_fkey",
@@ -3520,14 +3368,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "updated_by"
-      ],
+      "columns": ["updated_by"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "settings_updated_by_users_id_fkey",
@@ -3537,14 +3381,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_line_id"
-      ],
+      "columns": ["invoice_line_id"],
       "schemaTo": "public",
       "tableTo": "invoice_lines",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "shop_details_invoice_line_id_invoice_lines_id_fkey",
@@ -3554,14 +3394,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "article_id"
-      ],
+      "columns": ["article_id"],
       "schemaTo": "public",
       "tableTo": "stock_articles",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "shop_details_article_id_stock_articles_id_fkey",
@@ -3571,14 +3407,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "article_id"
-      ],
+      "columns": ["article_id"],
       "schemaTo": "public",
       "tableTo": "stock_articles",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "stock_items_article_id_stock_articles_id_fkey",
@@ -3588,14 +3420,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "article_id"
-      ],
+      "columns": ["article_id"],
       "schemaTo": "public",
       "tableTo": "stock_articles",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "stock_movements_article_id_stock_articles_id_fkey",
@@ -3605,14 +3433,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "agent_id"
-      ],
+      "columns": ["agent_id"],
       "schemaTo": "public",
       "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "stock_movements_agent_id_users_id_fkey",
@@ -3622,14 +3446,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "invoice_line_id"
-      ],
+      "columns": ["invoice_line_id"],
       "schemaTo": "public",
       "tableTo": "invoice_lines",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "name": "ticket_details_invoice_line_id_invoice_lines_id_fkey",
@@ -3638,9 +3458,7 @@
       "table": "ticket_details"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "audit_log_pkey",
       "schema": "public",
@@ -3648,9 +3466,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "commission_transactions_pkey",
       "schema": "public",
@@ -3658,9 +3474,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "commission_type_catalog_pkey",
       "schema": "public",
@@ -3668,9 +3482,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "counters_pkey",
       "schema": "public",
@@ -3678,9 +3490,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "credit_lot_entries_pkey",
       "schema": "public",
@@ -3688,9 +3498,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "credit_lots_pkey",
       "schema": "public",
@@ -3698,9 +3506,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "delivery_notes_pkey",
       "schema": "public",
@@ -3708,9 +3514,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "feature_flags_pkey",
       "schema": "public",
@@ -3718,9 +3522,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "installments_pkey",
       "schema": "public",
@@ -3728,9 +3530,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "invoice_lines_pkey",
       "schema": "public",
@@ -3738,9 +3538,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "invoices_pkey",
       "schema": "public",
@@ -3748,9 +3546,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "parties_pkey",
       "schema": "public",
@@ -3758,9 +3554,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "payments_pkey",
       "schema": "public",
@@ -3768,9 +3562,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "penalties_pkey",
       "schema": "public",
@@ -3778,9 +3570,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "proformas_pkey",
       "schema": "public",
@@ -3788,9 +3578,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "savings_accounts_pkey",
       "schema": "public",
@@ -3798,9 +3586,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "savings_transactions_pkey",
       "schema": "public",
@@ -3808,9 +3594,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "settings_pkey",
       "schema": "public",
@@ -3818,9 +3602,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "shop_details_pkey",
       "schema": "public",
@@ -3828,9 +3610,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "stock_articles_pkey",
       "schema": "public",
@@ -3838,9 +3618,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "stock_items_pkey",
       "schema": "public",
@@ -3848,9 +3626,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "stock_movements_pkey",
       "schema": "public",
@@ -3858,9 +3634,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "ticket_details_pkey",
       "schema": "public",
@@ -3868,9 +3642,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "users_pkey",
       "schema": "public",

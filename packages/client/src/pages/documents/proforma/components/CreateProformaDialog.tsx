@@ -61,12 +61,12 @@ export function CreateProformaDialog() {
     >
       <DialogTrigger>
         <Button size="sm">
-          <Plus size={14} /> Nouveau proforma
+          <Plus size={14} /> Nouvelle proforma
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Nouveau proforma</DialogTitle>
+          <DialogTitle>Nouvelle proforma</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

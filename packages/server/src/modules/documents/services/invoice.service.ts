@@ -44,6 +44,7 @@ async function toView(
     number: inv.number ?? undefined,
     proformaId: inv.proformaId ?? undefined,
     partyId: inv.partyId,
+    referrerPartyId: inv.referrerPartyId ?? undefined,
     partySnapshot: inv.partySnapshot as Record<string, unknown>,
     status: inv.status,
     totalAmount: inv.totalAmount,
@@ -98,6 +99,7 @@ export async function createDraftInvoice(params: CreateDraftInvoiceParams): Prom
       .insert(invoices)
       .values({
         partyId: params.partyId,
+        referrerPartyId: params.referrerPartyId,
         partySnapshot: { fullName: party.fullName, phone: party.phone, email: party.email },
         createdBy: params.createdByUserId,
       })

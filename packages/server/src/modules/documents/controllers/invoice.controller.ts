@@ -41,7 +41,8 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function createDraft(req: Request, res: Response): Promise<void> {
   try {
-    const { partyId, lines } = req.body;
+    const { partyId, referrerPartyId, lines } = req.body;
+
     if (!partyId || !Array.isArray(lines)) {
       res.status(400).json({ message: "partyId et lines sont requis." });
       return;
@@ -49,6 +50,7 @@ export async function createDraft(req: Request, res: Response): Promise<void> {
     const invoice = await invoiceService.createDraftInvoice({
       partyId,
       lines,
+      referrerPartyId,
       createdByUserId: req.user!.userId,
     });
     res.status(201).json(invoice);
