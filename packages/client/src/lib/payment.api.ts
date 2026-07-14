@@ -22,6 +22,9 @@ export interface Installment {
   expectedAmount: string;
   paidAmount: string;
   status: "unpaid" | "partial" | "paid";
+  penaltyAccrued: string;
+  penaltyPaid: string;
+  penaltyDue: string;
   rescheduledFrom?: string;
   rescheduledReason?: string;
 }
@@ -31,6 +34,7 @@ export interface RecordPaymentInput {
   method: "cash" | "mobile_money" | "virement" | "credit" | "epargne";
   targetInstallmentId?: number;
   overpaymentChoice?: "change" | "credit";
+  allocationTarget?: "principal" | "penalty";
 }
 
 export const paymentApi = {

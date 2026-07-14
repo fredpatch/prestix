@@ -45,6 +45,9 @@ export function PaymentPlanCard({ installments, onChanged }: PaymentPlanCardProp
             <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
               Payé
             </th>
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+              Pénalité due
+            </th>
             <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
               Statut
             </th>
@@ -74,6 +77,17 @@ export function PaymentPlanCard({ installments, onChanged }: PaymentPlanCardProp
               </td>
               <td className="px-4 py-2 text-[12px] text-neutral-800 text-right">
                 {parseFloat(inst.paidAmount).toLocaleString("fr-FR")}
+              </td>
+              <td className="px-4 py-2 text-[12px] text-right">
+                {parseFloat(inst.penaltyDue) > 0 ? (
+                  <span className="text-red-600 font-medium">
+                    {parseFloat(inst.penaltyDue).toLocaleString("fr-FR")} XAF
+                  </span>
+                ) : parseFloat(inst.penaltyAccrued) > 0 ? (
+                  <span className="text-neutral-400">réglée</span>
+                ) : (
+                  <span className="text-neutral-300">—</span>
+                )}
               </td>
               <td className="px-4 py-2">
                 <span

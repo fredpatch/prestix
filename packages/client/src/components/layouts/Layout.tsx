@@ -14,6 +14,7 @@ import {
   Contact,
   FileText,
   Receipt,
+  AlertTriangle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/parties", label: "Parties", icon: Contact, moduleCode: "party" },
   { to: "/proformas", label: "Proformas", icon: FileText, moduleCode: "documents" },
   { to: "/invoices", label: "Factures", icon: Receipt, moduleCode: "documents" },
+  { to: "/creances", label: "Créances", icon: AlertTriangle, moduleCode: "penalties" },
 
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },

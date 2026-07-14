@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Banknote } from "lucide-react";
+import { Loader2, Banknote, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogTrigger,
@@ -38,6 +38,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
   const [amount, setAmount] = useState(0);
   const [method, setMethod] = useState<RecordPaymentInput["method"]>("cash");
   const [target, setTarget] = useState<string>("fifo");
+  const [allocationTarget, setAllocationTarget] = useState<"principal" | "penalty">("principal");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [overpaymentPending, setOverpaymentPending] = useState<number | null>(null);
@@ -52,11 +53,13 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
     setAmount(0);
     setMethod("cash");
     setTarget("fifo");
+    setAllocationTarget("principal");
     setError(null);
     setOverpaymentPending(null);
   }
 
   const openInstallments = installments.filter((i) => i.status !== "paid");
+  const anyPenaltyDue = installments.some((i) => parseFloat(i.penaltyDue) > 0);
 
   async function submit(overpaymentChoice?: "change" | "credit") {
     setSubmitting(true);
@@ -67,6 +70,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
         method,
         targetInstallmentId: target !== "fifo" ? parseInt(target) : undefined,
         overpaymentChoice,
+        allocationTarget,
       });
       setOpen(false);
       reset();
@@ -173,11 +177,45 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                           "fr-FR",
                         )}{" "}
                         XAF
+                        {parseFloat(i.penaltyDue) > 0 &&
+                          ` (+ pénalité ${parseFloat(i.penaltyDue).toLocaleString("fr-FR")} XAF)`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {anyPenaltyDue && (
+                <div>
+                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                    Allouer en priorité à
+                  </label>
+                  <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setAllocationTarget("principal")}
+                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "principal" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+                    >
+                      Principal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllocationTarget("penalty")}
+                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "penalty" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+                    >
+                      Pénalité
+                    </button>
+                  </div>
+                  {allocationTarget === "penalty" && (
+                    <p className="flex items-start gap-1.5 text-[10.5px] text-amber-600 mt-1.5">
+                      <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                      <span>
+                        Le principal restera dû et l'accumulation de pénalité continuera tant qu'il
+                        n'est pas réglé.
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
               {error && <p className="text-[11px] text-red-600">{error}</p>}
             </div>
             <DialogFooter>

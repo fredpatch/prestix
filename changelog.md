@@ -55,7 +55,9 @@
 - Added creances backend draft at `/api/creances` with principal/penalty due aggregation and optional overdue filtering.
 - Wired invoice cancellation to void active penalties with audit logging.
 - Extended payment recording with principal-vs-penalty allocation support and exposed penalty accrued/paid/due totals on installment views.
-- Validation: server typecheck/build pass; dedicated penalty tests, client creances UI, penalty/creance API smoke, and legacy Beta cross-compare still pending.
+- Added creances client draft: `/creances` route/nav entry, creance API wrapper, overdue toggle, principal/penalty totals, and invoice links.
+- Added penalty-aware invoice payment UI: installment penalty due display and principal-vs-penalty allocation choice with warning.
+- Validation: server typecheck/build pass from backend draft; client build passes for this UI draft with the existing Vite chunk-size warning; dedicated penalty tests, penalty/creance API/client smoke, and legacy Beta cross-compare still pending.
 
 ## Validation Notes (2026-07-12)
 

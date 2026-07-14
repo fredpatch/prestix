@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks/changelog after Sprint 5 penalties/creances backend draft, then validate, commit, and push.
+Sync cache/tasks/changelog after Sprint 5 penalties/creances client draft, then validate, commit, and push.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,8 +8,8 @@ Sync cache/tasks/changelog after Sprint 5 penalties/creances backend draft, then
 
 ## Immediate next technical check (after cache sync)
 
-- Run server typecheck/build after penalties, creances, and penalty-aware payment allocation wiring.
-- Smoke-test `/api/creances` with and without `?overdue=true`.
+- Smoke-test client build output after creances page/nav/API wiring and penalty-aware payment UI updates.
+- Smoke-test `/creances` with and without the overdue toggle.
 - Smoke-test penalty accrual on overdue unpaid/partial installments and confirm paid installments do not accrue.
 - Smoke-test payment recording with `allocationTarget: "penalty"` and verify principal status remains principal-only.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
@@ -23,4 +23,4 @@ Sync cache/tasks/changelog after Sprint 5 penalties/creances backend draft, then
 
 ## Note
 
-Sprint 5 penalties/creances draft now has backend coverage: penalty accrual service, daily cron registration, `/api/creances`, invoice-cancel penalty voiding, penalty-first payment allocation, and penalty totals on installment views. Server typecheck/build pass; runtime API smoke and dedicated tests are still pending.
+Sprint 5 penalties/creances draft now has backend and initial client coverage: penalty accrual service, daily cron registration, `/api/creances`, invoice-cancel penalty voiding, penalty-first payment allocation, penalty totals on installment views, `/creances` route/nav, and invoice payment allocation controls. Server typecheck/build and client build pass; runtime smoke and dedicated tests are still pending.
