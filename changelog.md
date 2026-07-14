@@ -33,7 +33,8 @@
 - Added proforma creation/detail/promote flow with shared party search and line-item builder.
 - Added direct invoice draft creation/detail flow with draft line add/remove, issue action, cancellation dialog, and BL generation/display.
 - Added `proforma_lines` migration folder (`20260714090648_damp_ravenous`).
-- Validation: server typecheck/build and client build pass; migration application and API/client smoke still pending.
+- Added optional document référent support in proforma/invoice create/detail screens, with filtered référent search and `referrer_party_id` migration (`20260714132909_cooing_mathemanic`).
+- Validation: server typecheck/build and client build pass after référent changes; migration application and API/client smoke still pending.
 
 ## Validation Notes (2026-07-12)
 

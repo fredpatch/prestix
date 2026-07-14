@@ -19,12 +19,14 @@ export function CreateProformaDialog() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [party, setParty] = useState<Party | null>(null);
+  const [referrer, setReferrer] = useState<Party | null>(null);
   const [lines, setLines] = useState<DocumentLineInput[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setParty(null);
+    setReferrer(null);
     setLines([]);
     setError(null);
   }
@@ -34,7 +36,7 @@ export function CreateProformaDialog() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await proformaApi.create(party.id, lines);
+      const res = await proformaApi.create(party.id, lines, referrer?.id);
       setOpen(false);
       reset();
       navigate(`/proformas/${res.data.id}`);
@@ -75,6 +77,17 @@ export function CreateProformaDialog() {
               Partie
             </label>
             <PartySelect value={party} onChange={setParty} />
+          </div>
+          <div>
+            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              Référent (optionnel)
+            </label>
+            <PartySelect
+              value={referrer}
+              onChange={setReferrer}
+              filterReferrer
+              placeholder="Rechercher un référent..."
+            />
           </div>
           <div>
             <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">

@@ -7,6 +7,7 @@ import { invoiceApi, type Invoice } from "@/lib/invoice.api";
 import { deliveryNoteApi, type DeliveryNote } from "@/lib/delivery-note.api";
 import { useAuth } from "@/App";
 import { CancelInvoiceDialog } from "./CancelInvoiceDialog";
+import { Party, partyApi } from "@/lib/party.api";
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
   draft: "Brouillon",
@@ -22,6 +23,7 @@ export default function InvoiceDetailPage() {
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
+  const [referrer, setReferrer] = useState<Party | null>(null);
   const [loading, setLoading] = useState(true);
   const [issuing, setIssuing] = useState(false);
   const [creatingBL, setCreatingBL] = useState(false);
@@ -38,6 +40,10 @@ export default function InvoiceDetailPage() {
     invoiceApi.getById(invoiceId).then((res) => {
       setInvoice(res.data);
       setLoading(false);
+      if (res.data.referrerPartyId) {
+        partyApi.getById(res.data.referrerPartyId).then((r) => setReferrer(r.data));
+      }
+
       if (res.data.status === "issued") {
         deliveryNoteApi
           .getByInvoice(invoiceId)
@@ -139,6 +145,7 @@ export default function InvoiceDetailPage() {
             {invoice.dueDate &&
               ` · échéance ${new Date(invoice.dueDate).toLocaleDateString("fr-FR")}`}
             {invoice.proformaId && ` · issue du proforma`}
+            {referrer && ` · référent : ${referrer.fullName}`}
           </p>
           {invoice.status === "cancelled" && invoice.cancelReason && (
             <p className="text-[11px] text-red-600 mt-1">Raison : {invoice.cancelReason}</p>

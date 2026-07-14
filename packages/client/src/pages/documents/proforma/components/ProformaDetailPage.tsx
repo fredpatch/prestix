@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, ArrowRightCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { proformaApi, type Proforma } from "@/lib/proforma.api";
 import { invoiceApi } from "@/lib/invoice.api";
+import { Party, partyApi } from "@/lib/party.api";
 
 const STATUS_LABELS: Record<Proforma["status"], string> = {
   draft: "Valide",
@@ -16,6 +17,7 @@ export default function ProformaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [proforma, setProforma] = useState<Proforma | null>(null);
+  const [referrer, setReferrer] = useState<Party | null>(null);
   const [loading, setLoading] = useState(true);
   const [promoting, setPromoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,10 @@ export default function ProformaDetailPage() {
     proformaApi.getById(parseInt(id!)).then((res) => {
       setProforma(res.data);
       setLoading(false);
+
+      if (res.data.referrerPartyId) {
+        partyApi.getById(res.data.referrerPartyId).then((r) => setReferrer(r.data));
+      }
     });
   }, [id]);
 
@@ -64,6 +70,7 @@ export default function ProformaDetailPage() {
             {proforma.partySnapshot?.fullName} · {STATUS_LABELS[proforma.status]}
             {proforma.expiresAt &&
               ` · expire le ${new Date(proforma.expiresAt).toLocaleString("fr-FR")}`}
+            {referrer && ` · référent : ${referrer.fullName}`}
           </p>
         </div>
         {canPromote && (

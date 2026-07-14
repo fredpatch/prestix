@@ -5,15 +5,15 @@ typecheck cleanup.
 
 ## What's in scope today
 
-Cache/task sync after Sprint 3 document UI/API wrapper draft and generated `proforma_lines` migration.
+Cache/task sync after Sprint 3 document référent UI/API/migration draft.
 
 ## State of the codebase
 
 Backend has working Express routes for bootstrap, auth, users, settings, Party,
-Party History, Credit/Avoir, Proformas, Invoices, and Delivery Notes, with JWT cookie auth, RBAC middleware, default settings seed, job registration, and a generated `proforma_lines` migration.
+Party History, Credit/Avoir, Proformas, Invoices, and Delivery Notes, with JWT cookie auth, RBAC middleware, default settings seed, job registration, generated document migrations, and optional document référent linkage.
 Client now includes bootstrap-status route gating in App routing, a dedicated
 bootstrap initialization page, upgraded login/set-password UX, settings/users management,
-Party list/detail/create/edit/quick-add screens, and document list/detail/create/promote/issue/cancel/BL flows behind guarded routes.
+Party list/detail/create/edit/quick-add screens, and document list/detail/create/promote/issue/cancel/BL flows behind guarded routes, including optional référent selection/display on proformas and invoices.
 
 Validation snapshot (2026-07-14):
 
@@ -24,7 +24,7 @@ Validation snapshot (2026-07-14):
 - `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
 - `packages/client` dependencies installed successfully (`npm i`, exit 0).
 - `ignoreDeprecations` regression was fixed and pushed; Sprint 1 validation gate marked closed in `TASKS.md`.
-- Party/Credit/History backend routes and Party client routes are drafted; document backend and client routes are mounted. Server/client validation passes; migration application and API/client smoke are the next gate.
+- Party/Credit/History backend routes and Party client routes are drafted; document backend and client routes are mounted with optional référent support. Server/client validation passes; migration application and API/client smoke are the next gate.
 
 ## Key constraints active right now
 

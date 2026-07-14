@@ -52,10 +52,10 @@
 
 ## Sprint 3 – Document Engine (M4) | 2 weeks
 
-- [~] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL — backend routes + client list/detail/create/promote flows drafted for proformas/invoices/BL; `proforma_lines` migration generated; pending API/client smoke
+- [~] **Proforma / Invoice / BL + InvoiceLine; FK proforma→invoice** — CRITICAL — backend routes + client list/detail/create/promote flows drafted for proformas/invoices/BL; `proforma_lines` + optional `referrer_party_id` migrations generated; pending API/client smoke
 - [~] **Counters table (row-locked, continuous serial)** INV-/PRO- — CRITICAL — `getNextNumber(tx, "INV"|"PRO")` row-locks seeded counters and formats `KEY-YYYYMM-####`; pending concurrency smoke
 - [~] **issue() = one atomic transaction; requestId idempotency** — CRITICAL — invoice issue flow allocates number, stores requestId, sets due date/status inside transaction; ticket/stock hooks left TODO for S6/S7
-- [~] Draft-only mutation guard; snapshots at creation — CRITICAL — draft guards and party snapshots implemented; client can add/remove draft invoice lines; pending API/client smoke
+- [~] Draft-only mutation guard; snapshots at creation — CRITICAL — draft guards, party snapshots, and optional document référent assignment/display implemented; client can add/remove draft invoice lines; pending API/client smoke
 - [~] Proforma 48h expiry cron (auto Expirée, block invoice from expired) — HIGH — cron registered every 15 minutes and promotion blocks expired/cancelled proformas; pending runtime smoke
 - [~] Cancellation (admin+, reason, audited) + hooks: penalty-void (S5), stock-reverse (S7) — HIGH — admin route, reason guard, audit, optional credit-lot refund path and cancel dialog drafted; penalty/stock hooks deferred
 - [~] BL after full payment, no payment recap — MEDIUM — BL endpoint/service and invoice detail action drafted for issued invoices; full-payment gate deferred until M5 payment status exists
