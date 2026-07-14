@@ -10,6 +10,10 @@ import SettingsPage from "./pages/SettingsPage";
 import UsersPage from "./pages/UsersPage";
 import PartyDetailPage from "./pages/party/PartyDetailPage";
 import PartiesPage from "./pages/PartiesPage";
+import ProformasPage from "./pages/ProformasPage";
+import ProformaDetailPage from "./pages/documents/proforma/components/ProformaDetailPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import InvoiceDetailPage from "./pages/documents/invoices/components/InvoiceDetailPage";
 
 interface AuthUser {
   id: number;
@@ -137,6 +141,10 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPlaceholder />} />
           <Route path="/parties" element={<PartiesPage />} />
           <Route path="/parties/:id" element={<PartyDetailPage />} />
+          <Route path="/proformas" element={<ProformasPage />} />
+          <Route path="/proformas/:id" element={<ProformaDetailPage />} />
+          <Route path="/invoices" element={<InvoicesPage />} />
+          <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route
             path="/users"
             element={

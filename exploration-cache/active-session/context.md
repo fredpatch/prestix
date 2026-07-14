@@ -5,17 +5,17 @@ typecheck cleanup.
 
 ## What's in scope today
 
-Cache/task sync after comparing `35fc581..HEAD` and finding Party edit UI plus Sprint 3 document-engine backend draft.
+Cache/task sync after Sprint 3 document UI/API wrapper draft and generated `proforma_lines` migration.
 
 ## State of the codebase
 
 Backend has working Express routes for bootstrap, auth, users, settings, Party,
-Party History, Credit/Avoir, Proformas, Invoices, and Delivery Notes, with JWT cookie auth, RBAC middleware, default settings seed, and job registration.
+Party History, Credit/Avoir, Proformas, Invoices, and Delivery Notes, with JWT cookie auth, RBAC middleware, default settings seed, job registration, and a generated `proforma_lines` migration.
 Client now includes bootstrap-status route gating in App routing, a dedicated
 bootstrap initialization page, upgraded login/set-password UX, settings/users management,
-and Party list/detail/create/edit/quick-add screens behind guarded routes.
+Party list/detail/create/edit/quick-add screens, and document list/detail/create/promote/issue/cancel/BL flows behind guarded routes.
 
-Validation snapshot (2026-07-13):
+Validation snapshot (2026-07-14):
 
 - Docker stack is up in dev context (validated by successful `docker compose exec api ...` pre-flight run).
 - Puppeteer PDF pre-flight passed (`docker compose exec api npm run preflight:pdf`, exit 0).
@@ -24,7 +24,7 @@ Validation snapshot (2026-07-13):
 - `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
 - `packages/client` dependencies installed successfully (`npm i`, exit 0).
 - `ignoreDeprecations` regression was fixed and pushed; Sprint 1 validation gate marked closed in `TASKS.md`.
-- Party/Credit/History backend routes and Party client routes are drafted; document backend routes are mounted. Server typecheck/build and client build pass; API smoke is the next gate.
+- Party/Credit/History backend routes and Party client routes are drafted; document backend and client routes are mounted. Server/client validation passes; migration application and API/client smoke are the next gate.
 
 ## Key constraints active right now
 

@@ -26,6 +26,15 @@
 - Added proforma 48h expiry cron registration in the server job registry.
 - Validation: server typecheck/build and client build pass; API smoke still pending for document routes.
 
+## Sprint 3 (2026-07-14)
+
+- Added document client API wrappers for proformas, invoices, and delivery notes.
+- Added Proformas and Invoices navigation/routes plus list pages.
+- Added proforma creation/detail/promote flow with shared party search and line-item builder.
+- Added direct invoice draft creation/detail flow with draft line add/remove, issue action, cancellation dialog, and BL generation/display.
+- Added `proforma_lines` migration folder (`20260714090648_damp_ravenous`).
+- Validation: server typecheck/build and client build pass; migration application and API/client smoke still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)

@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
-  "lastUpdated": "2026-07-13",
-  "currentSprint": "Sprint 3 (Document engine backend draft)",
+  "lastUpdated": "2026-07-14",
+  "currentSprint": "Sprint 3 (Document UI draft)",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -16,6 +16,7 @@
     "project/decisions.md",
     "sessions/2026-07-12.md",
     "sessions/2026-07-13.md",
+    "sessions/2026-07-14.md",
     "tasks/backlog.md",
     "tasks/sprint-0.md",
     "technical/brand-reference.md",

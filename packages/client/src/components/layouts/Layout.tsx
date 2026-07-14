@@ -12,6 +12,8 @@ import {
   Sun,
   Moon,
   Contact,
+  FileText,
+  Receipt,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -31,6 +33,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, moduleCode: "dashboard" },
   { to: "/parties", label: "Parties", icon: Contact, moduleCode: "party" },
+  { to: "/proformas", label: "Proformas", icon: FileText, moduleCode: "documents" },
+  { to: "/invoices", label: "Factures", icon: Receipt, moduleCode: "documents" },
+
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
 ];

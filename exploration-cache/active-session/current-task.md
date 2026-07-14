@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks/changelog after commits `23cb752` and `6612e92` (Party edit dialog + Sprint 3 document backend draft), then validate and commit the documentation sync.
+Sync cache/tasks/changelog after Sprint 3 document UI draft and proforma-lines migration, then validate, commit, and push.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,10 +8,10 @@ Sync cache/tasks/changelog after commits `23cb752` and `6612e92` (Party edit dia
 
 ## Immediate next technical check (after cache sync)
 
-- Run server typecheck/build after document route mounts and job registration.
-- Smoke-test authenticated document endpoints: proforma create/list/get, invoice draft/line/issue/cancel, BL create/get.
-- Smoke-test proforma expiry cron registration and expired-proforma promotion guard.
-- Smoke-test Party edit dialog against the update API.
+- Run server typecheck/build after adding the migration and document UI/API wrappers.
+- Run client build for Proformas/Invoices routes and dialogs.
+- Smoke-test document flows: proforma create/list/detail/promote, invoice draft/line/issue/cancel, BL create/get.
+- Smoke-test `proforma_lines` migration application in the dev stack.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -23,4 +23,4 @@ Sync cache/tasks/changelog after commits `23cb752` and `6612e92` (Party edit dia
 
 ## Note
 
-Since `35fc581`, the repo has Party edit UI (`23cb752`) and the Sprint 3 document-engine backend draft (`6612e92`). Server typecheck/build and client build pass; tracking keeps Sprint 3 tasks at `[~]` until API smoke is complete.
+Sprint 3 now has the document backend draft plus client document screens/API wrappers and a generated `proforma_lines` migration. Server typecheck/build and client build pass; tracking keeps Sprint 3 tasks at `[~]` until migration application and API/client smoke are complete.
