@@ -45,7 +45,9 @@
 - Added overpayment handling with required change-vs-credit choice and credit-lot creation for credit overpayments.
 - Added admin+ installment reschedule flow with forward-only guard, reason/audit, and invoice final due-date adjustment.
 - Updated invoice cancellation to compute already-paid amounts from payment rows and move paid money to credit.
-- Validation: server typecheck/build pass; payment migration/API smoke still pending.
+- Added payment client draft on invoice detail: issue payment-plan dialog, payment plan card, record-payment dialog, and admin reschedule dialog.
+- Added `payment_status` migration folder (`20260714174707_motionless_toad_men`).
+- Validation: server typecheck/build and client build pass; payment migration/API/client smoke still pending.
 
 ## Validation Notes (2026-07-12)
 

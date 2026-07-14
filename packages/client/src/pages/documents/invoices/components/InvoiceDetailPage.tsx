@@ -8,6 +8,10 @@ import { deliveryNoteApi, type DeliveryNote } from "@/lib/delivery-note.api";
 import { useAuth } from "@/App";
 import { CancelInvoiceDialog } from "./CancelInvoiceDialog";
 import { Party, partyApi } from "@/lib/party.api";
+import { Installment, paymentApi } from "@/lib/payment.api";
+import { IssueInvoiceDialog } from "./IssueInvoiceDialog";
+import { RecordPaymentDialog } from "./RecordPaymentDialog";
+import { PaymentPlanCard } from "./PaymentPlanCard";
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
   draft: "Brouillon",
@@ -25,7 +29,7 @@ export default function InvoiceDetailPage() {
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
   const [loading, setLoading] = useState(true);
-  const [issuing, setIssuing] = useState(false);
+  const [installments, setInstallments] = useState<Installment[]>([]);
   const [creatingBL, setCreatingBL] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +53,9 @@ export default function InvoiceDetailPage() {
           .getByInvoice(invoiceId)
           .then((r) => setDeliveryNote(r.data))
           .catch(() => setDeliveryNote(null));
+        paymentApi.listInstallments(invoiceId).then((r) => setInstallments(r.data));
+      } else {
+        setInstallments([]);
       }
     });
   }
@@ -86,23 +93,6 @@ export default function InvoiceDetailPage() {
     load();
   }
 
-  async function handleIssue() {
-    setIssuing(true);
-    setError(null);
-    try {
-      const requestId = crypto.randomUUID();
-      await invoiceApi.issue(invoiceId, requestId);
-      load();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'émission.",
-      );
-    } finally {
-      setIssuing(false);
-    }
-  }
-
   async function handleCreateBL() {
     setCreatingBL(true);
     setError(null);
@@ -125,6 +115,7 @@ export default function InvoiceDetailPage() {
   const isIssued = invoice.status === "issued";
   const canCancel = isIssued && user && ["admin", "super_admin"].includes(user.role);
   const canDiscount = user && ["manager", "admin", "super_admin"].includes(user.role);
+  const isFullyPaid = invoice.paymentStatus === "paid";
 
   return (
     <div>
@@ -154,15 +145,16 @@ export default function InvoiceDetailPage() {
 
         <div className="flex gap-2">
           {isDraft && (
-            <Button
-              size="sm"
-              onClick={handleIssue}
-              disabled={issuing || invoice.lines.length === 0}
-            >
-              {issuing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-              Émettre
-            </Button>
+            <IssueInvoiceDialog
+              invoiceId={invoice.id}
+              totalAmount={parseFloat(invoice.totalAmount)}
+              onIssued={load}
+            />
           )}
+          {isIssued && !isFullyPaid && (
+            <RecordPaymentDialog invoiceId={invoice.id} onRecorded={load} />
+          )}
+
           {isIssued && !deliveryNote && (
             <Button size="sm" variant="outline" onClick={handleCreateBL} disabled={creatingBL}>
               {creatingBL ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
@@ -174,6 +166,8 @@ export default function InvoiceDetailPage() {
       </div>
 
       {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}
+      {isIssued && <PaymentPlanCard installments={installments} onChanged={load} />}
+
       {deliveryNote && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 mb-4 text-[12px] text-emerald-800">
           Bon de livraison {deliveryNote.number} généré le{" "}

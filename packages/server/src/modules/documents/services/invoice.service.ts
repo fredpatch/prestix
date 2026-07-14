@@ -49,6 +49,7 @@ async function toView(
     referrerPartyId: inv.referrerPartyId ?? undefined,
     partySnapshot: inv.partySnapshot as Record<string, unknown>,
     status: inv.status,
+    paymentStatus: inv.paymentStatus,
     totalAmount: inv.totalAmount,
     totalDiscount: inv.totalDiscount,
     dueDate: inv.dueDate ?? undefined,

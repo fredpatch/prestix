@@ -24,6 +24,7 @@ export interface InvoiceView {
   referrerPartyId?: number;
   partySnapshot: Record<string, unknown>;
   status: "draft" | "issued" | "expired" | "cancelled";
+  paymentStatus: "unpaid" | "partial" | "paid";
   totalAmount: string;
   totalDiscount: string;
   dueDate?: string;

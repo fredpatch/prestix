@@ -9,6 +9,7 @@ export interface Invoice {
   referrerPartyId?: number;
   partySnapshot: { fullName?: string; phone?: string; email?: string };
   status: "draft" | "issued" | "expired" | "cancelled";
+  paymentStatus: "unpaid" | "partial" | "paid";
   totalAmount: string;
   totalDiscount: string;
   dueDate?: string;
@@ -17,6 +18,11 @@ export interface Invoice {
   cancelReason?: string;
   createdAt: string;
   lines: DocumentLineView[];
+}
+
+export interface PaymentPlanInput {
+  mode: "full" | "installments";
+  installments?: { expectedDate: string; expectedAmount: number }[];
 }
 
 export const invoiceApi = {
@@ -30,8 +36,8 @@ export const invoiceApi = {
     api.post<Invoice>(`/invoices/${invoiceId}/lines`, line),
   removeLine: (invoiceId: number, lineId: number) =>
     api.delete<Invoice>(`/invoices/${invoiceId}/lines/${lineId}`),
-  issue: (invoiceId: number, requestId: string) =>
-    api.post<Invoice>(`/invoices/${invoiceId}/issue`, { requestId }),
+  issue: (invoiceId: number, requestId: string, paymentPlan: PaymentPlanInput) =>
+    api.post<Invoice>(`/invoices/${invoiceId}/issue`, { requestId, paymentPlan }),
   cancel: (invoiceId: number, reason: string) =>
     api.post<Invoice>(`/invoices/${invoiceId}/cancel`, { reason }),
 };

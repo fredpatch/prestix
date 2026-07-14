@@ -73,12 +73,12 @@
 
 ## Sprint 4 – Paiements & Échéancier (M5) | 2 weeks
 
-- [~] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL — backend payment service/routes mounted under `/api/payments`; pending migration/API smoke
-- [~] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL — `issue()` now requires full/installment payment plan and creates installments inside the numbering transaction; pending API smoke
-- [~] Allocation FIFO + agent override — CRITICAL — payment service allocates FIFO by sequence with optional target installment override; pending API smoke
-- [~] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL — overpayment choice required; change or credit-lot path drafted; pending API smoke
-- [~] Status auto-update (invoice + per-installment) — HIGH — installment paid/partial/unpaid and invoice paymentStatus recomputed after payment; pending API smoke
-- [~] Reschedule (admin+, forward-only, audited) — HIGH — admin route, forward-only guard, reason/audit, final due-date adjustment drafted; pending API smoke
+- [~] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL — backend payment service/routes and invoice-detail payment UI drafted; pending migration/API/client smoke
+- [~] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL — issue dialog supports full/installment plans and creates installments inside the numbering transaction; pending API/client smoke
+- [~] Allocation FIFO + agent override — CRITICAL — payment service allocates FIFO by sequence and payment dialog supports optional target installment override; pending smoke
+- [~] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL — overpayment choice required server-side and prompted client-side; change or credit-lot path drafted; pending smoke
+- [~] Status auto-update (invoice + per-installment) — HIGH — installment paid/partial/unpaid and invoice paymentStatus exposed in API/UI; `payment_status` migration generated; pending smoke
+- [~] Reschedule (admin+, forward-only, audited) — HIGH — admin route and reschedule dialog drafted with forward-only guard, reason/audit, final due-date adjustment; pending smoke
 - [~] Cancel → money to credit (V1) — HIGH — invoice cancel now computes paid amount from payment rows and creates a credit lot; pending API smoke
 
 ## Sprint 5 – Créances & Pénalités (M6) | 1.5 weeks

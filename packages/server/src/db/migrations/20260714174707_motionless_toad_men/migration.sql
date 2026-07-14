@@ -1,0 +1,1 @@
+ALTER TABLE "invoices" ADD COLUMN "payment_status" "installment_status" DEFAULT 'unpaid'::"installment_status" NOT NULL;
