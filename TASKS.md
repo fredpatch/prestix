@@ -71,23 +71,40 @@
 
 - Line-level discount now gated manager+ (both service-side `assertCanDiscount` and client-side field hiding) — full M7 workflow (bounds validation, print summary) still Sprint 6 scope.
 
-## Sprint 4 – Paiements & Échéancier (M5) | 2 weeks
+## Sprint 4 – Paiements & Échéancier (M5) ✅ CLOSED (2026-07-14) | 2 weeks
 
-- [~] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL — backend payment service/routes and invoice-detail payment UI drafted; pending migration/API/client smoke
-- [~] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL — issue dialog supports full/installment plans and creates installments inside the numbering transaction; pending API/client smoke
-- [~] Allocation FIFO + agent override — CRITICAL — payment service allocates FIFO by sequence and payment dialog supports optional target installment override; pending smoke
-- [~] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL — overpayment choice required server-side and prompted client-side; change or credit-lot path drafted; pending smoke
-- [~] Status auto-update (invoice + per-installment) — HIGH — installment paid/partial/unpaid and invoice paymentStatus exposed in API/UI; `payment_status` migration generated; pending smoke
-- [~] Reschedule (admin+, forward-only, audited) — HIGH — admin route and reschedule dialog drafted with forward-only guard, reason/audit, final due-date adjustment; pending smoke
-- [~] Cancel → money to credit (V1) — HIGH — invoice cancel now computes paid amount from payment rows and creates a credit lot; pending API smoke
+> Payment recording is one row per installment touched per payment event (not one collapsed running total) — a deliberate departure from the legacy MongoDB microservice's model, matching our own schema's row-per-(invoice,installment) design already established for M6 penalties. Legacy's own add-payment UI had no échéance-targeting at all; per-échéance override here is a genuine PrestiX improvement over legacy, not a port. Runtime-tested end to end: full-mode issue, installment-mode issue with avance, FIFO across échéances, override target, overpayment→credit (verified on party's real credit balance), reschedule forward-only, and cancel-with-real-paid-amount (including the two-separate-credit-lots case after a prior overpayment).
+
+- [x] **Payment records (append-only): tendered/applied/change/credited/method** — CRITICAL — runtime-tested across all 8 smoke-test scenarios
+- [x] **Échéancier ≤3, avance at issue, Σ = total** — CRITICAL — Σ-must-equal-total validated client-side before submit, enforced again server-side
+- [x] Allocation FIFO + agent override — CRITICAL — both paths confirmed working
+- [x] **Overpayment → change/credit prompt** (writes credit ledger) — CRITICAL — confirmed real credit-lot creation, verified on party detail page balance
+- [x] Status auto-update (invoice + per-installment) — HIGH — `unpaid → partial → paid` confirmed at both levels
+- [x] Reschedule (admin+, forward-only, audited) — HIGH — backward-date rejection confirmed, final due-date shift on last échéance confirmed
+- [x] Cancel → money to credit (V1) — HIGH — confirmed `cancelInvoice` computes the real paid amount from payment rows (no longer caller-supplied); confirmed correct behavior on the double-credit-lot edge case (prior overpayment + cancellation reimbursement are two separate legitimate lots, not double-counted)
+
+### Schema gap found and fixed during planning
+
+- `invoices` had no `paymentStatus` column — the M5 spec's `unpaid → partial → paid` axis is separate from the document-lifecycle `status` (draft/issued/expired/cancelled). Added, reusing the existing `installment_status` enum, migrated.
+- `InvoiceView`/`toView()` initially didn't expose the new `paymentStatus` field in the API response after the schema addition — caught before shipping (client logic gating the "record payment" button on it would have silently always read `undefined`).
+
+### Real integration points closed this sprint
+
+- Sprint 2's `createCreditLot()` got its first real caller (overpayment, and cancellation).
+- Sprint 3's `cancelInvoice(paidAmountToCredit)` placeholder param replaced with a real computed value.
+- Sprint 3's `issueInvoice()` extended (not replaced) to create installments inside the same atomic transaction as numbering.
+
+### Known follow-up (filed in Notion, Sprint 12 hardening)
+
+- `recordPayment`'s overpayment→credit path calls `createCreditLot()` in a second transaction after the payment transaction commits. A failure in that second call after a successful payment commit would leave `creditedAmount` set with no matching lot — rare, not reproduced, flagged for the Sprint 12 cross-compare hardening pass.
 
 ## Sprint 5 – Créances & Pénalités (M6) | 1.5 weeks
 
-- [ ] **Penalty accrual cron: +2500/week accumulating, per-échéance, snapshot** — CRITICAL
-- [ ] **Dedicated test suite** (named constants) — CRITICAL
+- [~] **Penalty accrual cron: +2500/week accumulating, per-échéance, snapshot** — CRITICAL — backend service and daily cron drafted; uses settings-backed named constants and snapshots grace weeks on the first active row; pending dedicated tests and runtime smoke
+- [ ] **Dedicated test suite** (named constants) — CRITICAL — still pending
 - [ ] **Cross-compare gate** vs legacy Beta on sample data — CRITICAL
-- [ ] Payment allocation: agent chooses principal/penalty (+UI warn) — HIGH
-- [ ] Créances view; overdue = receivables aggregation (single source) — HIGH
+- [~] Payment allocation: agent chooses principal/penalty (+UI warn) — HIGH — backend accepts `allocationTarget`, splits principal vs penalty rows, and keeps principal status separate; client warning/control still pending
+- [~] Créances view; overdue = receivables aggregation (single source) — HIGH — `/api/creances` backend route drafted with principal/penalty due aggregation and overdue filter; client view and runtime smoke pending
 
 ## Sprint 6 – Remises & Billetterie (M7, M8) | 2 weeks
 

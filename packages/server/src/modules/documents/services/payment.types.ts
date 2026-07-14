@@ -5,6 +5,7 @@ export interface RecordPaymentParams {
   agentId: number;
   targetInstallmentId?: number; // agent override; FIFO if omitted
   overpaymentChoice?: "change" | "credit"; // required only if this payment overpays
+  allocationTarget?: "principal" | "penalty"; // M6: agent's principal-first vs penalty-first choice, defaults to principal
 }
 
 export interface PaymentView {
@@ -29,6 +30,9 @@ export interface InstallmentView {
   expectedAmount: string;
   paidAmount: string; // derived, not stored
   status: "unpaid" | "partial" | "paid";
+  penaltyAccrued: string; // M6: sum of non-voided penalty rows for this installment
+  penaltyPaid: string;
+  penaltyDue: string;
   rescheduledFrom?: string;
   rescheduledReason?: string;
 }

@@ -21,6 +21,7 @@ import type {
   InvoiceView,
   IssueInvoiceParams,
 } from "./invoice.types.js";
+import { voidPenaltiesForInvoice } from "@/modules/penalties/services/penalty.service.js";
 
 function lineTotal(unitPrice: number, quantity: number, discount: number): number {
   return unitPrice * quantity - discount;
@@ -425,7 +426,10 @@ export async function cancelInvoice(params: CancelInvoiceParams): Promise<Invoic
     });
   }
 
-  // TODO (Sprint 5 / M6): void every penalty row tied to this invoice's installments.
+  // M6: cancellation voids every accrued penalty on this invoice — the only
+  // path that can ever void a penalty (no manual waiver exists anywhere else).
+  await voidPenaltiesForInvoice(updated.id, params.reason, params.userId);
+
   // TODO (Sprint 7 / M9): compensating stock IN for every OUT this invoice triggered.
 
   await logAudit({

@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/tasks/changelog after Sprint 4 payments UI draft, then validate, commit, and push.
+Sync cache/tasks/changelog after Sprint 5 penalties/creances backend draft, then validate, commit, and push.
 
 ## Remaining Sprint 0 items (unordered, awaiting priority call)
 
@@ -8,10 +8,10 @@ Sync cache/tasks/changelog after Sprint 4 payments UI draft, then validate, comm
 
 ## Immediate next technical check (after cache sync)
 
-- Run server typecheck/build and client build after payment UI/API wiring.
-- Smoke-test invoice issue dialog with full payment plan and <=3 installment plan.
-- Smoke-test payment record dialog: FIFO allocation, target override, overpayment change/credit, and status recompute.
-- Smoke-test admin reschedule dialog and cancel-to-credit from real payment rows.
+- Run server typecheck/build after penalties, creances, and penalty-aware payment allocation wiring.
+- Smoke-test `/api/creances` with and without `?overdue=true`.
+- Smoke-test penalty accrual on overdue unpaid/partial installments and confirm paid installments do not accrue.
+- Smoke-test payment recording with `allocationTarget: "penalty"` and verify principal status remains principal-only.
 - Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
 
 ## Last validation run (2026-07-12)
@@ -23,4 +23,4 @@ Sync cache/tasks/changelog after Sprint 4 payments UI draft, then validate, comm
 
 ## Note
 
-Sprint 4 payments draft now has backend and invoice-detail UI coverage: payment plans at issue, installment display, payment recording, overpayment choice, admin reschedule, paymentStatus exposure, and `payment_status` migration. Server typecheck/build and client build pass; tracking keeps Sprint 4 tasks at `[~]` until migration application and API/client smoke are complete.
+Sprint 5 penalties/creances draft now has backend coverage: penalty accrual service, daily cron registration, `/api/creances`, invoice-cancel penalty voiding, penalty-first payment allocation, and penalty totals on installment views. Server typecheck/build pass; runtime API smoke and dedicated tests are still pending.

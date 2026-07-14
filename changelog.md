@@ -49,6 +49,14 @@
 - Added `payment_status` migration folder (`20260714174707_motionless_toad_men`).
 - Validation: server typecheck/build and client build pass; payment migration/API/client smoke still pending.
 
+## Sprint 5 (2026-07-14)
+
+- Added penalties backend draft: weekly overdue penalty accrual service, settings-backed penalty amount/grace defaults, and daily cron registration.
+- Added creances backend draft at `/api/creances` with principal/penalty due aggregation and optional overdue filtering.
+- Wired invoice cancellation to void active penalties with audit logging.
+- Extended payment recording with principal-vs-penalty allocation support and exposed penalty accrued/paid/due totals on installment views.
+- Validation: server typecheck/build pass; dedicated penalty tests, client creances UI, penalty/creance API smoke, and legacy Beta cross-compare still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)

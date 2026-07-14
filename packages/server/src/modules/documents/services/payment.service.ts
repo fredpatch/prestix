@@ -1,6 +1,6 @@
 import { db } from "../../../db/index.js";
 import { payments, installments, invoices } from "../../../db/schema.js";
-import { eq, and, asc, ne } from "drizzle-orm";
+import { eq, and, asc, ne, isNull, or } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { createCreditLot } from "../../credit/services/credit.service.js";
 import type {
@@ -9,6 +9,7 @@ import type {
   RecordPaymentParams,
   RescheduleParams,
 } from "./payment.types.js";
+import { getInstallmentPenaltyAccrued } from "@/modules/penalties/services/penalty.service.js";
 
 function toPaymentView(p: typeof payments.$inferSelect): PaymentView {
   return {
@@ -27,10 +28,36 @@ function toPaymentView(p: typeof payments.$inferSelect): PaymentView {
 }
 
 // Sum of amountApplied for one installment, across every payment row ever
-// recorded against it — the source of truth for "how much of this échéance is
-// actually settled," never a stored counter.
+// recorded against it — the source of truth for "how much of this échéance's
+// PRINCIPAL is actually settled," never a stored counter. Explicitly excludes
+// allocationTarget='penalty' rows (M6) — those settle the separate penalty
+// bucket, tracked by getInstallmentPenaltyPaidAmount below, never principal.
+// NOTE: `or(isNull(...), ne(...))` matters here — a plain ne() on a nullable
+// column silently drops every ordinary principal payment (NULL allocationTarget)
+// from the sum, since SQL `<>` never matches NULL.
 async function installmentPaidAmount(tx: typeof db, installmentId: number): Promise<number> {
-  const rows = await tx.select().from(payments).where(eq(payments.installmentId, installmentId));
+  const rows = await tx
+    .select()
+    .from(payments)
+    .where(
+      and(
+        eq(payments.installmentId, installmentId),
+        or(isNull(payments.allocationTarget), ne(payments.allocationTarget, "penalty")),
+      ),
+    );
+  return rows.reduce((sum, p) => sum + parseFloat(p.amountApplied), 0);
+}
+
+// M6: sum of amountApplied specifically allocated to penalty for this
+// installment — the other half of the principal/penalty split.
+async function installmentPenaltyPaidAmount(tx: typeof db, installmentId: number): Promise<number> {
+  const rows = await tx
+    .select()
+    .from(payments)
+    .where(
+      and(eq(payments.installmentId, installmentId), eq(payments.allocationTarget, "penalty")),
+    );
+
   return rows.reduce((sum, p) => sum + parseFloat(p.amountApplied), 0);
 }
 
@@ -78,6 +105,39 @@ export async function recordPayment(params: RecordPaymentParams): Promise<Paymen
 
     let remaining = params.amountTendered;
     const inserted: (typeof payments.$inferSelect)[] = [];
+
+    // M6: penalty-first is a per-payment-event choice on the FIRST installment
+    // in the fill order only (the targeted one, or the oldest under FIFO) —
+    // it's about which bucket THIS installment's money hits first, not a
+    // global override for every échéance the payment happens to reach.
+    if (params.allocationTarget === "penalty" && ordered.length > 0 && remaining > 0) {
+      const first = ordered[0];
+      const accrued = await getInstallmentPenaltyAccrued(first.id, tx);
+      const penaltyAlreadyPaid = await installmentPenaltyPaidAmount(tx, first.id);
+      const penaltyDue = accrued - penaltyAlreadyPaid;
+
+      if (penaltyDue > 0.01) {
+        const appliedToPenalty = Math.min(penaltyDue, remaining);
+        remaining -= appliedToPenalty;
+
+        const [penaltyRow] = await tx
+          .insert(payments)
+          .values({
+            invoiceId: params.invoiceId,
+            installmentId: first.id,
+            amountTendered: appliedToPenalty.toFixed(2),
+            amountApplied: appliedToPenalty.toFixed(2),
+            method: params.method,
+            allocationTarget: "penalty",
+            agentId: params.agentId,
+          })
+          .returning();
+        inserted.push(penaltyRow);
+        // Note: paying off penalty never changes installment.status — that
+        // status tracks PRINCIPAL only (M5), penalty-first leaving principal
+        // open is the whole point of this edge case.
+      }
+    }
 
     for (const inst of ordered) {
       if (remaining <= 0) break;
@@ -188,6 +248,9 @@ export async function listInstallmentsByInvoice(invoiceId: number): Promise<Inst
   const results: InstallmentView[] = [];
   for (const inst of rows) {
     const paidAmount = await installmentPaidAmount(db, inst.id);
+    const penaltyAccrued = await getInstallmentPenaltyAccrued(inst.id);
+    const penaltyPaid = await installmentPenaltyPaidAmount(db, inst.id);
+
     results.push({
       id: inst.id,
       invoiceId: inst.invoiceId,
@@ -196,6 +259,9 @@ export async function listInstallmentsByInvoice(invoiceId: number): Promise<Inst
       expectedAmount: inst.expectedAmount,
       paidAmount: paidAmount.toFixed(2),
       status: inst.status,
+      penaltyAccrued: penaltyAccrued.toFixed(2),
+      penaltyPaid: penaltyPaid.toFixed(2),
+      penaltyDue: Math.max(0, penaltyAccrued - penaltyPaid).toFixed(2),
       rescheduledFrom: inst.rescheduledFrom ?? undefined,
       rescheduledReason: inst.rescheduledReason ?? undefined,
     });
@@ -254,6 +320,9 @@ export async function rescheduleInstallment(params: RescheduleParams): Promise<I
   });
 
   const paidAmount = await installmentPaidAmount(db, updated.id);
+  const penaltyAccrued = await getInstallmentPenaltyAccrued(updated.id);
+  const penaltyPaid = await installmentPenaltyPaidAmount(db, updated.id);
+
   return {
     id: updated.id,
     invoiceId: updated.invoiceId,
@@ -262,6 +331,9 @@ export async function rescheduleInstallment(params: RescheduleParams): Promise<I
     expectedAmount: updated.expectedAmount,
     paidAmount: paidAmount.toFixed(2),
     status: updated.status,
+    penaltyAccrued: penaltyAccrued.toFixed(2),
+    penaltyPaid: penaltyPaid.toFixed(2),
+    penaltyDue: Math.max(0, penaltyAccrued - penaltyPaid).toFixed(2),
     rescheduledFrom: updated.rescheduledFrom ?? undefined,
     rescheduledReason: updated.rescheduledReason ?? undefined,
   };
