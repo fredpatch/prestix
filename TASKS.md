@@ -136,13 +136,28 @@
 - `usePageHeader` hook-order violation ("Rendered more hooks than during the previous render") — hook was called after an early-return loading guard in 3 detail pages, violating Rules of Hooks. Fixed by moving the call before any conditional return, with null-safe title values.
 - Footer color, 48h-banner placement, and table density were all off from the intended design — fixed based on direct visual review of real printed output, not assumption.
 
-## Sprint 7 – PrestiShop & Stock (M9) | 1.5 weeks
+## Sprint 7 – PrestiShop & Stock (M9) ✅ CLOSED (2026-07-15) | 1.5 weeks
 
-- [~] **Shop line: article, qty, price (editable), passenger (dropdown/free-text)** — CRITICAL — backend proforma/invoice shop-detail persistence drafted, client composers and create-page validation now carry stock article/passenger fields; runtime smoke pending
-- [~] Stock articles/items/movements (append-only IN/OUT/ADJUST) — CRITICAL — backend service/controller/routes mounted at `/api/stock`; client stock page/API drafted with article list, inactive toggle, create, restock, and active toggle; runtime smoke pending
-- [~] **Stock OUT on issue (idempotent refType+refId)** — CRITICAL — `issueInvoice()` records shop `articleId` OUT movements inside the invoice transaction; client warns when requested quantity exceeds current stock; runtime smoke pending
-- [~] Negative-on-issue → manager+ override (new vs legacy); manual blocks negative — HIGH — service enforces manual negative blocking and issue-only override/audit flag; controller and invoice issue dialog gate override to manager+; runtime smoke pending
-- [~] Restock IN/ADJUST (manager+); below-threshold → operational KPI only — HIGH — manager restock/adjust endpoint and low-stock query helper drafted; client/dashboard surfacing pending
+> Shop items confirmed quotable on BOTH proforma and invoice (not invoice-only as first read from the spec) — a real business scenario from Lucrèce (client wants tickets + shop items priced together before committing) led to correcting that initial reading and adding a `proformaShopDetails` table mirroring the ticket pattern from Sprint 6. Two genuinely serious bugs found and fixed during this sprint, documented below — one of them (Zod silently stripping `shopDetails` on submit) was invisible in the UI and invisible in typecheck, only caught because the person checked the actual database directly instead of trusting the screen.
+
+- [x] **Shop line: article, qty, price (editable), passenger (dropdown/free-text)** — CRITICAL — full runtime-tested: article selection auto-fills price, passenger dropdown sources from the document's own ticket passengers with free-text fallback, proactive low-stock warning shown at quoting time (not just blocked at issue)
+- [x] Stock articles/items/movements (append-only IN/OUT/ADJUST) — CRITICAL — admin page runtime-tested: create article, restock (IN), toggle active
+- [x] **Stock OUT on issue (idempotent refType+refId)** — CRITICAL — runtime-tested: onHand decremented correctly on real invoice issue, movement recorded with `SHOP_ORDER` ref
+- [x] Negative-on-issue → manager+ override (new vs legacy); manual blocks negative — HIGH — both halves runtime-tested separately: agent correctly blocked with a real translated error message (not a raw error code); manager+ override chain works end-to-end (confirmed negative `onHand` after forcing); manual `ADJUST` toward negative correctly blocked even for manager+ (no override exists for that path, by design — confirmed, not assumed)
+- [x] Restock IN/ADJUST (manager+); below-threshold → operational KPI only — HIGH — restock runtime-tested (onHand increases correctly); below-threshold KPI _display_ is explicitly M12 (Sprint 10) scope, same treatment as ticket margin in Sprint 6 — `listLowStockArticles()` query exists and is ready, no dashboard yet
+
+### Real bugs found and fixed during Sprint 7
+
+- `proformaShopDetails` table was specified at planning but never actually pasted/pushed — caught by direct DB inspection before building the frontend on top of a gap that would have silently discarded data.
+- `invoice.service.ts` only ever _read_ `shopDetails` (for the stock-OUT lookup inside `issueInvoice()`) — nothing anywhere actually _wrote_ to it. The stock-OUT join would always have come back empty. Found via code review before frontend work started, not by testing.
+- All three PDF services (invoice/proforma/BL) never read `shopDetails.passengerName` for the printed line's client name — always fell through to the buyer's name regardless of a designated passenger. Found by the person reviewing real printed output directly.
+- **The big one:** `CreateProformaPage.tsx`/`CreateInvoiceDraftPage.tsx`'s Zod `lineSchema` never declared a `shopDetails` field. Since Zod's `z.object()` defaults to strip-unknown-keys mode, `zodResolver` silently deleted `shopDetails` from every submission before the submit handler ever saw it — no error, no warning, UI looked completely correct. Only caught because the person checked `proforma_shop_details` in the actual database and found it empty despite the form clearly working. General lesson for any future `zodResolver` form: every field the UI writes to form state must be explicitly declared in the schema, or it vanishes invisibly on submit.
+- Issue-time `INSUFFICIENT_STOCK` error was displaying as the raw error code, not a translated message — easy to miss, looked like a bug rather than a real block. Fixed with a proper error-code-to-message map, same pass that added the manager+ override UI.
+
+### Deliberately deferred, logged not built
+
+- Reusable per-page "guide/help" panel — the person's own idea, correctly scoped as needing real content-authoring work (not just a mechanism) and a genuine UX design pass (panel vs. toggleable handle). Filed in Notion backlog.
+- Papeterie/POS receipt mode — already V2/deferred per spec, owner decision pending. Confirmed during this sprint's planning that the stock schema is already reusable groundwork for it whenever that conversation happens (Papeterie would just be more `stockArticles` rows, not a separate system).
 
 ## Sprint 8 – Commission Divers (M10) | 2 weeks
 

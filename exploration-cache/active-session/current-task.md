@@ -1,49 +1,40 @@
 ## Task
 
-Sync cache/changelog after Sprint 7 low-stock warning and manager override UI update, then commit and push all current changes.
+None active — Sprint 7 fully closed (2026-07-15). Awaiting direction on Sprint 8
+(Commission Divers, M10).
 
-## Current Sprint 7 State
+## Sprint 7 close-out summary
 
-Sprint 7 - PrestiShop & Stock (M9) is underway. The backend stock module is drafted
-and mounted at `/api/stock`, with article setup, row-locked on-hand balances,
-append-only movements, manual restock/adjust actions, invoice issue-time shop
-stock OUT hooks, negative override audit, and cancellation compensation.
+Full PrestiShop & Stock module built and runtime-tested: stock articles/items/
+movements, shop-line capture (article auto-fill, passenger dropdown-or-free-text,
+proactive low-stock warning at quoting time), stock OUT on issue with real
+idempotency, and the two distinct negative-stock rules confirmed separately —
+manual ops always blocked (no override exists), issue-time OUT can be overridden
+by manager+ only (confirmed via real negative onHand after override).
 
-Shop-line server persistence is now drafted for both proformas and invoices:
-`proforma_shop_details` stores article, supplier/selling price, and passenger
-metadata before promotion; invoice `shop_details` is populated from direct invoice
-drafts, added lines, and proforma promotion. Client stock UI is drafted with a
-`/stock` page, stock API wrapper, manager create/restock/activate controls, and
-stock article/passenger fields in both Proforma and Invoice line composers.
-The Proforma/Invoice create-page validation schemas now accept `shopDetails` so
-those fields survive form validation/submission.
-Proforma/Invoice shop line composers now warn when selected article quantity
-exceeds current stock, and the invoice issue dialog can retry with the
-manager-only negative stock override after an `INSUFFICIENT_STOCK` response.
+Corrected an initial scope misreading during planning: shop items ARE quotable
+on proformas, not invoice-only as the spec's literal wording first suggested —
+a real business scenario from Lucrèce (tickets + shop items priced together)
+overrode that reading. Added proformaShopDetails mirroring the ticket pattern.
 
-## Last Validation Run (2026-07-15)
+Four real bugs found and fixed, one of them serious enough to note for every
+future zodResolver form: Zod's z.object() silently strips any key not declared
+in the schema. The ShopFields UI wrote correctly to form state the whole time,
+but shopDetails vanished on every submit with zero error, because lineSchema
+never declared it. Invisible in the UI, invisible in typecheck — only caught
+because the person checked the actual database directly instead of trusting
+the screen. Also caught: proformaShopDetails table spec'd but never pushed,
+invoice.service.ts only ever reading (never writing) shopDetails, and all
+three PDF services never reading shopDetails.passengerName for the printed
+client name.
 
-- Server typecheck: PASS (`npm run typecheck -w packages/server`)
-- Server build: PASS (`npm run build -w packages/server`)
-- Migration generation: PASS (`npm run db:generate -w packages/server`, generated `20260715180806_lazy_ultimo`)
-- Client build: PASS after elevated rerun for known Vite/esbuild `spawn EPERM` (`npm run build -w packages/client`)
-- Client build: PASS after create-page `shopDetails` validation update (`npm run build -w packages/client`, elevated rerun for known Vite/esbuild `spawn EPERM`)
-- Client build: PASS after low-stock warning/manager override UI update (`npm run build -w packages/client`, elevated rerun for known Vite/esbuild `spawn EPERM`)
+One feature explicitly deferred at the person's own suggestion: a reusable
+per-page guide/help panel. Correctly scoped as needing real content-authoring
+work plus its own UX design pass, not a quick bolt-on. Logged in Notion.
 
-## Immediate Next Technical Check
+## Next up
 
-- Smoke `/api/stock` list/create/update/active/restock/movements with agent vs manager role gates.
-- Smoke invoice issue with shop lines carrying `articleId` to verify stock OUT movements are created inside the issue transaction.
-- Smoke proforma shop details create/read/promote into invoice shop details.
-- Smoke insufficient stock rejection and manager negative override audit behavior.
-- Smoke invoice cancellation stock compensation for recorded shop OUT movements.
-- Smoke `/stock` page create/restock/active toggle and article list behavior.
-- Smoke stock article picker and passenger assignment in Proforma/Invoice line composers.
-- Smoke Proforma/Invoice create submit with shop `shopDetails` payloads.
-- Smoke low-stock warning text in Proforma/Invoice shop line composers.
-- Smoke manager-only negative stock override prompt during invoice issue.
-
-## Note
-
-Sprint 6 is closed. Sprint 7 now has the backend stock foundation, document-side
-shop-detail persistence, and a client stock draft in place, but runtime smoke is still pending.
+Sprint 8 — Commission Divers (M10). Not yet started. This is the first module
+that's genuinely "autonomous" per spec — commission transactions never enter
+the Proforma→Facture→BL flow at all, a real architectural departure from every
+module built so far this session.
