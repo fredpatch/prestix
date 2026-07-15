@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Plane, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Plane, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useFieldArray, useFormContext, type FieldErrors, type FieldPath } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,15 @@ function ShopFields({ index, line }: ShopFieldsProps) {
 
   const shop = line.shopDetails ?? { supplierPrice: 0, sellingPrice: line.unitPrice };
 
+  const selectedArticle = shop.articleId
+    ? articles.find((a) => a.id === shop.articleId)
+    : undefined;
+  const requestedQty = line.quantity ?? 1;
+  const stockWarning =
+    selectedArticle && requestedQty > selectedArticle.onHand
+      ? `Stock insuffisant : ${selectedArticle.onHand} en stock, ${requestedQty} demandé${requestedQty > 1 ? "s" : ""}.`
+      : null;
+
   function selectArticle(articleId: string) {
     if (!articleId) {
       setValue(
@@ -138,7 +147,7 @@ function ShopFields({ index, line }: ShopFieldsProps) {
 
       <div className="grid gap-3 md:grid-cols-2">
         <div>
-          <Label>Article (optionnel — laisser vide pour une prestation sans stock)</Label>
+          <Label>Article (optionnel - laisser vide pour une prestation sans stock)</Label>
           <select
             value={shop.articleId ?? ""}
             onChange={(e) => selectArticle(e.target.value)}
@@ -147,7 +156,7 @@ function ShopFields({ index, line }: ShopFieldsProps) {
             <option value="">Aucun (prestation)</option>
             {articles.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.name} — {a.onHand} {a.unit} en stock
+                {a.name} - {a.onHand} {a.unit} en stock
               </option>
             ))}
           </select>
@@ -162,6 +171,16 @@ function ShopFields({ index, line }: ShopFieldsProps) {
         </div>
       </div>
 
+      {stockWarning && (
+        <p className="mt-2 flex gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+          <span>
+            {stockWarning} - l'émission de la facture nécessitera l'autorisation d'un manager si le
+            stock ne change pas d'ici là.
+          </span>
+        </p>
+      )}
+
       <div className="mt-4">
         <Label>Passager désigné (optionnel)</Label>
         {passengerMode === "dropdown" && ticketPassengers.length > 0 ? (
@@ -171,7 +190,7 @@ function ShopFields({ index, line }: ShopFieldsProps) {
               onChange={(e) => updateShopField({ passengerName: e.target.value })}
               className="flex h-10 flex-1 rounded border border-neutral-200 bg-white px-3 text-sm"
             >
-              <option value="">— Sélectionner —</option>
+              <option value="">- Sélectionner -</option>
               {ticketPassengers.map((name) => (
                 <option key={name} value={name}>
                   {name}

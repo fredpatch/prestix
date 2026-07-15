@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/changelog after Sprint 7 create-page shopDetails validation update, then commit and push all current changes.
+Sync cache/changelog after Sprint 7 low-stock warning and manager override UI update, then commit and push all current changes.
 
 ## Current Sprint 7 State
 
@@ -17,6 +17,9 @@ drafts, added lines, and proforma promotion. Client stock UI is drafted with a
 stock article/passenger fields in both Proforma and Invoice line composers.
 The Proforma/Invoice create-page validation schemas now accept `shopDetails` so
 those fields survive form validation/submission.
+Proforma/Invoice shop line composers now warn when selected article quantity
+exceeds current stock, and the invoice issue dialog can retry with the
+manager-only negative stock override after an `INSUFFICIENT_STOCK` response.
 
 ## Last Validation Run (2026-07-15)
 
@@ -25,6 +28,7 @@ those fields survive form validation/submission.
 - Migration generation: PASS (`npm run db:generate -w packages/server`, generated `20260715180806_lazy_ultimo`)
 - Client build: PASS after elevated rerun for known Vite/esbuild `spawn EPERM` (`npm run build -w packages/client`)
 - Client build: PASS after create-page `shopDetails` validation update (`npm run build -w packages/client`, elevated rerun for known Vite/esbuild `spawn EPERM`)
+- Client build: PASS after low-stock warning/manager override UI update (`npm run build -w packages/client`, elevated rerun for known Vite/esbuild `spawn EPERM`)
 
 ## Immediate Next Technical Check
 
@@ -36,6 +40,8 @@ those fields survive form validation/submission.
 - Smoke `/stock` page create/restock/active toggle and article list behavior.
 - Smoke stock article picker and passenger assignment in Proforma/Invoice line composers.
 - Smoke Proforma/Invoice create submit with shop `shopDetails` payloads.
+- Smoke low-stock warning text in Proforma/Invoice shop line composers.
+- Smoke manager-only negative stock override prompt during invoice issue.
 
 ## Note
 

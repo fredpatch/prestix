@@ -11,12 +11,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { invoiceApi } from "@/lib/invoice.api";
+import { useAuth } from "@/App";
 
 interface IssueInvoiceDialogProps {
   invoiceId: number;
   totalAmount: number;
   onIssued: () => void;
 }
+
+const ERROR_MESSAGES: Record<string, string> = {
+  INSUFFICIENT_STOCK: "Stock insuffisant pour au moins un article de cette facture.",
+  INVOICE_HAS_NO_LINES: "La facture n'a aucune ligne.",
+  INVALID_INSTALLMENT_COUNT: "Le nombre d'échéances doit être entre 1 et 3.",
+  INSTALLMENTS_MUST_SUM_TO_TOTAL: "La somme des échéances doit égaler le total de la facture.",
+  NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER:
+    "Seul un manager peut forcer l'émission avec un stock insuffisant.",
+};
 
 interface InstallmentDraft {
   expectedDate: string;
@@ -28,6 +38,7 @@ function todayISO(): string {
 }
 
 export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueInvoiceDialogProps) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"full" | "installments">("full");
   // échéance 1 (avance) always starts today, per M5 spec — not editable by the agent.
@@ -36,11 +47,15 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stockOverridePending, setStockOverridePending] = useState(false);
+
+  const canOverrideStock = user && ["manager", "admin", "super_admin"].includes(user.role);
 
   function reset() {
     setMode("full");
     setInstallments([{ expectedDate: todayISO(), expectedAmount: totalAmount }]);
     setError(null);
+    setStockOverridePending(false);
   }
 
   function addInstallment() {
@@ -62,23 +77,30 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
   const datesValid = mode === "full" || installments.every((i) => i.expectedDate);
   const canSubmit = mode === "full" || (sumMatches && datesValid);
 
-  async function handleSubmit() {
+  async function handleSubmit(allowNegativeStockOverride = false) {
     setSubmitting(true);
     setError(null);
     try {
       const requestId = crypto.randomUUID();
-      await invoiceApi.issue(invoiceId, requestId, {
-        mode,
-        installments: mode === "installments" ? installments : undefined,
-      });
+      await invoiceApi.issue(
+        invoiceId,
+        requestId,
+        {
+          mode,
+          installments: mode === "installments" ? installments : undefined,
+        },
+        allowNegativeStockOverride,
+      );
       setOpen(false);
       reset();
       onIssued();
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'émission.",
-      );
+      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
+      if (code === "INSUFFICIENT_STOCK" && canOverrideStock) {
+        setStockOverridePending(true);
+      } else {
+        setError((code && ERROR_MESSAGES[code]) ?? "Erreur lors de l'émission.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -184,13 +206,45 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
           )}
 
           {error && <p className="text-[11px] text-red-600">{error}</p>}
+          {stockOverridePending && (
+            <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 space-y-2">
+              <p className="text-[12px] text-amber-800">
+                Stock insuffisant pour au moins un article. En tant que manager, vous pouvez forcer
+                l'émission - cela enregistrera un mouvement de stock négatif, audité.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setStockOverridePending(false)}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleSubmit(true)}
+                  disabled={submitting}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {submitting ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    "Forcer l'émission"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !canSubmit}>
+          <Button
+            onClick={() => handleSubmit(false)}
+            disabled={submitting || !canSubmit || stockOverridePending}
+          >
             {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'émission"}
           </Button>
         </DialogFooter>

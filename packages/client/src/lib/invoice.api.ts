@@ -36,8 +36,17 @@ export const invoiceApi = {
     api.post<Invoice>(`/invoices/${invoiceId}/lines`, line),
   removeLine: (invoiceId: number, lineId: number) =>
     api.delete<Invoice>(`/invoices/${invoiceId}/lines/${lineId}`),
-  issue: (invoiceId: number, requestId: string, paymentPlan: PaymentPlanInput) =>
-    api.post<Invoice>(`/invoices/${invoiceId}/issue`, { requestId, paymentPlan }),
+  issue: (
+    invoiceId: number,
+    requestId: string,
+    paymentPlan: PaymentPlanInput,
+    allowNegativeStockOverride?: boolean,
+  ) =>
+    api.post<Invoice>(`/invoices/${invoiceId}/issue`, {
+      requestId,
+      paymentPlan,
+      allowNegativeStockOverride,
+    }),
   cancel: (invoiceId: number, reason: string) =>
     api.post<Invoice>(`/invoices/${invoiceId}/cancel`, { reason }),
 };
