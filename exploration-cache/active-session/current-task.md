@@ -1,27 +1,32 @@
 ## Task
 
-Sync cache/changelog after document PDF print refinement, then commit and push all current changes.
+Sync cache/changelog after Sprint 7 stock backend draft, then commit and push all current changes.
 
-## Remaining Sprint 0 items (unordered, awaiting priority call)
+## Current Sprint 7 State
 
-- None. Sprint 0 is closed.
+Sprint 7 - PrestiShop & Stock (M9) is underway. The backend stock module is drafted
+and mounted at `/api/stock`, with article setup, row-locked on-hand balances,
+append-only movements, manual restock/adjust actions, invoice issue-time shop
+stock OUT hooks, negative override audit, and cancellation compensation.
 
-## Immediate next technical check (after cache sync)
+Shop-line client/passenger association is still carried forward for the client/UI
+layer. The schema already has `shopDetails.passengerName`; capture UI and article
+picker are not built yet.
 
-- Smoke-test the generated PDF files after payment schedule/return-date/template spacing refinements.
-- Smoke-test `/api/proformas/:id/pdf`, `/api/invoices/:id/pdf`, and `/api/delivery-notes/invoice/:invoiceId/pdf`.
-- Verify multi-installment invoice PDFs show the payment schedule.
-- Verify round-trip ticket rows show return dates in invoice/proforma/BL PDFs.
-- Verify `DOCUMENT_PRINTED` audit rows for invoice, proforma, and BL exports.
-- Smoke-test Proforma detail PDF action and Invoice detail BL PDF link.
-- Keep migration mapping notes ready for Sprint 11 once Beta access is granted.
-
-## Last validation run (2026-07-15)
+## Last Validation Run (2026-07-15)
 
 - Server typecheck: PASS (`npm run typecheck -w packages/server`)
 - Server build: PASS (`npm run build -w packages/server`)
-- Client build: PASS after elevated rerun for known Vite/esbuild `spawn EPERM` (`npm run build -w packages/client`)
+
+## Immediate Next Technical Check
+
+- Smoke `/api/stock` list/create/update/active/restock/movements with agent vs manager role gates.
+- Smoke invoice issue with shop lines carrying `articleId` to verify stock OUT movements are created inside the issue transaction.
+- Smoke insufficient stock rejection and manager negative override audit behavior.
+- Smoke invoice cancellation stock compensation for recorded shop OUT movements.
+- Plan/build client stock article picker and shop-line passenger/article capture.
 
 ## Note
 
-Document PDF export now covers invoices, proformas, and delivery notes using the shared print template. The print template now includes ticket return dates, multi-installment invoice schedules, denser table/spacing styles, and print audit logging. Server/client validation passes for this refinement batch; runtime PDF visual smoke is still pending.
+Sprint 6 is closed. Sprint 7 now has the backend stock foundation in place, but
+runtime API smoke and client UI wiring are still pending.

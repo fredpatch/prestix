@@ -11,8 +11,10 @@ import {
   payments,
   ticketDetails,
   proformaTicketDetails,
+  shopDetails,
+  stockMovements,
 } from "../../../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { getNextNumber } from "./counters.service.js";
 import { getIntValue } from "../../settings/services/settings.service.js";
@@ -25,6 +27,10 @@ import type {
   IssueInvoiceParams,
 } from "./invoice.types.js";
 import { voidPenaltiesForInvoice } from "@/modules/penalties/services/penalty.service.js";
+import {
+  recordManualStockMovement,
+  recordShopSaleStockMovementInTx,
+} from "@/modules/stock/services/stock.service.js";
 
 function lineTotal(unitPrice: number, quantity: number, discount: number): number {
   return unitPrice * quantity - discount;
@@ -456,24 +462,58 @@ export async function issueInvoice(params: IssueInvoiceParams): Promise<InvoiceV
       })),
     );
 
-    // TODO (Sprint 6 / M8, Sprint 7 / M9): inside THIS transaction —
-    //   - mark each attached ticket/shop order `invoiced`
-    //   - for shop lines with a stockArticleId, create a stock OUT movement
-    // Both must happen here, not as separate calls, to preserve the all-or-nothing
-    // guarantee this function exists to provide.
+    // M9: stock OUT for shop lines with a stockArticleId, inside THIS
+    // transaction — not a separate call, per spec ("all-or-nothing").
+    const shopLinesWithStock = await tx
+      .select({ line: invoiceLines, shop: shopDetails })
+      .from(invoiceLines)
+      .innerJoin(shopDetails, eq(shopDetails.invoiceLineId, invoiceLines.id))
+      .where(and(eq(invoiceLines.invoiceId, params.invoiceId), isNotNull(shopDetails.articleId)));
 
-    return updated;
+    const negativeOverrideMovements: { id: number; articleId: number; quantity: number }[] = [];
+    for (const { line, shop } of shopLinesWithStock) {
+      const movement = await recordShopSaleStockMovementInTx(
+        tx,
+        shop.articleId!,
+        line.quantity,
+        "SHOP_ORDER",
+        String(line.id),
+        params.userId,
+        params.allowNegativeStockOverride ?? false,
+      );
+      if (movement.isNegativeOverride) {
+        negativeOverrideMovements.push({
+          id: movement.id,
+          articleId: movement.articleId,
+          quantity: movement.quantity,
+        });
+      }
+    }
+
+    return { updated, negativeOverrideMovements };
   });
+
+  const { updated, negativeOverrideMovements } = result;
 
   await logAudit({
     userId: params.userId,
     action: "INVOICE_ISSUED",
     entityType: "invoices",
-    entityId: String(result.id),
-    metadata: { number: result.number, requestId: params.requestId },
+    entityId: String(updated.id),
+    metadata: { number: updated.number, requestId: params.requestId },
   });
 
-  return toView(result, lines);
+  for (const m of negativeOverrideMovements) {
+    await logAudit({
+      userId: params.userId,
+      action: "STOCK_NEGATIVE_OVERRIDE",
+      entityType: "stock_movements",
+      entityId: String(m.id),
+      metadata: { articleId: m.articleId, quantity: m.quantity, invoiceId: updated.id },
+    });
+  }
+
+  return toView(updated, lines);
 }
 
 // Cancellation — M4: privileged admin+ (enforced at route level), reason required,
@@ -524,7 +564,29 @@ export async function cancelInvoice(params: CancelInvoiceParams): Promise<Invoic
   // path that can ever void a penalty (no manual waiver exists anywhere else).
   await voidPenaltiesForInvoice(updated.id, params.reason, params.userId);
 
-  // TODO (Sprint 7 / M9): compensating stock IN for every OUT this invoice triggered.
+  // M9: compensating stock IN for every OUT this invoice triggered. Note this
+  // is a separate call, not nested in one wrapping transaction with the rest
+  // of cancelInvoice() — consistent with how this function already handles
+  // its other side effects (credit lot creation above is the same pattern).
+  const invoiceLineIds = (
+    await db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, params.invoiceId))
+  ).map((l) => l.id);
+  for (const lineId of invoiceLineIds) {
+    const [movement] = await db
+      .select()
+      .from(stockMovements)
+      .where(
+        and(eq(stockMovements.refType, "SHOP_ORDER"), eq(stockMovements.refId, String(lineId))),
+      );
+    if (movement) {
+      await recordManualStockMovement(
+        movement.articleId,
+        "ADJUST",
+        -movement.quantity,
+        params.userId,
+      );
+    }
+  }
 
   await logAudit({
     userId: params.userId,

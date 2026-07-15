@@ -110,21 +110,39 @@
 
 - [~] Invoice/Proforma/BL print exports — shared template now renders ticket return dates, invoice payment schedules, denser table/signature/footer spacing, and print audit logging; server typecheck/build and client build pass; visual endpoint smoke and audit-row verification still pending
 
-## Sprint 6 – Remises & Billetterie (M7, M8) | 2 weeks
+## Sprint 6 – Remises & Billetterie (M7, M8) ✅ CLOSED (2026-07-15) | 2 weeks (ran long — see note)
 
-- [ ] Line-level fixed discount (manager+), ≥0, ≤ line — HIGH
-- [ ] Discount on printed invoice (per-line + summary) — HIGH
-- [ ] **Ticketing: class enum economy/business/first/premium; abbrev eco/bnss/prem/prm** — CRITICAL
-- [ ] Ticket line = one passenger; segments + passenger + references (reuse legacy shape) — HIGH
-- [ ] Ticket margin (selling − supplier); attach → invoiced at issue — HIGH
+> Grew well past its original checklist. Original scope (discount bounds/print, ticket class/passenger capture) is a fraction of what actually shipped: proforma/invoice/BL PDF generation (never itemized in TASKS.md — surfaced when asked "how do we send the proforma to the client"), the échéancier print restoration, and a full Layout page-header mechanism (cross-cutting UI work, not M7/M8 scope). Future planning should treat document-output/print work as its own cost center, not an assumed-included afterthought.
+
+- [x] Line-level fixed discount (manager+), ≥0, ≤ line — HIGH — role gate + bounds check both live-tested; over-line-amount discount confirmed rejected
+- [x] Discount on printed invoice (per-line + summary) — HIGH — confirmed on real printed proforma output (Remise column + Sous-total/Remise/TOTAL summary)
+- [x] **Ticketing: class enum economy/business/first/premium; abbrev eco/bnss/prem/prm** — CRITICAL — confirmed on real printed output ("prm" rendering correctly)
+- [x] Ticket line = one passenger; segments + passenger + references (reuse legacy shape) — HIGH — passenger/route/PNR/GDS/ticket-number all captured and printing correctly; supplier-ref dropped per real business feedback (agent doesn't need it)
+- [x] Ticket margin (selling − supplier); attach → invoiced at issue — HIGH — data capture correct (supplierPrice/sellingPrice on both proforma and invoice ticket details); margin _display_/reporting is explicitly M12 (Sprint 10) scope, not built here; "attach→invoiced" satisfied by design (no separate booking-cart — confirmed at planning, document engine's own status transition covers it)
+
+### Beyond-scope work completed this sprint
+
+- **Full print/PDF generation for all 3 document types** — proforma, invoice, delivery note. Only invoice PDF existed going in; proforma/BL PDF never existed as a feature until this sprint.
+- **Échéancier (payment schedule) restored on invoice print** — cut during the Sprint 0 pre-flight port pending M5; M5 now exists, restored with real installment data.
+- **Print-audit logging** — every PDF download now logs `DOCUMENT_PRINTED`, matching a legacy pattern worth keeping (who printed what, when).
+- **Layout page-header mechanism** (`usePageHeader` hook + Layout integration) — retrofitted across all 10 pages for consistent, non-scrolling page titles/back-navigation. Real UX problem, not originally scoped, fixed properly instead of patched locally.
+- **Full react-hook-form + Zod rewrite** of proforma/invoice line-item capture (replacing the original plain-useState version), including collapse/expand per line, live validation, and a progress-checklist sidebar.
+
+### Real bugs found and fixed during Sprint 6
+
+- Discount upper bound (`≤ line amount`) was never actually enforced — only the manager+ role gate existed. Found during planning, fixed before shipping.
+- `proformaLines` had no linked ticket-details table — schema gap found during planning (proforma quoting a ticket had nowhere to store passenger/segment/class data), fixed before building on top of it.
+- `CreateInvoiceDraftPage` was left completely broken after a mid-sprint UI refactor — the line-builder UI was deleted with nothing replacing it, making the page unusable. Found via direct repo inspection when the person reported confusion, not caught by typecheck.
+- `usePageHeader` hook-order violation ("Rendered more hooks than during the previous render") — hook was called after an early-return loading guard in 3 detail pages, violating Rules of Hooks. Fixed by moving the call before any conditional return, with null-safe title values.
+- Footer color, 48h-banner placement, and table density were all off from the intended design — fixed based on direct visual review of real printed output, not assumption.
 
 ## Sprint 7 – PrestiShop & Stock (M9) | 1.5 weeks
 
 - [ ] **Shop line: article, qty, price (editable), passenger (dropdown/free-text)** — CRITICAL
-- [ ] Stock articles/items/movements (append-only IN/OUT/ADJUST) — CRITICAL
-- [ ] **Stock OUT on issue (idempotent refType+refId)** — CRITICAL
-- [ ] Negative-on-issue → manager+ override (new vs legacy); manual blocks negative — HIGH
-- [ ] Restock IN/ADJUST (manager+); below-threshold → operational KPI only — HIGH
+- [~] Stock articles/items/movements (append-only IN/OUT/ADJUST) — CRITICAL — backend service/controller/routes mounted at `/api/stock`; row-locked on-hand updates and movement history drafted; runtime smoke pending
+- [~] **Stock OUT on issue (idempotent refType+refId)** — CRITICAL — `issueInvoice()` records shop `articleId` OUT movements inside the invoice transaction; runtime smoke pending
+- [~] Negative-on-issue → manager+ override (new vs legacy); manual blocks negative — HIGH — service enforces manual negative blocking and issue-only override/audit flag; controller gates override to manager+; runtime smoke pending
+- [~] Restock IN/ADJUST (manager+); below-threshold → operational KPI only — HIGH — manager restock/adjust endpoint and low-stock query helper drafted; client/dashboard surfacing pending
 
 ## Sprint 8 – Commission Divers (M10) | 2 weeks
 

@@ -1,34 +1,46 @@
-## Where we left off
+## Where We Left Off
 
-Sprint 1 is now closed in task tracking after end-to-end runtime checks and
-typecheck cleanup.
+Sprint 6 is closed. Sprint 7 - PrestiShop & Stock (M9) is now underway.
 
-## What's in scope today
+## What's In Scope Today
 
-Cache/changelog sync after document PDF print refinement.
+Cache/changelog sync after the Sprint 7 stock backend draft, then commit and push.
 
-## State of the codebase
+## State Of The Codebase
 
 Backend has working Express routes for bootstrap, auth, users, settings, Party,
-Party History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments, and Creances, with JWT cookie auth, RBAC middleware, default settings seed, job registration, generated document migrations, and optional document référent linkage.
-Client now includes bootstrap-status route gating in App routing, a dedicated
-bootstrap initialization page, upgraded login/set-password UX, settings/users management,
-Party list/detail/create/edit/quick-add screens, document list/detail/create/promote/issue/cancel/BL flows, dedicated `/proformas/new` and `/invoices/new` creation pages, invoice-detail payment issue/record/reschedule flows, penalty-aware payment allocation controls, and the `/creances` page behind guarded routes. Routed pages can set their top-bar title/back/badge via the shared page-header context. Document PDFs now exist for invoices, proformas, and delivery notes, with return dates and invoice payment schedules in the shared print template.
+Party History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments,
+Creances, and Stock. The server uses JWT cookie auth, RBAC middleware, default
+settings seed, job registration, generated document migrations, optional document
+referent linkage, and audit logging.
 
-Validation snapshot (2026-07-15):
+Client includes bootstrap-status route gating, bootstrap initialization, upgraded
+login/set-password UX, settings/users management, Party screens, document
+list/detail/create/promote/issue/cancel/BL flows, dedicated `/proformas/new` and
+`/invoices/new` creation pages, invoice-detail payment issue/record/reschedule
+flows, penalty-aware payment allocation controls, and the `/creances` page.
+Routed pages set their top-bar title/back/badge through the shared page-header
+context. Stock client UI is not built yet.
 
-- Docker stack is up in dev context (validated by successful `docker compose exec api ...` pre-flight run).
-- Puppeteer PDF pre-flight passed (`docker compose exec api npm run preflight:pdf`, exit 0).
-- Drizzle schema gaps found during audit were fixed.
-- Mongo->PG migration schema mapping spike documented in cache technical notes.
-- `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
-- `packages/client` dependencies installed successfully (`npm i`, exit 0).
-- `ignoreDeprecations` regression was fixed and pushed; Sprint 1 validation gate marked closed in `TASKS.md`.
-- Party/Credit/History backend routes and Party client routes are drafted; document backend/client routes are mounted; payments backend routes and invoice-detail payment UI are drafted. Document creation now uses dedicated Proforma/Invoice pages, shared layout page headers replace duplicated in-page titles/back links, and proforma/invoice/BL PDFs share the print template with audit logging, return dates, and invoice installment schedules. PDF visual smoke, penalty/creance runtime smoke, and legacy Beta cross-compare are the next gates.
+Document PDFs exist for invoices, proformas, and delivery notes, with return
+dates and invoice payment schedules in the shared print template.
 
-## Key constraints active right now
+Sprint 7 stock backend is drafted: `/api/stock` exposes article/movement reads,
+manager article setup/restock actions, append-only stock movements, row-locked
+stock balances, issue-time shop stock OUT hooks, negative override audit, and
+invoice cancellation compensation.
 
-- npm workspaces, run scripts from within each package
-- Windows MINGW64 dev environment
-- Health check is /api/health (not /health)
-- Migration dry-run is blocked until Beta production data access is available
+## Validation Snapshot (2026-07-15)
+
+- `npm run typecheck -w packages/server`: PASS after stock backend draft.
+- `npm run build -w packages/server`: PASS after stock backend draft.
+- Runtime stock API smoke is pending.
+- Invoice issue/cancel stock movement smoke is pending.
+- PDF visual smoke, penalty/creance runtime smoke, and legacy Beta cross-compare are still pending.
+
+## Key Constraints Active Right Now
+
+- npm workspaces, run scripts from within each package.
+- Windows dev environment.
+- Health check is `/api/health`, not `/health`.
+- Migration dry-run is blocked until Beta production data access is available.

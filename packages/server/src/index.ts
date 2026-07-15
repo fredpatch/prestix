@@ -68,6 +68,7 @@ import invoiceRoutes from "./modules/documents/routes/invoice.routes.js";
 import deliveryNoteRoutes from "./modules/documents/routes/delivery-note.routes.js";
 import paymentRoutes from "./modules/documents/routes/payment.routes.js";
 import creanceRoutes from "./modules/penalties/routes/creance.routes.js";
+import stockRoutes from "./modules/stock/routes/stock.routes.js";
 import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
@@ -85,6 +86,7 @@ app.use("/api/invoices", invoiceRoutes);
 app.use("/api/delivery-notes", deliveryNoteRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/creances", creanceRoutes);
+app.use("/api/stock", stockRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as invoiceService from "../services/invoice.service.js";
+import { roleLevel } from "../../../db/schema.js";
 
 function handleError(res: Response, error: unknown): void {
   const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -18,6 +19,10 @@ function handleError(res: Response, error: unknown): void {
     CANCEL_REASON_REQUIRED: 400,
     INVALID_INSTALLMENT_COUNT: 400,
     INSTALLMENTS_MUST_SUM_TO_TOTAL: 400,
+    STOCK_ARTICLE_NOT_FOUND: 404,
+    MOVEMENT_ALREADY_RECORDED: 409,
+    INSUFFICIENT_STOCK: 400,
+    NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER: 403,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[invoice]", error);
@@ -95,7 +100,7 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
 export async function issue(req: Request, res: Response): Promise<void> {
   try {
     const invoiceId = parseInt(req.params.id);
-    const { requestId, paymentPlan } = req.body;
+    const { requestId, paymentPlan, allowNegativeStockOverride } = req.body;
     if (!requestId) {
       res.status(400).json({ message: "requestId est requis (idempotence)." });
       return;
@@ -104,11 +109,19 @@ export async function issue(req: Request, res: Response): Promise<void> {
       res.status(400).json({ message: "paymentPlan est requis." });
       return;
     }
+    const wantsNegativeOverride = allowNegativeStockOverride === true;
+    const userRole = req.user!.role as keyof typeof roleLevel;
+    const isManagerPlus = (roleLevel[userRole] ?? 0) >= roleLevel.manager;
+    if (wantsNegativeOverride && !isManagerPlus) {
+      throw new Error("NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER");
+    }
+
     const invoice = await invoiceService.issueInvoice({
       invoiceId,
       requestId,
       userId: req.user!.userId,
       paymentPlan,
+      allowNegativeStockOverride: wantsNegativeOverride,
     });
     res.json(invoice);
   } catch (error) {

@@ -85,6 +85,16 @@
 - Restored TypeScript `ignoreDeprecations` settings to the repo-compatible `5.0` value in base/server configs.
 - Validation: server typecheck/build and client build pass; client build required elevated rerun for the known Vite/esbuild `spawn EPERM`, and the existing Vite chunk-size warning remains.
 
+## Sprint 7 Stock Backend (2026-07-15)
+
+- Added Stock backend module mounted at `/api/stock` with agent+ article/movement reads and manager+ article create/update/activation/restock actions.
+- Added append-only stock movement recording with row-locked `stock_items` balance updates, duplicate reference protection, manual negative-stock blocking, and negative override flags for invoice issue only.
+- Wired invoice issue to create idempotent stock OUT movements for shop lines with `articleId` inside the invoice transaction.
+- Added invoice issue controller support for manager-gated negative stock override requests and stock error responses.
+- Wired invoice cancellation to create compensating stock adjustments for previously recorded shop OUT movements.
+- Added stock audit logging for article mutations and negative-stock overrides.
+- Validation: server typecheck/build pass; runtime stock API and invoice stock movement smoke still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)

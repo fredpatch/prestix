@@ -57,6 +57,7 @@ export interface IssueInvoiceParams {
   requestId: string;
   userId: number;
   paymentPlan: PaymentPlanInput;
+  allowNegativeStockOverride?: boolean; // manager+ only - checked at controller level
 }
 
 export interface CancelInvoiceParams {
