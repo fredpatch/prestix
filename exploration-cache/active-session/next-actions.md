@@ -5,9 +5,11 @@
 5. Smoke invoice issue with shop lines carrying `articleId`: stock OUT created inside issue transaction and duplicate issue/request handling stays idempotent.
 6. Smoke insufficient stock rejection for normal issue and manager negative override audit path.
 7. Smoke invoice cancellation creates compensating stock adjustment for each recorded shop OUT movement.
-8. Plan/build the client stock article picker and shop-line passenger/article capture.
-9. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number appear on the printed document itself, or stay internal-only?
-10. Sprint 12 hardening item: recordPayment -> createCreditLot cross-transaction risk on overpayment.
-11. Deferred hardening item from Sprint 1: retrofit remaining hardcoded neutral/brand Tailwind pages to semantic tokens for full dark-mode coverage.
-12. Open migration-backfill decisions still pending Lucrece: company-type party fields, credit-lot decision-window backfill, epargne fee/status backfill.
-13. Still blocked: Beta prod data access is needed for the Sprint 11 migration dry-run and Sprint 5 M6 cross-compare gate.
+8. Smoke `/stock` page list/create/restock/active-toggle behavior with manager and agent role gates.
+9. Smoke stock article picker and passenger assignment in Proforma/Invoice line composers.
+10. Smoke invoice/proforma/BL PDFs for PrestiShop rows using assigned shop passenger names.
+11. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number appear on the printed document itself, or stay internal-only?
+12. Sprint 12 hardening item: recordPayment -> createCreditLot cross-transaction risk on overpayment.
+13. Deferred hardening item from Sprint 1: retrofit remaining hardcoded neutral/brand Tailwind pages to semantic tokens for full dark-mode coverage.
+14. Open migration-backfill decisions still pending Lucrece: company-type party fields, credit-lot decision-window backfill, epargne fee/status backfill.
+15. Still blocked: Beta prod data access is needed for the Sprint 11 migration dry-run and Sprint 5 M6 cross-compare gate.

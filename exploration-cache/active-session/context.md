@@ -4,7 +4,7 @@ Sprint 6 is closed. Sprint 7 - PrestiShop & Stock (M9) is now underway.
 
 ## What's In Scope Today
 
-Cache/changelog sync after the Sprint 7 shop-detail persistence update, then commit and push.
+Cache/changelog sync after the Sprint 7 stock client/PDF shop-line update, then commit and push.
 
 ## State Of The Codebase
 
@@ -18,9 +18,10 @@ Client includes bootstrap-status route gating, bootstrap initialization, upgrade
 login/set-password UX, settings/users management, Party screens, document
 list/detail/create/promote/issue/cancel/BL flows, dedicated `/proformas/new` and
 `/invoices/new` creation pages, invoice-detail payment issue/record/reschedule
-flows, penalty-aware payment allocation controls, and the `/creances` page.
+flows, penalty-aware payment allocation controls, the `/creances` page, and the
+draft `/stock` page.
 Routed pages set their top-bar title/back/badge through the shared page-header
-context. Stock client UI is not built yet.
+context. Stock client UI is drafted but not runtime-smoked yet.
 
 Document PDFs exist for invoices, proformas, and delivery notes, with return
 dates and invoice payment schedules in the shared print template.
@@ -35,6 +36,11 @@ article, supplier/selling price, and passenger metadata in `proforma_shop_detail
 direct invoice drafts/add-line flows persist invoice `shop_details`; proforma
 promotion carries shop details into invoice lines.
 
+Stock client draft is in place: `/stock` route/nav, stock API wrapper, article
+list/inactive toggle, manager create/restock/activate controls, and stock
+article/passenger fields in Proforma and Invoice line composers. Document PDFs
+now print shop lines as PrestiShop rows and use assigned shop passengers when set.
+
 ## Validation Snapshot (2026-07-15)
 
 - `npm run typecheck -w packages/server`: PASS after stock backend draft.
@@ -42,6 +48,7 @@ promotion carries shop details into invoice lines.
 - `npm run db:generate -w packages/server`: PASS, generated `20260715180806_lazy_ultimo`.
 - `npm run typecheck -w packages/server`: PASS after shop-detail persistence update.
 - `npm run build -w packages/server`: PASS after shop-detail persistence update.
+- `npm run build -w packages/client`: PASS after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing chunk-size warning remains.
 - Runtime stock API smoke is pending.
 - Shop-detail create/read/promote smoke is pending.
 - Invoice issue/cancel stock movement smoke is pending.

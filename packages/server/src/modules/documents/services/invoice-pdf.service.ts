@@ -91,6 +91,18 @@ export async function generateInvoicePdf(
         total: parseFloat(l.lineTotal),
       };
     }
+
+    if (l.lineType === "shop") {
+      return {
+        clientName: l.shopDetails?.passengerName || buyerName,
+        category: "PrestiShop",
+        detail: l.description,
+        unitPrice: parseFloat(l.unitPrice),
+        discount: parseFloat(l.discount),
+        total: parseFloat(l.lineTotal),
+      };
+    }
+
     return {
       clientName: buyerName,
       category: l.lineType === "shop" ? "PrestiShop" : "Service",

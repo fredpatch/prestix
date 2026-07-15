@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, Plane, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useFieldArray, useFormContext, type FieldErrors, type FieldPath } from "react-hook-form";
@@ -21,6 +21,7 @@ import {
   defaultTicketLine,
   type ProformaFormValues,
 } from "./proforma-form.types";
+import { stockApi, StockArticle } from "@/lib/stock.api";
 
 const LINE_TYPES = [
   { value: "ticket", label: "Billetterie", icon: Plane },
@@ -71,6 +72,143 @@ function lineSummary(line: DocumentLineInput) {
 
 function lineTotal(line: DocumentLineInput) {
   return (line.unitPrice || 0) * (line.quantity || 1) - (line.discount || 0);
+}
+
+interface ShopFieldsProps {
+  index: number;
+  line: DocumentLineInput;
+}
+
+function ShopFields({ index, line }: ShopFieldsProps) {
+  const { setValue, watch } = useFormContext<ProformaFormValues>();
+  const allLines = watch("lines");
+  const [articles, setArticles] = useState<StockArticle[]>([]);
+  const [passengerMode, setPassengerMode] = useState<"dropdown" | "free">(
+    line.shopDetails?.passengerName ? "free" : "dropdown",
+  );
+
+  useEffect(() => {
+    stockApi.list().then((res) => setArticles(res.data));
+  }, []);
+
+  const ticketPassengers = allLines
+    .filter((l) => l.lineType === "ticket" && l.ticketDetails?.passengerName)
+    .map((l) => l.ticketDetails!.passengerName);
+
+  const shop = line.shopDetails ?? { supplierPrice: 0, sellingPrice: line.unitPrice };
+
+  function selectArticle(articleId: string) {
+    if (!articleId) {
+      setValue(
+        `lines.${index}.shopDetails` as any,
+        { ...shop, articleId: undefined },
+        { shouldDirty: true },
+      );
+      return;
+    }
+    const article = articles.find((a) => a.id === Number(articleId));
+    if (!article) return;
+    const sellingPrice = parseFloat(article.defaultSellingPrice);
+    const supplierPrice = parseFloat(article.defaultSupplierPrice);
+    setValue(`lines.${index}.description` as any, article.name, { shouldDirty: true });
+    setValue(`lines.${index}.unitPrice` as any, sellingPrice, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(
+      `lines.${index}.shopDetails` as any,
+      { articleId: article.id, supplierPrice, sellingPrice, passengerName: shop.passengerName },
+      { shouldDirty: true },
+    );
+  }
+
+  function updateShopField(patch: Partial<NonNullable<DocumentLineInput["shopDetails"]>>) {
+    setValue(`lines.${index}.shopDetails` as any, { ...shop, ...patch }, { shouldDirty: true });
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.16 }}
+      className="mt-4 border-t border-neutral-200 pt-4"
+    >
+      <h3 className="text-[12px] font-semibold text-neutral-900 mb-3">Informations article</h3>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <div>
+          <Label>Article (optionnel — laisser vide pour une prestation sans stock)</Label>
+          <select
+            value={shop.articleId ?? ""}
+            onChange={(e) => selectArticle(e.target.value)}
+            className="flex h-10 w-full rounded border border-neutral-200 bg-white px-3 text-sm"
+          >
+            <option value="">Aucun (prestation)</option>
+            {articles.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} — {a.onHand} {a.unit} en stock
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label>Prix fournisseur</Label>
+          <Input
+            type="number"
+            value={shop.supplierPrice || ""}
+            onChange={(e) => updateShopField({ supplierPrice: parseFloat(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Label>Passager désigné (optionnel)</Label>
+        {passengerMode === "dropdown" && ticketPassengers.length > 0 ? (
+          <div className="flex gap-2">
+            <select
+              value={shop.passengerName ?? ""}
+              onChange={(e) => updateShopField({ passengerName: e.target.value })}
+              className="flex h-10 flex-1 rounded border border-neutral-200 bg-white px-3 text-sm"
+            >
+              <option value="">— Sélectionner —</option>
+              {ticketPassengers.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPassengerMode("free")}
+            >
+              Autre
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              value={shop.passengerName ?? ""}
+              onChange={(e) => updateShopField({ passengerName: e.target.value })}
+              placeholder="Nom du client"
+            />
+            {ticketPassengers.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPassengerMode("dropdown")}
+              >
+                Liste
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
 }
 
 interface TicketFieldsProps {
@@ -504,6 +642,7 @@ export function ProformaLineItemsComposer() {
                         {line.lineType === "ticket" && (
                           <TicketFields index={index} line={line} error={error} />
                         )}
+                        {line.lineType === "shop" && <ShopFields index={index} line={line} />}
                       </AnimatePresence>
                     </motion.div>
                   )}

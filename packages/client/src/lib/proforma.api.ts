@@ -16,6 +16,13 @@ export interface TicketDetailsInput {
   sellingPrice: number;
 }
 
+export interface ShopDetailsInput {
+  articleId?: number;
+  supplierPrice: number;
+  sellingPrice: number;
+  passengerName?: string;
+}
+
 export interface DocumentLineInput {
   lineType: "ticket" | "shop";
   description: string;
@@ -23,6 +30,7 @@ export interface DocumentLineInput {
   unitPrice: number;
   discount?: number;
   ticketDetails?: TicketDetailsInput;
+  shopDetails?: ShopDetailsInput;
 }
 
 export interface TicketDetailsView {
@@ -41,6 +49,14 @@ export interface TicketDetailsView {
   sellingPrice: string;
 }
 
+export interface ShopDetailsView {
+  id: number;
+  articleId?: number;
+  supplierPrice: string;
+  sellingPrice: string;
+  passengerName?: string;
+}
+
 export interface DocumentLineView {
   id: number;
   lineType: string;
@@ -50,6 +66,7 @@ export interface DocumentLineView {
   discount: string;
   lineTotal: string;
   ticketDetails?: TicketDetailsView;
+  shopDetails?: ShopDetailsView;
 }
 
 export interface Proforma {

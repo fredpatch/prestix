@@ -18,6 +18,7 @@ import CreancesPage from "./pages/CreancesPage";
 import CreateProformaPage from "./pages/documents/proforma/components/CreateProformaPage";
 import CreateInvoiceDraftPage from "./pages/documents/invoices/components/CreateInvoiceDraftPage";
 import { PageHeaderProvider, usePageHeader } from "./components/layouts/lib/page-header";
+import StockArticlesPage from "./pages/StockArticlesPage";
 
 interface AuthUser {
   id: number;
@@ -153,6 +154,7 @@ export default function App() {
             <Route path="/invoices/new" element={<CreateInvoiceDraftPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
             <Route path="/creances" element={<CreancesPage />} />
+            <Route path="/stock" element={<StockArticlesPage />} />
             <Route
               path="/users"
               element={
