@@ -4,7 +4,7 @@ import { generateInvoicePdf } from "../services/invoice-pdf.service.js";
 export async function download(req: Request, res: Response): Promise<void> {
   try {
     const invoiceId = parseInt(req.params.id);
-    const pdf = await generateInvoicePdf(invoiceId);
+    const pdf = await generateInvoicePdf(invoiceId, req.user!.userId);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="facture-${invoiceId}.pdf"`);
     res.send(pdf);

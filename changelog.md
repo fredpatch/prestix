@@ -73,6 +73,14 @@
 - Simplified document line composers by removing duplicate generated-description panels now that ticket details are explicitly labeled.
 - Validation: client build passes after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing Vite chunk-size warning remains.
 
+## Document PDF Export (2026-07-15)
+
+- Added Proforma PDF export endpoint at `/api/proformas/:id/pdf`, reusing the shared invoice print template with the 48h validity note.
+- Added Delivery Note PDF export endpoint at `/api/delivery-notes/invoice/:invoiceId/pdf`, reusing invoice line/party data without payment recap.
+- Added `DOCUMENT_PRINTED` audit logging for invoice, proforma, and delivery-note PDF generation.
+- Added client PDF actions on Proforma detail and generated delivery-note display on Invoice detail.
+- Validation: server typecheck/build and client build pass; client build required elevated rerun for the known Vite/esbuild `spawn EPERM`, and the existing Vite chunk-size warning remains.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)

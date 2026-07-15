@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-15",
-  "currentSprint": "Document layout header polish",
+  "currentSprint": "Document PDF export",
   "files": [
     "index.md",
     "quick-ref.md",

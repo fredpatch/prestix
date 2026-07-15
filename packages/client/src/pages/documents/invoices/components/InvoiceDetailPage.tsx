@@ -171,9 +171,20 @@ export default function InvoiceDetailPage() {
       {isIssued && <PaymentPlanCard installments={installments} onChanged={load} />}
 
       {deliveryNote && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 mb-4 text-[12px] text-emerald-800">
-          Bon de livraison {deliveryNote.number} généré le{" "}
-          {new Date(deliveryNote.issuedAt).toLocaleDateString("fr-FR")}
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 mb-4 text-[12px] text-emerald-800">
+          <span>
+            Bon de livraison {deliveryNote.number} généré le{" "}
+            {new Date(deliveryNote.issuedAt).toLocaleDateString("fr-FR")}
+          </span>
+
+          <a
+            href={`/api/delivery-notes/invoice/${invoice.id}/pdf`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-emerald-800 underline hover:text-emerald-900 text-[11.5px] font-medium"
+          >
+            Voir le PDF
+          </a>
         </div>
       )}
 

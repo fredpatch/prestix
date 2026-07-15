@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, ArrowRightCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, ArrowRightCircle, Download } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { proformaApi, type Proforma } from "@/lib/proforma.api";
 import { invoiceApi } from "@/lib/invoice.api";
 import { Party, partyApi } from "@/lib/party.api";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<Proforma["status"], string> = {
   draft: "Valide",
@@ -68,16 +69,26 @@ export default function ProformaDetailPage() {
             {referrer && ` · référent : ${referrer.fullName}`}
           </p>
         </div>
-        {canPromote && (
-          <Button size="sm" onClick={handlePromote} disabled={promoting}>
-            {promoting ? (
-              <Loader2 size={13} className="animate-spin" />
-            ) : (
-              <ArrowRightCircle size={13} />
-            )}
-            Promouvoir en facture
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <a
+            href={`/api/proformas/${proforma.id}/pdf`}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Download size={13} /> PDF
+          </a>
+          {canPromote && (
+            <Button size="sm" onClick={handlePromote} disabled={promoting}>
+              {promoting ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <ArrowRightCircle size={13} />
+              )}
+              Promouvoir en facture
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}

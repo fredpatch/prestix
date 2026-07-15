@@ -19,6 +19,7 @@ export interface PrintInvoiceData {
   docNumber: string;
   issueDate: string;
   dueDate?: string;
+  validUntil?: string; // proforma only — 48h expiry, already formatted
   paymentMode: string;
   agentName?: string;
   buyerName: string;
@@ -274,6 +275,13 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
       </div>
     </div>
     ${words ? `<div class="p-words"><strong>${AMOUNT_WORDS_LABEL[doc.docType]}</strong> ${words}</div>` : ""}
+     ${
+       doc.docType === "proforma" && doc.validUntil
+         ? `<div style="font-size:10.5px;color:#7a5c00;background:#fef9ec;border:1px solid #e8d48a;border-radius:3px;padding:5px 10px;margin-bottom:12px;font-style:italic;">
+             Attention : ce proforma est valable <strong>48h</strong> à compter de sa date d'émission — jusqu'au <strong>${esc(doc.validUntil)}</strong>.
+           </div>`
+         : ""
+     }
     <div class="p-received"><span class="lbl">Reçu le</span> ${esc(doc.receivedOn) || '<span style="display:inline-block;min-width:120px;border-bottom:1px solid #bbb;">&nbsp;</span>'}</div>
     <div class="p-sigs">
       <div class="p-sig">Signature destinataire</div>

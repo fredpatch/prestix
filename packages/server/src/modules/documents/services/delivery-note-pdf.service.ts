@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { db } from "../../../db/index.js";
-import { invoices, users, payments } from "../../../db/schema.js";
+import { users, invoices } from "../../../db/schema.js";
 import { eq } from "drizzle-orm";
 import { generatePdf } from "../../../utils/pdf.js";
 import {
@@ -9,35 +9,16 @@ import {
   type PrintInvoiceData,
   type PrintLineItem,
 } from "../templates/invoice-print.template.js";
+import { getByInvoiceId } from "./delivery-note.service.js";
 import { getInvoiceById } from "./invoice.service.js";
-import { logAudit } from "@/modules/auth/services/auth.service.js";
+import { logAudit } from "../../auth/services/auth.service.js";
 
-// M8: display-only abbreviation layer over the stored enum — changing this map
-// later is a no-op, no data migration (spec's whole point of keeping it separate
-// from the stored value). "prm" for Premium is pending final client confirmation
-// (see TASKS.md/Notion — technical model is locked regardless of the final label).
 const TRAVEL_CLASS_ABBREV: Record<string, string> = {
   economy: "eco",
   business: "bnss",
   first: "prem",
   premium: "prm",
 };
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cash: "CASH",
-  mobile_money: "MOBILE MONEY",
-  virement: "VIREMENT",
-  credit: "CRÉDIT",
-  epargne: "ÉPARGNE",
-};
-
-let cachedLogoBase64: string | null = null;
-function getLogoBase64(): string {
-  if (cachedLogoBase64) return cachedLogoBase64;
-  const logoPath = path.resolve(process.cwd(), "../client/public/brand/logo.jpg");
-  cachedLogoBase64 = `data:image/jpeg;base64,${fs.readFileSync(logoPath).toString("base64")}`;
-  return cachedLogoBase64;
-}
 
 function fmtDateShort(d: Date | string): string {
   return new Intl.DateTimeFormat("fr-FR", {
@@ -47,19 +28,28 @@ function fmtDateShort(d: Date | string): string {
   }).format(new Date(d));
 }
 
-export async function generateInvoicePdf(
+let cachedLogoBase64: string | null = null;
+function getLogoBase64(): string {
+  if (cachedLogoBase64) return cachedLogoBase64;
+  const logoPath = path.resolve(process.cwd(), "../client/public/brand/logo.jpg");
+  cachedLogoBase64 = `data:image/jpeg;base64,${fs.readFileSync(logoPath).toString("base64")}`;
+  return cachedLogoBase64;
+}
+
+// M4: BL — no payment recap (showPaymentRecap in the template is gated to
+// docType === 'invoice' only, so this falls through to false automatically).
+// Uses the SAME line/party data as the parent invoice — a BL doesn't have its
+// own lines, it's a delivery confirmation referencing the invoice.
+export async function generateDeliveryNotePdf(
   invoiceId: number,
   requestedByUserId: number,
 ): Promise<Buffer> {
+  const bl = await getByInvoiceId(invoiceId);
+  if (!bl) throw new Error("DELIVERY_NOTE_NOT_FOUND");
+
   const invoice = await getInvoiceById(invoiceId);
-
-  const [agent] = await db.select().from(users).where(eq(users.id, invoice.createdBy));
-
-  const invoicePayments = await db.select().from(payments).where(eq(payments.invoiceId, invoiceId));
-  const paymentMethod = invoicePayments[0]?.method;
-  const paidAmount = invoicePayments
-    .filter((p) => p.allocationTarget !== "penalty")
-    .reduce((sum, p) => sum + parseFloat(p.amountApplied), 0);
+  const [invRow] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
+  const [agent] = await db.select().from(users).where(eq(users.id, invRow.createdBy));
 
   const buyerName = (invoice.partySnapshot as { fullName?: string }).fullName ?? "—";
   const buyerPhone = (invoice.partySnapshot as { phone?: string }).phone;
@@ -93,11 +83,10 @@ export async function generateInvoicePdf(
   });
 
   const printData: PrintInvoiceData = {
-    docType: "invoice",
-    docNumber: invoice.number ?? `BROUILLON-${invoice.id}`,
-    issueDate: invoice.issuedAt ? fmtDateShort(invoice.issuedAt) : fmtDateShort(invoice.createdAt),
-    dueDate: invoice.dueDate ? fmtDateShort(invoice.dueDate) : undefined,
-    paymentMode: paymentMethod ? (PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod) : "-",
+    docType: "delivery_note",
+    docNumber: bl.number ?? `BL-${invoiceId}`,
+    issueDate: fmtDateShort(bl.issuedAt),
+    paymentMode: "-",
     agentName: agent?.fullName,
     buyerName,
     buyerPhone,
@@ -106,9 +95,6 @@ export async function generateInvoicePdf(
     subtotal: parseFloat(invoice.totalAmount) + parseFloat(invoice.totalDiscount),
     discount: parseFloat(invoice.totalDiscount),
     total: parseFloat(invoice.totalAmount),
-    paidAmount,
-    balanceDue: Math.max(0, parseFloat(invoice.totalAmount) - paidAmount),
-    receivedOn: invoice.paymentStatus === "paid" ? fmtDateShort(new Date()) : undefined,
   };
 
   const html = renderInvoiceHtml(printData);
@@ -117,8 +103,8 @@ export async function generateInvoicePdf(
   await logAudit({
     userId: requestedByUserId,
     action: "DOCUMENT_PRINTED",
-    entityType: "invoices",
-    entityId: String(invoiceId),
+    entityType: "delivery_notes",
+    entityId: String(bl.id),
   });
 
   return pdf;
