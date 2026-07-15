@@ -1,0 +1,142 @@
+diff --git a/packages/client/src/pages/documents/invoices/components/InvoiceDetailPage.tsx b/packages/client/src/pages/documents/invoices/components/InvoiceDetailPage.tsx
+index 9c96983..e30508f 100644
+--- a/packages/client/src/pages/documents/invoices/components/InvoiceDetailPage.tsx
++++ b/packages/client/src/pages/documents/invoices/components/InvoiceDetailPage.tsx
+@@ -170,6 +170,10 @@ export default function InvoiceDetailPage() {
+   if (loading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+ 
+   const isDraft = invoice.status === "draft";
++  // A promoted invoice sits in status:'draft' too until issued, but its lines
++  // are locked — the client already approved these exact lines on the
++  // proforma. Only a direct (no-proforma) draft is freely editable.
++  const isEditableDraft = isDraft && !invoice.proformaId;
+   const isIssued = invoice.status === "issued";
+   const canCancel = isIssued && user && ["admin", "super_admin"].includes(user.role);
+   const canDiscount = user && ["manager", "admin", "super_admin"].includes(user.role);
+@@ -220,6 +224,12 @@ export default function InvoiceDetailPage() {
+       </div>
+ 
+       {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}
++      {isDraft && !isEditableDraft && (
++        <p className="text-[11.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
++          Cette facture provient d'un proforma validé par le client — ses lignes sont verrouillées.
++          Pour un changement, créez un nouveau proforma.
++        </p>
++      )}
+       {isIssued && <PaymentPlanCard installments={installments} onChanged={load} />}
+ 
+       {deliveryNote && (
+@@ -259,7 +269,7 @@ export default function InvoiceDetailPage() {
+               <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                 Total
+               </th>
+-              {isDraft && <th className="px-4 py-2.5 w-20"></th>}
++              {isEditableDraft && <th className="px-4 py-2.5 w-20"></th>}
+             </tr>
+           </thead>
+           <tbody>
+@@ -333,7 +343,7 @@ export default function InvoiceDetailPage() {
+                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
+                     {parseFloat(l.lineTotal).toLocaleString("fr-FR")}
+                   </td>
+-                  {isDraft && (
++                  {isEditableDraft && (
+                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                       <Button variant="ghost" size="icon" onClick={() => startEdit(l)} title="Modifier">
+                         <Pencil size={13} />
+@@ -356,7 +366,7 @@ export default function InvoiceDetailPage() {
+           <tfoot>
+             <tr className="bg-neutral-50">
+               <td
+-                colSpan={isDraft ? 5 : 4}
++                colSpan={isEditableDraft ? 5 : 4}
+                 className="px-4 py-2.5 text-[12px] font-semibold text-neutral-800 text-right"
+               >
+                 Total
+@@ -369,7 +379,7 @@ export default function InvoiceDetailPage() {
+         </table>
+       </div>
+ 
+-      {isDraft && (
++      {isEditableDraft && (
+         <div className="bg-white border border-neutral-200 rounded-lg p-4">
+           <p className="text-[11.5px] font-medium text-neutral-800 mb-2.5">Ajouter une ligne</p>
+           <div className="flex gap-2">
+diff --git a/packages/server/src/modules/documents/controllers/invoice.controller.ts b/packages/server/src/modules/documents/controllers/invoice.controller.ts
+index 083acb3..932d66a 100644
+--- a/packages/server/src/modules/documents/controllers/invoice.controller.ts
++++ b/packages/server/src/modules/documents/controllers/invoice.controller.ts
+@@ -24,6 +24,8 @@ function handleError(res: Response, error: unknown): void {
+     INSUFFICIENT_STOCK: 400,
+     NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER: 403,
+     INVOICE_LINE_NOT_FOUND: 404,
++    INVOICE_LOCKED_FROM_PROFORMA: 400,
++    PROFORMA_ALREADY_PROMOTED: 400,
+   };
+   const code = status[message] ?? 500;
+   if (code === 500) console.error("[invoice]", error);
+diff --git a/packages/server/src/modules/documents/services/invoice.service.ts b/packages/server/src/modules/documents/services/invoice.service.ts
+index 0995f9d..3aec2c9 100644
+--- a/packages/server/src/modules/documents/services/invoice.service.ts
++++ b/packages/server/src/modules/documents/services/invoice.service.ts
+@@ -151,6 +151,20 @@ async function assertDraft(invoiceId: number): Promise<typeof invoices.$inferSel
+   return inv;
+ }
+ 
++// Stricter than assertDraft — used ONLY by line mutations (add/update/remove),
++// never by issue(). A promoted invoice must still be issuable (that's the
++// whole point of promoting), it just can't have its lines silently changed
++// after the client already approved them on the proforma. Real gap fixed
++// here: assertDraft alone let an agent freely edit a promoted-but-not-yet-
++// issued invoice, exactly the "quote 1 bag, secretly issue 2" trust problem
++// this whole edit-lock exists to prevent. Hard commit point, no undo — if
++// changes are needed post-promotion, the answer is a fresh proforma.
++async function assertMutable(invoiceId: number): Promise<typeof invoices.$inferSelect> {
++  const inv = await assertDraft(invoiceId);
++  if (inv.proformaId !== null) throw new Error("INVOICE_LOCKED_FROM_PROFORMA");
++  return inv;
++}
++
+ // Direct draft creation — M4: "an invoice can be created directly as a draft" (proforma optional).
+ export async function createDraftInvoice(params: CreateDraftInvoiceParams): Promise<InvoiceView> {
+   if (params.lines.length === 0) throw new Error("INVOICE_NEEDS_AT_LEAST_ONE_LINE");
+@@ -248,6 +262,12 @@ export async function promoteProformaToInvoice(
+   if (proforma.status === "expired") throw new Error("PROFORMA_EXPIRED"); // M4: invoice creation blocked from expired proforma
+   if (proforma.status === "cancelled") throw new Error("PROFORMA_CANCELLED");
+ 
++  // Real gap fixed here too: nothing previously stopped promoting the same
++  // proforma twice, which would create two invoices from one client-approved
++  // quote — same trust concern as the line-edit lock above, different angle.
++  const [existingPromotion] = await db.select().from(invoices).where(eq(invoices.proformaId, proformaId));
++  if (existingPromotion) throw new Error("PROFORMA_ALREADY_PROMOTED");
++
+   const sourceLines = await db
+     .select()
+     .from(proformaLines)
+@@ -350,7 +370,7 @@ export async function addLine(
+   line: InvoiceLineInput,
+   userId: number,
+ ): Promise<InvoiceView> {
+-  await assertDraft(invoiceId);
++  await assertMutable(invoiceId);
+   assertDiscountBounds([line]);
+   await assertCanDiscount(userId, [line]);
+   const quantity = line.quantity ?? 1;
+@@ -411,7 +431,7 @@ export async function removeLine(
+   lineId: number,
+   userId: number,
+ ): Promise<InvoiceView> {
+-  await assertDraft(invoiceId);
++  await assertMutable(invoiceId);
+ 
+   await db.transaction(async (tx: any) => {
+     await tx
+@@ -439,7 +459,7 @@ export async function updateLine(
+   patch: Partial<InvoiceLineInput>,
+   userId: number,
+ ): Promise<InvoiceView> {
+-  await assertDraft(invoiceId);
++  await assertMutable(invoiceId);
+ 
+   const [existing] = await db
+     .select()

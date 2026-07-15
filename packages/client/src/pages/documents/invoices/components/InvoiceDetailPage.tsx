@@ -170,6 +170,10 @@ export default function InvoiceDetailPage() {
   if (loading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   const isDraft = invoice.status === "draft";
+  // A promoted invoice sits in status:'draft' too until issued, but its lines
+  // are locked — the client already approved these exact lines on the
+  // proforma. Only a direct (no-proforma) draft is freely editable.
+  const isEditableDraft = isDraft && !invoice.proformaId;
   const isIssued = invoice.status === "issued";
   const canCancel = isIssued && user && ["admin", "super_admin"].includes(user.role);
   const canDiscount = user && ["manager", "admin", "super_admin"].includes(user.role);
@@ -220,6 +224,12 @@ export default function InvoiceDetailPage() {
       </div>
 
       {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}
+      {isDraft && !isEditableDraft && (
+        <p className="text-[11.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+          Cette facture provient d'un proforma validé par le client — ses lignes sont verrouillées.
+          Pour un changement, créez un nouveau proforma.
+        </p>
+      )}
       {isIssued && <PaymentPlanCard installments={installments} onChanged={load} />}
 
       {deliveryNote && (
@@ -259,7 +269,7 @@ export default function InvoiceDetailPage() {
               <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
                 Total
               </th>
-              {isDraft && <th className="px-4 py-2.5 w-20"></th>}
+              {isEditableDraft && <th className="px-4 py-2.5 w-20"></th>}
             </tr>
           </thead>
           <tbody>
@@ -333,7 +343,7 @@ export default function InvoiceDetailPage() {
                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
                     {parseFloat(l.lineTotal).toLocaleString("fr-FR")}
                   </td>
-                  {isDraft && (
+                  {isEditableDraft && (
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <Button variant="ghost" size="icon" onClick={() => startEdit(l)} title="Modifier">
                         <Pencil size={13} />
@@ -356,7 +366,7 @@ export default function InvoiceDetailPage() {
           <tfoot>
             <tr className="bg-neutral-50">
               <td
-                colSpan={isDraft ? 5 : 4}
+                colSpan={isEditableDraft ? 5 : 4}
                 className="px-4 py-2.5 text-[12px] font-semibold text-neutral-800 text-right"
               >
                 Total
@@ -369,7 +379,7 @@ export default function InvoiceDetailPage() {
         </table>
       </div>
 
-      {isDraft && (
+      {isEditableDraft && (
         <div className="bg-white border border-neutral-200 rounded-lg p-4">
           <p className="text-[11.5px] font-medium text-neutral-800 mb-2.5">Ajouter une ligne</p>
           <div className="flex gap-2">

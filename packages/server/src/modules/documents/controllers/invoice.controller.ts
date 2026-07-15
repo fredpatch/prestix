@@ -24,6 +24,8 @@ function handleError(res: Response, error: unknown): void {
     INSUFFICIENT_STOCK: 400,
     NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER: 403,
     INVOICE_LINE_NOT_FOUND: 404,
+    INVOICE_LOCKED_FROM_PROFORMA: 400,
+    PROFORMA_ALREADY_PROMOTED: 400,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[invoice]", error);

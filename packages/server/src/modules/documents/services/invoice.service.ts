@@ -151,6 +151,20 @@ async function assertDraft(invoiceId: number): Promise<typeof invoices.$inferSel
   return inv;
 }
 
+// Stricter than assertDraft — used ONLY by line mutations (add/update/remove),
+// never by issue(). A promoted invoice must still be issuable (that's the
+// whole point of promoting), it just can't have its lines silently changed
+// after the client already approved them on the proforma. Real gap fixed
+// here: assertDraft alone let an agent freely edit a promoted-but-not-yet-
+// issued invoice, exactly the "quote 1 bag, secretly issue 2" trust problem
+// this whole edit-lock exists to prevent. Hard commit point, no undo — if
+// changes are needed post-promotion, the answer is a fresh proforma.
+async function assertMutable(invoiceId: number): Promise<typeof invoices.$inferSelect> {
+  const inv = await assertDraft(invoiceId);
+  if (inv.proformaId !== null) throw new Error("INVOICE_LOCKED_FROM_PROFORMA");
+  return inv;
+}
+
 // Direct draft creation — M4: "an invoice can be created directly as a draft" (proforma optional).
 export async function createDraftInvoice(params: CreateDraftInvoiceParams): Promise<InvoiceView> {
   if (params.lines.length === 0) throw new Error("INVOICE_NEEDS_AT_LEAST_ONE_LINE");
@@ -247,6 +261,12 @@ export async function promoteProformaToInvoice(
   if (!proforma) throw new Error("PROFORMA_NOT_FOUND");
   if (proforma.status === "expired") throw new Error("PROFORMA_EXPIRED"); // M4: invoice creation blocked from expired proforma
   if (proforma.status === "cancelled") throw new Error("PROFORMA_CANCELLED");
+
+  // Real gap fixed here too: nothing previously stopped promoting the same
+  // proforma twice, which would create two invoices from one client-approved
+  // quote — same trust concern as the line-edit lock above, different angle.
+  const [existingPromotion] = await db.select().from(invoices).where(eq(invoices.proformaId, proformaId));
+  if (existingPromotion) throw new Error("PROFORMA_ALREADY_PROMOTED");
 
   const sourceLines = await db
     .select()
@@ -350,7 +370,7 @@ export async function addLine(
   line: InvoiceLineInput,
   userId: number,
 ): Promise<InvoiceView> {
-  await assertDraft(invoiceId);
+  await assertMutable(invoiceId);
   assertDiscountBounds([line]);
   await assertCanDiscount(userId, [line]);
   const quantity = line.quantity ?? 1;
@@ -411,7 +431,7 @@ export async function removeLine(
   lineId: number,
   userId: number,
 ): Promise<InvoiceView> {
-  await assertDraft(invoiceId);
+  await assertMutable(invoiceId);
 
   await db.transaction(async (tx: any) => {
     await tx
@@ -439,7 +459,7 @@ export async function updateLine(
   patch: Partial<InvoiceLineInput>,
   userId: number,
 ): Promise<InvoiceView> {
-  await assertDraft(invoiceId);
+  await assertMutable(invoiceId);
 
   const [existing] = await db
     .select()
