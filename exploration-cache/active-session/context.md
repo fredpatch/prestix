@@ -5,7 +5,7 @@ typecheck cleanup.
 
 ## What's in scope today
 
-Cache/task sync after Sprint 5 penalties test pass.
+Cache/changelog sync after document create UI hardening.
 
 ## State of the codebase
 
@@ -13,7 +13,7 @@ Backend has working Express routes for bootstrap, auth, users, settings, Party,
 Party History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments, and Creances, with JWT cookie auth, RBAC middleware, default settings seed, job registration, generated document migrations, and optional document référent linkage.
 Client now includes bootstrap-status route gating in App routing, a dedicated
 bootstrap initialization page, upgraded login/set-password UX, settings/users management,
-Party list/detail/create/edit/quick-add screens, document list/detail/create/promote/issue/cancel/BL flows, invoice-detail payment issue/record/reschedule flows, penalty-aware payment allocation controls, and the `/creances` page behind guarded routes.
+Party list/detail/create/edit/quick-add screens, document list/detail/create/promote/issue/cancel/BL flows, dedicated `/proformas/new` and `/invoices/new` creation pages, invoice-detail payment issue/record/reschedule flows, penalty-aware payment allocation controls, and the `/creances` page behind guarded routes.
 
 Validation snapshot (2026-07-15):
 
@@ -24,7 +24,7 @@ Validation snapshot (2026-07-15):
 - `npm run dev` in `packages/server` exited 130 (manual interrupt), not treated as a functional blocker.
 - `packages/client` dependencies installed successfully (`npm i`, exit 0).
 - `ignoreDeprecations` regression was fixed and pushed; Sprint 1 validation gate marked closed in `TASKS.md`.
-- Party/Credit/History backend routes and Party client routes are drafted; document backend/client routes are mounted; payments backend routes and invoice-detail payment UI are drafted. Sprint 5 penalties/creances backend routes, cron wiring, client nav/page, payment allocation controls, and dedicated accrual-count tests are drafted; penalty/creance runtime smoke and legacy Beta cross-compare are the next gates.
+- Party/Credit/History backend routes and Party client routes are drafted; document backend/client routes are mounted; payments backend routes and invoice-detail payment UI are drafted. Document creation now uses dedicated Proforma/Invoice pages, with Proforma creation refactored into a guided React Hook Form flow. Proforma/Invoice create smoke, penalty/creance runtime smoke, and legacy Beta cross-compare are the next gates.
 
 ## Key constraints active right now
 

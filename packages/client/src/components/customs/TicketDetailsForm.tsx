@@ -15,9 +15,22 @@ const TRAVEL_CLASSES: { value: TicketDetailsInput["travelClass"]; label: string 
 
 export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
   const segment = value.segments[0] ?? { from: "", to: "", date: "" };
+  const isRoundTrip = segment.tripType === "round_trip";
 
   function updateSegment(patch: Partial<typeof segment>) {
     onChange({ ...value, segments: [{ ...segment, ...patch }] });
+  }
+
+  function updateReferences(patch: Partial<NonNullable<TicketDetailsInput["references"]>>) {
+    onChange({
+      ...value,
+      references: {
+        pnr: value.references?.pnr ?? "",
+        gds: value.references?.gds ?? "",
+        ...value.references,
+        ...patch,
+      },
+    });
   }
 
   return (
@@ -77,6 +90,22 @@ export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
           />
         </div>
         <div>
+          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">Type</label>
+          <select
+            value={segment.tripType ?? "one_way"}
+            onChange={(e) =>
+              updateSegment({ tripType: e.target.value as "one_way" | "round_trip" })
+            }
+            className="h-8 w-full rounded border border-neutral-200 bg-white px-2 text-[12px]"
+          >
+            <option value="one_way">Aller simple</option>
+            <option value="round_trip">Aller-retour</option>
+          </select>
+        </div>
+      </div>
+
+      <div className={isRoundTrip ? "grid grid-cols-2 gap-2.5" : "grid grid-cols-1 gap-2.5"}>
+        <div>
           <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">
             Date de départ
           </label>
@@ -87,6 +116,19 @@ export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
             className="h-8 text-[12px]"
           />
         </div>
+        {isRoundTrip && (
+          <div>
+            <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">
+              Date de retour
+            </label>
+            <Input
+              type="date"
+              value={segment.returnDate ?? ""}
+              onChange={(e) => updateSegment({ returnDate: e.target.value })}
+              className="h-8 text-[12px]"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2.5">
@@ -101,19 +143,6 @@ export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
           />
         </div>
         <div>
-          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">Type</label>
-          <select
-            value={segment.tripType ?? "one_way"}
-            onChange={(e) =>
-              updateSegment({ tripType: e.target.value as "one_way" | "round_trip" })
-            }
-            className="h-8 w-full rounded border border-neutral-200 bg-white px-2 text-[12px]"
-          >
-            <option value="one_way">Aller simple</option>
-            <option value="round_trip">Aller-retour</option>
-          </select>
-        </div>
-        <div>
           <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">
             Prix fournisseur
           </label>
@@ -124,18 +153,24 @@ export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
             className="h-8 text-[12px]"
           />
         </div>
+        <div />
       </div>
 
       <div className="grid grid-cols-3 gap-2.5">
         <div>
-          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">
-            PNR (optionnel)
-          </label>
+          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">PNR</label>
           <Input
             value={value.references?.pnr ?? ""}
-            onChange={(e) =>
-              onChange({ ...value, references: { ...value.references, pnr: e.target.value } })
-            }
+            onChange={(e) => updateReferences({ pnr: e.target.value })}
+            className="h-8 text-[12px]"
+          />
+        </div>
+        <div>
+          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">GDS</label>
+          <Input
+            value={value.references?.gds ?? ""}
+            onChange={(e) => updateReferences({ gds: e.target.value })}
+            placeholder="Amadeus, Sabre..."
             className="h-8 text-[12px]"
           />
         </div>
@@ -145,27 +180,7 @@ export function TicketDetailsForm({ value, onChange }: TicketDetailsFormProps) {
           </label>
           <Input
             value={value.references?.ticketNumber ?? ""}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                references: { ...value.references, ticketNumber: e.target.value },
-              })
-            }
-            className="h-8 text-[12px]"
-          />
-        </div>
-        <div>
-          <label className="block text-[10.5px] font-medium text-neutral-600 mb-1">
-            Réf. fournisseur (optionnel)
-          </label>
-          <Input
-            value={value.references?.supplierReference ?? ""}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                references: { ...value.references, supplierReference: e.target.value },
-              })
-            }
+            onChange={(e) => updateReferences({ ticketNumber: e.target.value })}
             className="h-8 text-[12px]"
           />
         </div>

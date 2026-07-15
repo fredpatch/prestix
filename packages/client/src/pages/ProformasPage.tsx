@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { proformaApi, type Proforma } from "@/lib/proforma.api";
-import { CreateProformaDialog } from "./documents/proforma/components/CreateProformaDialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<Proforma["status"], string> = {
   draft: "bg-blue-50 text-blue-700",
@@ -41,7 +42,9 @@ export default function ProformasPage() {
             {proformas.length} proforma{proformas.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <CreateProformaDialog />
+        <Link to="/proformas/new" className={cn(buttonVariants({ size: "sm" }))}>
+          <Plus size={14} /> Nouvelle proforma
+        </Link>
       </div>
 
       {loading ? (

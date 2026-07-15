@@ -15,6 +15,8 @@ import ProformaDetailPage from "./pages/documents/proforma/components/ProformaDe
 import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailPage from "./pages/documents/invoices/components/InvoiceDetailPage";
 import CreancesPage from "./pages/CreancesPage";
+import CreateProformaPage from "./pages/documents/proforma/components/CreateProformaPage";
+import CreateInvoiceDraftPage from "./pages/documents/invoices/components/CreateInvoiceDraftPage";
 
 interface AuthUser {
   id: number;
@@ -143,8 +145,10 @@ export default function App() {
           <Route path="/parties" element={<PartiesPage />} />
           <Route path="/parties/:id" element={<PartyDetailPage />} />
           <Route path="/proformas" element={<ProformasPage />} />
+          <Route path="/proformas/new" element={<CreateProformaPage />} />
           <Route path="/proformas/:id" element={<ProformaDetailPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
+          <Route path="/invoices/new" element={<CreateInvoiceDraftPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/creances" element={<CreancesPage />} />
           <Route

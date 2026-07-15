@@ -61,6 +61,15 @@
 - Fixed payment record controller forwarding for `allocationTarget` so principal-vs-penalty allocation reaches the service.
 - Validation: root typecheck, server build, and client build pass; `npm test` passes (8 penalty tests) after elevated rerun for Windows `spawn EPERM`; penalty/creance API/client smoke and legacy Beta cross-compare still pending.
 
+## Document UI Hardening (2026-07-15)
+
+- Replaced proforma and direct-invoice creation dialogs with dedicated `/proformas/new` and `/invoices/new` pages.
+- Added a guided Proforma creation flow with React Hook Form/Zod validation, labeled ticket fields, completion summary, totals panel, and Framer Motion line transitions.
+- Added a Proforma line composer with shadcn labels/inputs/selects, ticket-vs-shop line cards, collapse/remove controls, and clearer required-field feedback.
+- Extended ticket detail shape for return dates and GDS references across client and server proforma types.
+- Updated Proformas/Invoices list actions to link into the new creation pages.
+- Validation: client build passes after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing Vite chunk-size warning remains.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)

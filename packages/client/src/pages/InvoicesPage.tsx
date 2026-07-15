@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { invoiceApi, type Invoice } from "@/lib/invoice.api";
-import { CreateInvoiceDraftDialog } from "./documents/invoices/components/CreateInvoiceDraftDialog";
-import { CreateProformaDialog } from "./documents/proforma/components/CreateProformaDialog";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 const STATUS_STYLES: Record<Invoice["status"], string> = {
   draft: "bg-amber-50 text-amber-700",
@@ -43,8 +43,15 @@ export default function InvoicesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <CreateInvoiceDraftDialog />
-          <CreateProformaDialog />
+          <Link
+            to="/invoices/new"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Plus size={14} /> Facture directe (sans proforma)
+          </Link>
+          <Link to="/proformas/new" className={cn(buttonVariants({ size: "sm" }))}>
+            <Plus size={14} /> Nouvelle proforma
+          </Link>
         </div>
       </div>
 

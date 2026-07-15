@@ -1,5 +1,6 @@
-1. Smoke `/creances` and `/api/creances` aggregation with and without the overdue filter
-2. Smoke penalty accrual against overdue unpaid/partial installments and confirm paid installments are skipped
-3. Smoke payment recording with `allocationTarget: "penalty"` and verify penalty rows do not mark principal paid
-4. Run legacy Beta cross-compare once sample data access is available
-5. Keep migration/backfill decisions open: company parties, credit window, epargne backfill
+1. Smoke `/proformas/new` end to end: party, referrer, ticket line, shop line, validation errors, submit, detail navigation
+2. Smoke `/invoices/new` direct draft creation and detail navigation
+3. Smoke ticket details shape: one-way, round-trip return date, PNR, GDS, ticket number, generated description
+4. Smoke `/creances` and `/api/creances` aggregation with and without the overdue filter
+5. Run legacy Beta cross-compare once sample data access is available
+6. Keep migration/backfill decisions open: company parties, credit window, epargne backfill

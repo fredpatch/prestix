@@ -7,10 +7,11 @@ export interface TicketDetailsInput {
     from: string;
     to: string;
     date: string;
+    returnDate?: string;
     flightNo?: string;
     tripType?: "one_way" | "round_trip";
   }>;
-  references?: { pnr?: string; ticketNumber?: string; supplierReference?: string };
+  references?: { pnr: string; gds: string; ticketNumber?: string };
   supplierPrice: number;
   sellingPrice: number;
 }
@@ -28,8 +29,14 @@ export interface TicketDetailsView {
   id: number;
   travelClass: string;
   passengerName: string;
-  segments: Array<{ from: string; to: string; date: string; flightNo?: string }>;
-  references?: { pnr?: string; ticketNumber?: string; supplierReference?: string };
+  segments: Array<{
+    from: string;
+    to: string;
+    date: string;
+    returnDate?: string;
+    flightNo?: string;
+  }>;
+  references?: { pnr: string; gds: string; ticketNumber?: string };
   supplierPrice: string;
   sellingPrice: string;
 }
