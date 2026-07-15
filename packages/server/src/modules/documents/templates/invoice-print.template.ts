@@ -10,6 +10,7 @@ export interface PrintLineItem {
   cie?: string;
   travelClass?: string;
   unitPrice: number;
+  discount?: number;
   total: number;
 }
 
@@ -130,6 +131,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
   const words = doc.total > 0 ? amountWords(Math.round(doc.total)).toUpperCase() : null;
   const showCie = doc.items.some((l) => l.cie);
   const showClass = doc.items.some((l) => l.travelClass);
+  const showLineDiscount = doc.items.some((l) => (l.discount ?? 0) > 0);
 
   const rows = doc.items
     .map(
@@ -145,6 +147,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
       ${showCie ? `<td class="c">${esc(l.cie) || '<span class="dim">-</span>'}</td>` : ""}
       ${showClass ? `<td class="c">${esc(l.travelClass) || '<span class="dim">-</span>'}</td>` : ""}
       <td class="r">${fmt(l.unitPrice)}</td>
+      ${showLineDiscount ? `<td class="r">${(l.discount ?? 0) > 0 ? `- ${fmt(l.discount)}` : "—"}</td>` : ""}
       <td class="r">${fmt(l.total)}</td>
     </tr>`,
     )
@@ -243,6 +246,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
           ${showCie ? '<th class="c" style="width:7%">CIE</th>' : ""}
           ${showClass ? '<th class="c" style="width:7%">Classe</th>' : ""}
           <th class="r" style="width:13%">Prix Unitaire</th>
+          ${showLineDiscount ? '<th class="r" style="width:9%">Remise</th>' : ""}
           <th class="r" style="width:11%">Total</th>
         </tr>
       </thead>

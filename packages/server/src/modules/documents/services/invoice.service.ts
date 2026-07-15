@@ -9,6 +9,8 @@ import {
   users,
   installments,
   payments,
+  ticketDetails,
+  proformaTicketDetails,
 } from "../../../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
@@ -18,6 +20,7 @@ import { createCreditLot } from "../../credit/services/credit.service.js";
 import type {
   CancelInvoiceParams,
   CreateDraftInvoiceParams,
+  InvoiceLineInput,
   InvoiceView,
   IssueInvoiceParams,
 } from "./invoice.types.js";
@@ -25,6 +28,19 @@ import { voidPenaltiesForInvoice } from "@/modules/penalties/services/penalty.se
 
 function lineTotal(unitPrice: number, quantity: number, discount: number): number {
   return unitPrice * quantity - discount;
+}
+
+/* M7: discount ≥ 0 and ≤ line amount (no negative net line) — was never actually
+ enforced, only the manager+ role gate existed. */
+function assertDiscountBounds(
+  lines: { unitPrice: number; quantity?: number; discount?: number }[],
+): void {
+  for (const l of lines) {
+    const discount = l.discount ?? 0;
+    const lineAmount = l.unitPrice * (l.quantity ?? 1);
+    if (discount < 0) throw new Error("DISCOUNT_CANNOT_BE_NEGATIVE");
+    if (discount > lineAmount) throw new Error("DISCOUNT_EXCEEDS_LINE_AMOUNT");
+  }
 }
 
 // M7: discounts are manager only. Cheap to enforce now even though the full
@@ -42,12 +58,24 @@ async function toView(
   inv: typeof invoices.$inferSelect,
   lines: (typeof invoiceLines.$inferSelect)[],
 ): Promise<InvoiceView> {
+  const linesWithTickets = await Promise.all(
+    lines.map(async (l) => {
+      if (l.lineType !== "ticket") return { line: l, ticket: undefined };
+      const [ticket] = await db
+        .select()
+        .from(ticketDetails)
+        .where(eq(ticketDetails.invoiceLineId, l.id));
+      return { line: l, ticket };
+    }),
+  );
+
   return {
     id: inv.id,
     number: inv.number ?? undefined,
     proformaId: inv.proformaId ?? undefined,
     partyId: inv.partyId,
     referrerPartyId: inv.referrerPartyId ?? undefined,
+    createdBy: inv.createdBy,
     partySnapshot: inv.partySnapshot as Record<string, unknown>,
     status: inv.status,
     paymentStatus: inv.paymentStatus,
@@ -58,7 +86,7 @@ async function toView(
     cancelledAt: inv.cancelledAt ?? undefined,
     cancelReason: inv.cancelReason ?? undefined,
     createdAt: inv.createdAt,
-    lines: lines.map((l) => ({
+    lines: linesWithTickets.map(({ line: l, ticket }) => ({
       id: l.id,
       lineType: l.lineType,
       description: l.description,
@@ -66,6 +94,17 @@ async function toView(
       unitPrice: l.unitPrice,
       discount: l.discount,
       lineTotal: l.lineTotal,
+      ticketDetails: ticket
+        ? {
+            id: ticket.id,
+            travelClass: ticket.travelClass,
+            passengerName: ticket.passengerName,
+            segments: ticket.segments,
+            references: ticket.references ?? undefined,
+            supplierPrice: ticket.supplierPrice,
+            sellingPrice: ticket.sellingPrice,
+          }
+        : undefined,
     })),
   };
 }
@@ -90,6 +129,9 @@ async function assertDraft(invoiceId: number): Promise<typeof invoices.$inferSel
 // Direct draft creation — M4: "an invoice can be created directly as a draft" (proforma optional).
 export async function createDraftInvoice(params: CreateDraftInvoiceParams): Promise<InvoiceView> {
   if (params.lines.length === 0) throw new Error("INVOICE_NEEDS_AT_LEAST_ONE_LINE");
+
+  // M7: discount bounds are manager-only, but cheap to enforce now even though the full discount workflow (bounds, print summary) is Sprint 6 scope.
+  assertDiscountBounds(params.lines);
 
   // M7: discounts are manager-only. Cheap to enforce now even though the full
   // discount workflow (bounds, print summary) is Sprint 6 scope.
@@ -128,6 +170,21 @@ export async function createDraftInvoice(params: CreateDraftInvoiceParams): Prom
       )
       .returning();
 
+    // M8: ticket details are now stored in a separate table, linked to the invoice line. This is a no-op for shop lines, but for ticket lines we insert the ticket details here.
+    for (let i = 0; i < params.lines.length; i++) {
+      const td = params.lines[i].ticketDetails;
+      if (!td) continue;
+      await tx.insert(ticketDetails).values({
+        invoiceLineId: insertedLines[i].id,
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      });
+    }
+
     await recomputeInvoiceTotals(tx, invoice.id);
     return { invoice, insertedLines };
   });
@@ -160,6 +217,16 @@ export async function promoteProformaToInvoice(
     .where(eq(proformaLines.proformaId, proformaId));
   if (sourceLines.length === 0) throw new Error("PROFORMA_HAS_NO_LINES");
 
+  const sourceTicketDetailsByLineId = new Map<number, typeof proformaTicketDetails.$inferSelect>();
+  for (const l of sourceLines) {
+    if (l.lineType !== "ticket") continue;
+    const [td] = await db
+      .select()
+      .from(proformaTicketDetails)
+      .where(eq(proformaTicketDetails.proformaLineId, l.id));
+    if (td) sourceTicketDetailsByLineId.set(l.id, td);
+  }
+
   const [party] = await db.select().from(parties).where(eq(parties.id, proforma.partyId));
   if (!party) throw new Error("PARTY_NOT_FOUND");
 
@@ -189,6 +256,21 @@ export async function promoteProformaToInvoice(
       )
       .returning();
 
+    // M8: ticket lines carry a linked details row — inserted in the same order
+    for (let i = 0; i < sourceLines.length; i++) {
+      const td = sourceTicketDetailsByLineId.get(sourceLines[i].id);
+      if (!td) continue;
+      await tx.insert(ticketDetails).values({
+        invoiceLineId: insertedLines[i].id,
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice,
+        sellingPrice: td.sellingPrice,
+      });
+    }
+
     await recomputeInvoiceTotals(tx, invoice.id);
     return { invoice, insertedLines };
   });
@@ -206,30 +288,42 @@ export async function promoteProformaToInvoice(
 
 export async function addLine(
   invoiceId: number,
-  line: {
-    lineType: "ticket" | "shop";
-    description: string;
-    quantity?: number;
-    unitPrice: number;
-    discount?: number;
-  },
+  line: InvoiceLineInput,
   userId: number,
 ): Promise<InvoiceView> {
   await assertDraft(invoiceId);
+  assertDiscountBounds([line]);
   await assertCanDiscount(userId, [line]);
   const quantity = line.quantity ?? 1;
   const discount = line.discount ?? 0;
 
   await db.transaction(async (tx: any) => {
-    await tx.insert(invoiceLines).values({
-      invoiceId,
-      lineType: line.lineType,
-      description: line.description,
-      quantity,
-      unitPrice: line.unitPrice.toFixed(2),
-      discount: discount.toFixed(2),
-      lineTotal: lineTotal(line.unitPrice, quantity, discount).toFixed(2),
-    });
+    const [inserted] = await tx
+      .insert(invoiceLines)
+      .values({
+        invoiceId,
+        lineType: line.lineType,
+        description: line.description,
+        quantity,
+        unitPrice: line.unitPrice.toFixed(2),
+        discount: discount.toFixed(2),
+        lineTotal: lineTotal(line.unitPrice, quantity, discount).toFixed(2),
+      })
+      .returning();
+
+    if (line.ticketDetails) {
+      const td = line.ticketDetails;
+      await tx.insert(ticketDetails).values({
+        invoiceLineId: inserted.id,
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      });
+    }
+
     await recomputeInvoiceTotals(tx, invoiceId);
   });
 

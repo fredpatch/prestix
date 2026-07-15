@@ -8,6 +8,8 @@ function handleError(res: Response, error: unknown): void {
     PARTY_NOT_FOUND: 404,
     PROFORMA_NEEDS_AT_LEAST_ONE_LINE: 400,
     DISCOUNT_REQUIRES_MANAGER: 403,
+    DISCOUNT_CANNOT_BE_NEGATIVE: 400,
+    DISCOUNT_EXCEEDS_LINE_AMOUNT: 400,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[proforma]", error);

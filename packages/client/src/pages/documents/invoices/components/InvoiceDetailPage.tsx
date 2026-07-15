@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Send, Trash2, Plus, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Send, Trash2, Plus, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { invoiceApi, type Invoice } from "@/lib/invoice.api";
@@ -154,11 +154,17 @@ export default function InvoiceDetailPage() {
           {isIssued && !isFullyPaid && (
             <RecordPaymentDialog invoiceId={invoice.id} onRecorded={load} />
           )}
-
           {isIssued && !deliveryNote && (
             <Button size="sm" variant="outline" onClick={handleCreateBL} disabled={creatingBL}>
               {creatingBL ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
               Générer le BL
+            </Button>
+          )}
+          {isIssued && (
+            <Button size="sm" variant="outline">
+              <a href={`/api/invoices/${invoice.id}/pdf`} target="_blank" rel="noreferrer">
+                <Download size={13} /> PDF
+              </a>
             </Button>
           )}
           {canCancel && <CancelInvoiceDialog invoiceId={invoice.id} onCancelled={load} />}

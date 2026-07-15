@@ -3,7 +3,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/App";
-import type { DocumentLineInput } from "@/lib/proforma.api";
+import type { DocumentLineInput, TicketDetailsInput } from "@/lib/proforma.api";
+import { TicketDetailsForm } from "./TicketDetailsForm";
 
 interface LineItemsBuilderProps {
   lines: DocumentLineInput[];
@@ -32,6 +33,25 @@ export function LineItemsBuilder({ lines, onChange }: LineItemsBuilderProps) {
     onChange(lines.map((l, i) => (i === index ? { ...l, ...patch } : l)));
   }
 
+  function updateTicketDetails(index: number, ticketDetails: TicketDetailsInput) {
+    // sellingPrice always mirrors the row's own unitPrice — never asked twice
+    onChange(
+      lines.map((l, i) =>
+        i === index ? { ...l, ticketDetails: { ...ticketDetails, sellingPrice: l.unitPrice } } : l,
+      ),
+    );
+  }
+
+  function defaultTicketDetails(unitPrice: number): TicketDetailsInput {
+    return {
+      travelClass: "economy",
+      passengerName: "",
+      segments: [{ from: "", to: "", date: "" }],
+      supplierPrice: 0,
+      sellingPrice: unitPrice,
+    };
+  }
+
   function removeLine(index: number) {
     onChange(lines.filter((_, i) => i !== index));
   }
@@ -44,56 +64,81 @@ export function LineItemsBuilder({ lines, onChange }: LineItemsBuilderProps) {
   return (
     <div className="space-y-2">
       {lines.map((line, i) => (
-        <div key={i} className="grid grid-cols-12 gap-2 items-start bg-neutral-50 rounded-lg p-2.5">
-          <select
-            value={line.lineType}
-            onChange={(e) => updateLine(i, { lineType: e.target.value as "ticket" | "shop" })}
-            className="col-span-2 h-9 rounded border border-neutral-200 bg-white px-2 text-[12px]"
-          >
-            {LINE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <Input
-            placeholder="Description"
-            value={line.description}
-            onChange={(e) => updateLine(i, { description: e.target.value })}
-            className={canDiscount ? "col-span-4 h-9 text-[12px]" : "col-span-6 h-9 text-[12px]"}
-          />
-          <Input
-            type="number"
-            placeholder="Qté"
-            value={line.quantity ?? 1}
-            onChange={(e) => updateLine(i, { quantity: parseInt(e.target.value) || 1 })}
-            className="col-span-1 h-9 text-[12px]"
-            min={1}
-          />
-          <Input
-            type="number"
-            placeholder="Prix unitaire"
-            value={line.unitPrice}
-            onChange={(e) => updateLine(i, { unitPrice: parseFloat(e.target.value) || 0 })}
-            className="col-span-2 h-9 text-[12px]"
-          />
-          {canDiscount && (
+        <div key={i} className="bg-neutral-50 rounded-lg p-2.5">
+          <div className="grid grid-cols-12 gap-2 items-start">
+            <select
+              value={line.lineType}
+              onChange={(e) => {
+                const lineType = e.target.value as "ticket" | "shop";
+                updateLine(i, {
+                  lineType,
+                  ticketDetails:
+                    lineType === "ticket"
+                      ? (line.ticketDetails ?? defaultTicketDetails(line.unitPrice))
+                      : undefined,
+                });
+              }}
+              className="col-span-2 h-9 rounded border border-neutral-200 bg-white px-2 text-[12px]"
+            >
+              {LINE_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <Input
+              placeholder="Description"
+              value={line.description}
+              onChange={(e) => updateLine(i, { description: e.target.value })}
+              className={canDiscount ? "col-span-4 h-9 text-[12px]" : "col-span-6 h-9 text-[12px]"}
+            />
             <Input
               type="number"
-              placeholder="Remise"
-              value={line.discount ?? 0}
-              onChange={(e) => updateLine(i, { discount: parseFloat(e.target.value) || 0 })}
+              placeholder="Qté"
+              value={line.quantity ?? 1}
+              onChange={(e) => {
+                const unitPrice = parseFloat(e.target.value) || 0;
+                updateLine(i, {
+                  unitPrice,
+                  ticketDetails: line.ticketDetails
+                    ? { ...line.ticketDetails, sellingPrice: unitPrice }
+                    : undefined,
+                });
+              }}
+              className="col-span-1 h-9 text-[12px]"
+              min={1}
+            />
+            <Input
+              type="number"
+              placeholder="Prix unitaire"
+              value={line.unitPrice}
+              onChange={(e) => updateLine(i, { unitPrice: parseFloat(e.target.value) || 0 })}
               className="col-span-2 h-9 text-[12px]"
             />
+            {canDiscount && (
+              <Input
+                type="number"
+                placeholder="Remise"
+                value={line.discount ?? 0}
+                onChange={(e) => updateLine(i, { discount: parseFloat(e.target.value) || 0 })}
+                className="col-span-2 h-9 text-[12px]"
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => removeLine(i)}
+              className="col-span-1 text-red-500 hover:bg-red-50"
+            >
+              <Trash2 size={13} />
+            </Button>
+          </div>
+          {line.lineType === "ticket" && (
+            <TicketDetailsForm
+              value={line.ticketDetails ?? defaultTicketDetails(line.unitPrice)}
+              onChange={(td) => updateTicketDetails(i, td)}
+            />
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => removeLine(i)}
-            className="col-span-1 text-red-500 hover:bg-red-50"
-          >
-            <Trash2 size={13} />
-          </Button>
         </div>
       ))}
 

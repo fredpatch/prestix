@@ -1,9 +1,12 @@
+import { TicketDetailsInput, TicketDetailsView } from "./proforma.types.js";
+
 export interface InvoiceLineInput {
   lineType: "ticket" | "shop";
   description: string;
   quantity?: number;
   unitPrice: number;
   discount?: number;
+  ticketDetails?: TicketDetailsInput;
 }
 
 export interface InvoiceLineView {
@@ -14,6 +17,7 @@ export interface InvoiceLineView {
   unitPrice: string;
   discount: string;
   lineTotal: string;
+  ticketDetails?: TicketDetailsView;
 }
 
 export interface InvoiceView {
@@ -22,6 +26,7 @@ export interface InvoiceView {
   proformaId?: number;
   partyId: number;
   referrerPartyId?: number;
+  createdBy: number;
   partySnapshot: Record<string, unknown>;
   status: "draft" | "issued" | "expired" | "cancelled";
   paymentStatus: "unpaid" | "partial" | "paid";

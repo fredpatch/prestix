@@ -1,11 +1,37 @@
 import api from "./axios";
 
+export interface TicketDetailsInput {
+  travelClass: "economy" | "business" | "first" | "premium";
+  passengerName: string;
+  segments: Array<{
+    from: string;
+    to: string;
+    date: string;
+    flightNo?: string;
+    tripType?: "one_way" | "round_trip";
+  }>;
+  references?: { pnr?: string; ticketNumber?: string; supplierReference?: string };
+  supplierPrice: number;
+  sellingPrice: number;
+}
+
 export interface DocumentLineInput {
   lineType: "ticket" | "shop";
   description: string;
   quantity?: number;
   unitPrice: number;
   discount?: number;
+  ticketDetails?: TicketDetailsInput;
+}
+
+export interface TicketDetailsView {
+  id: number;
+  travelClass: string;
+  passengerName: string;
+  segments: Array<{ from: string; to: string; date: string; flightNo?: string }>;
+  references?: { pnr?: string; ticketNumber?: string; supplierReference?: string };
+  supplierPrice: string;
+  sellingPrice: string;
 }
 
 export interface DocumentLineView {
@@ -16,6 +42,7 @@ export interface DocumentLineView {
   unitPrice: string;
   discount: string;
   lineTotal: string;
+  ticketDetails?: TicketDetailsView;
 }
 
 export interface Proforma {

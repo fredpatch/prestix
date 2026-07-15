@@ -1,5 +1,12 @@
 import { db } from "../../../db/index.js";
-import { proformas, proformaLines, parties, users, roleLevel } from "../../../db/schema.js";
+import {
+  proformas,
+  proformaLines,
+  parties,
+  users,
+  roleLevel,
+  proformaTicketDetails,
+} from "../../../db/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { getNextNumber } from "./counters.service.js";
@@ -9,6 +16,17 @@ const PROFORMA_VALIDITY_HOURS = 48;
 
 function lineTotal(unitPrice: number, quantity: number, discount: number): number {
   return unitPrice * quantity - discount;
+}
+
+function assertDiscountBounds(
+  lines: { unitPrice: number; quantity?: number; discount?: number }[],
+): void {
+  for (const l of lines) {
+    const discount = l.discount ?? 0;
+    const lineAmount = l.unitPrice * (l.quantity ?? 1);
+    if (discount < 0) throw new Error("DISCOUNT_CANNOT_BE_NEGATIVE");
+    if (discount > lineAmount) throw new Error("DISCOUNT_EXCEEDS_LINE_AMOUNT");
+  }
 }
 
 async function assertCanDiscount(userId: number, lines: { discount?: number }[]): Promise<void> {
@@ -24,6 +42,17 @@ async function toView(
   p: typeof proformas.$inferSelect,
   lines: (typeof proformaLines.$inferSelect)[],
 ): Promise<ProformaView> {
+  const linesWithTickets = await Promise.all(
+    lines.map(async (l) => {
+      if (l.lineType !== "ticket") return { line: l, ticket: undefined };
+      const [ticket] = await db
+        .select()
+        .from(proformaTicketDetails)
+        .where(eq(proformaTicketDetails.proformaLineId, l.id));
+      return { line: l, ticket };
+    }),
+  );
+
   return {
     id: p.id,
     number: p.number,
@@ -33,7 +62,7 @@ async function toView(
     status: p.status,
     expiresAt: p.expiresAt ?? undefined,
     createdAt: p.createdAt,
-    lines: lines.map((l) => ({
+    lines: linesWithTickets.map(({ line: l, ticket }) => ({
       id: l.id,
       lineType: l.lineType,
       description: l.description,
@@ -41,6 +70,17 @@ async function toView(
       unitPrice: l.unitPrice,
       discount: l.discount,
       lineTotal: l.lineTotal,
+      ticketDetails: ticket
+        ? {
+            id: ticket.id,
+            travelClass: ticket.travelClass,
+            passengerName: ticket.passengerName,
+            segments: ticket.segments,
+            references: ticket.references ?? undefined,
+            supplierPrice: ticket.supplierPrice,
+            sellingPrice: ticket.sellingPrice,
+          }
+        : undefined,
     })),
   };
 }
@@ -50,6 +90,9 @@ async function toView(
 // separate slow draft-then-issue flow for proformas.
 export async function createProforma(params: CreateProformaParams): Promise<ProformaView> {
   if (params.lines.length === 0) throw new Error("PROFORMA_NEEDS_AT_LEAST_ONE_LINE");
+
+  // M7: discount bounds are manager-only, but cheap to enforce now even though the full discount workflow (bounds, print summary) is Sprint 6 scope.
+  assertDiscountBounds(params.lines);
 
   // M7: discounts are manager-only. Cheap to enforce now even though the full
   // discount workflow (bounds, print summary) is Sprint 6 scope.
@@ -92,6 +135,22 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
         }),
       )
       .returning();
+
+    // M8: ticket lines carry a linked details row — inserted in the same order
+    // as params.lines/insertedLines so index-matching is safe here.
+    for (let i = 0; i < params.lines.length; i++) {
+      const td = params.lines[i].ticketDetails;
+      if (!td) continue;
+      await tx.insert(proformaTicketDetails).values({
+        proformaLineId: insertedLines[i].id,
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      });
+    }
 
     return { proforma, insertedLines };
   });

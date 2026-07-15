@@ -206,6 +206,19 @@ export const proformaLines = pgTable("proforma_lines", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const proformaTicketDetails = pgTable("proforma_ticket_details", {
+  id: serial("id").primaryKey(),
+  proformaLineId: integer("proforma_line_id")
+    .notNull()
+    .references(() => proformaLines.id),
+  travelClass: ticketClassEnum("travel_class").notNull(),
+  passengerName: varchar("passenger_name", { length: 255 }).notNull(),
+  segments: jsonb("segments").notNull(),
+  references: jsonb("references"),
+  supplierPrice: numeric("supplier_price", { precision: 12, scale: 2 }).notNull(),
+  sellingPrice: numeric("selling_price", { precision: 12, scale: 2 }).notNull(),
+});
+
 export const invoices = pgTable(
   "invoices",
   {
