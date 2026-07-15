@@ -83,7 +83,7 @@ export async function generateProformaPdf(
     };
   });
 
-  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * 1, 0); // proforma lines: quantity folded into unitPrice already at capture time
+  const subtotal = items.reduce((sum, i) => sum + i.unitPrice, 0);
   const totalDiscount = items.reduce((sum, i) => sum + (i.discount ?? 0), 0);
   const total = items.reduce((sum, i) => sum + i.total, 0);
 

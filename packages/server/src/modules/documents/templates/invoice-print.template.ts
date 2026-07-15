@@ -1,6 +1,5 @@
 // Ported from legacy PrintableCommercialDocument (React) — server-side HTML string version.
-// Trimmed for Sprint 0 pre-flight: no installment schedule, no multi-passenger row split
-// (both depend on M5 data models, not yet built). Restore when M4/M5 land in Sprint 3-4.
+// Installment schedule restored in Sprint 6 now that M5 (payments) exists.
 
 export interface PrintLineItem {
   clientName: string;
@@ -52,6 +51,12 @@ const AMOUNT_WORDS_LABEL: Record<string, string> = {
   proforma: "Proforma arrêtée à la somme de",
   invoice: "Facture arrêtée à la somme de",
   delivery_note: "Bon de livraison arrêté à la somme de",
+};
+
+const INSTALLMENT_STATUS_LABELS: Record<string, string> = {
+  unpaid: "Non payée",
+  partial: "Partielle",
+  paid: "Payée",
 };
 
 function fmt(v = 0): string {
@@ -143,11 +148,25 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
   const showLineDiscount = doc.items.some((l) => (l.discount ?? 0) > 0);
   const showInstallments = doc.docType === "invoice" && (doc.installments?.length ?? 0) > 1;
 
-  const INSTALLMENT_STATUS_LABELS: Record<string, string> = {
-    unpaid: "Non payée",
-    partial: "Partielle",
-    paid: "Payée",
-  };
+  const rows = doc.items
+    .map(
+      (l, i) => `
+    <tr>
+      <td>${esc(l.clientName)}</td>
+      <td class="c">${i + 1}</td>
+      <td>
+        <div class="svc-category">${esc(l.category)}</div>
+        ${l.detail ? `<div class="svc-detail">${esc(l.detail)}</div>` : ""}
+      </td>
+      <td>${esc(l.date) || "-"}${l.returnDate ? `<br/><span class="dim" style="font-size:9px;">retour ${esc(l.returnDate)}</span>` : ""}</td>
+      ${showCie ? `<td class="c">${esc(l.cie) || '<span class="dim">-</span>'}</td>` : ""}
+      ${showClass ? `<td class="c">${esc(l.travelClass) || '<span class="dim">-</span>'}</td>` : ""}
+      <td class="r">${fmt(l.unitPrice)}</td>
+      ${showLineDiscount ? `<td class="r">${(l.discount ?? 0) > 0 ? `- ${fmt(l.discount)}` : "—"}</td>` : ""}
+      <td class="r">${fmt(l.total)}</td>
+    </tr>`,
+    )
+    .join("");
 
   const scheduleRows = (doc.installments ?? [])
     .map(
@@ -159,26 +178,6 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
       <td class="r">${fmt(inst.paidAmount)}</td>
       <td class="r">${fmt(Math.max(0, inst.expectedAmount - inst.paidAmount))}</td>
       <td>${INSTALLMENT_STATUS_LABELS[inst.status] ?? inst.status}</td>
-    </tr>`,
-    )
-    .join("");
-
-  const rows = doc.items
-    .map(
-      (l, i) => `
-    <tr>
-      <td>${esc(l.clientName)}</td>
-      <td class="c">${i + 1}</td>
-      <td>
-        <div class="svc-category">${esc(l.category)}</div>
-        ${l.detail ? `<div class="svc-detail">${esc(l.detail)}</div>` : ""}
-      </td>
-       <td>${esc(l.date) || "-"}${l.returnDate ? `<br/><span class="dim" style="font-size:9px;">retour ${esc(l.returnDate)}</span>` : ""}</td>
-      ${showCie ? `<td class="c">${esc(l.cie) || '<span class="dim">-</span>'}</td>` : ""}
-      ${showClass ? `<td class="c">${esc(l.travelClass) || '<span class="dim">-</span>'}</td>` : ""}
-      <td class="r">${fmt(l.unitPrice)}</td>
-      ${showLineDiscount ? `<td class="r">${(l.discount ?? 0) > 0 ? `- ${fmt(l.discount)}` : "—"}</td>` : ""}
-      <td class="r">${fmt(l.total)}</td>
     </tr>`,
     )
     .join("");
@@ -211,24 +210,24 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
   .p-meta td.mk { font-weight: 600; color: #555; padding-right: 10px; }
   table.p-items { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; }
   table.p-items thead tr { background: #ddc99a; }
-  table.p-items thead th { padding: 4px 7px; font-size: 10px; font-weight: 500; text-align: left; color: #2a1f00; border: 1px solid #c9ae72; }
+  table.p-items thead th { padding: 4px 7px; font-size: 10px; font-weight: 600; text-align: left; color: #2a1f00; border: 1px solid #c9ae72; }
   table.p-items thead th.r { text-align: right; }
   table.p-items thead th.c { text-align: center; }
   table.p-items tbody tr { border-bottom: 1px solid #eae6de; }
-  table.p-items tbody td { padding: 7px 7px;  font-size: 10px; border-left: 1px solid #eae6de; border-right: 1px solid #eae6de; }
+  table.p-items tbody td { padding: 7px 7px; border-left: 1px solid #eae6de; border-right: 1px solid #eae6de; }
   table.p-items tbody td.r { text-align: right; }
   table.p-items tbody td.c { text-align: center; }
-  table.p-items tbody td.dim { color: #aaa; font-size: 11px; }
-  .svc-category { font-weight: 600; font-size: 11.5px; }
-  .svc-detail { font-size: 10.5px; color: #666; font-style: italic; margin-top: 1px; }
-  .p-totals-row { display: flex; justify-content: flex-end; margin-top: 32px; margin-bottom: 32px; }
+  table.p-items tbody td.dim { color: #aaa; font-size: 10px; }
+  .svc-category { font-weight: 600; font-size: 11px; }
+  .svc-detail { font-size: 10px; color: #666; font-style: italic; margin-top: 1px; }
+  .p-totals-row { display: flex; justify-content: flex-end; margin-top: 24px; margin-bottom: 24px; }
   .p-totals-box { border: 1px solid #aaa; min-width: 210px; }
-  .p-totals-box table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .p-totals-box table { width: 100%; border-collapse: collapse; font-size: 11px; }
   .p-totals-box table td { padding: 4px 11px; }
   .p-totals-box table td.tl { font-weight: 600; color: #444; border-right: 1px solid #aaa; white-space: nowrap; }
   .p-totals-box table td.tr { text-align: right; }
   .p-totals-box table tr + tr td { border-top: 1px solid #ddd; }
-  .p-totals-box table tr.t-main td { font-size: 12px; font-weight: 600; background: #f7f1e3; }
+  .p-totals-box table tr.t-main td { font-size: 12.5px; font-weight: 700; background: #f7f1e3; }
   .p-totals-box table tr.t-paid td { color: #1a5c35; }
   .p-totals-box table tr.t-balance td { color: #8b1a1a; font-weight: 600; }
   .p-schedule { margin-top: 8px; margin-bottom: 12px; }
@@ -238,13 +237,13 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
   table.p-schedule-table thead th.r { text-align: right; }
   table.p-schedule-table tbody td { padding: 3px 6px; border: 1px solid #eee; }
   table.p-schedule-table tbody td.r { text-align: right; }
-  .p-words { font-size: 11px; margin-bottom: 10px; padding-top: 30px; font-style: italic; }
+  .p-words { font-size: 11px; margin-bottom: 4px; font-style: italic; }
   .p-words strong { font-style: normal; font-weight: 600; color: #222; }
-  .p-received { font-size: 11px; color: #555; margin-bottom: 28px; }
+  .p-received { font-size: 11px; color: #555; margin-bottom: 20px; }
   .p-received .lbl { font-weight: 600; color: #333; }
-  .p-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 48px; margin-bottom: 24px; }
-  .p-sig { border-top: 1px solid #bbb; padding-top: 8px; font-size: 10px; color: #aaa; text-align: center; min-height: 54px; }
-  .p-footer { padding-top: 28px; text-align: center; font-size: 9.5px; color: #a77800; line-height: 1.8; }
+  .p-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; margin-top: 36px; margin-bottom: 16px; }
+  .p-sig { border-top: 1px solid #bbb; padding-top: 8px; font-size: 10px; color: #aaa; text-align: center; min-height: 40px; }
+  .p-footer { padding-top: 12px; text-align: center; font-size: 9.5px; color: #a77800; line-height: 1.8; }
 </style>
 </head>
 <body>
@@ -282,7 +281,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
           <th style="width:11%">Date</th>
           ${showCie ? '<th class="c" style="width:7%">CIE</th>' : ""}
           ${showClass ? '<th class="c" style="width:7%">Classe</th>' : ""}
-          <th class="r" style="width:13%">Prix unitaire</th>
+          <th class="r" style="width:13%">Prix Unitaire</th>
           ${showLineDiscount ? '<th class="r" style="width:9%">Remise</th>' : ""}
           <th class="r" style="width:11%">Total</th>
         </tr>
@@ -310,10 +309,9 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
         </table>
       </div>
     </div>
-
-        ${
-          showInstallments
-            ? `<div class="p-schedule">
+    ${
+      showInstallments
+        ? `<div class="p-schedule">
              <div class="p-schedule-title">Échéancier de paiement</div>
              <table class="p-schedule-table">
                <thead>
@@ -322,24 +320,21 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
                <tbody>${scheduleRows}</tbody>
              </table>
            </div>`
-            : ""
-        }
-
-   ${words ? `<div class="p-words"><strong>${AMOUNT_WORDS_LABEL[doc.docType]}</strong> ${words}</div>` : ""}
+        : ""
+    }
+    ${words ? `<div class="p-words"><strong>${AMOUNT_WORDS_LABEL[doc.docType]}</strong> ${words}</div>` : ""}
     <div class="p-received"><span class="lbl">Reçu le</span> ${esc(doc.receivedOn) || '<span style="display:inline-block;min-width:120px;border-bottom:1px solid #bbb;">&nbsp;</span>'}</div>
     <div class="p-sigs">
       <div class="p-sig">Signature destinataire</div>
       <div class="p-sig">Signature émetteur</div>
     </div>
-
-       ${
-         doc.docType === "proforma" && doc.validUntil
-           ? `<div style="font-size:10px;color:#7a5c00;background:#fef9ec;border:1px solid #e8d48a;border-radius:3px;padding:4px 10px;margin-top:16px;font-style:italic;">
-             Attention : cette proforma est valable <strong>48h</strong> à compter de sa date d'émission - jusqu'au <strong>${esc(doc.validUntil)}</strong>.
+    ${
+      doc.docType === "proforma" && doc.validUntil
+        ? `<div style="font-size:10px;color:#7a5c00;background:#fef9ec;border:1px solid #e8d48a;border-radius:3px;padding:4px 10px;margin-top:16px;font-style:italic;">
+             ⚠ Ce proforma est valable <strong>48h</strong> à compter de sa date d'émission — jusqu'au <strong>${esc(doc.validUntil)}</strong>.
            </div>`
-           : ""
-       }
-
+        : ""
+    }
     <div class="p-footer">
       LE PRESTIGIEUX, Capital de 1 000 000 FCFA · N°RCCM : GA-LBV-01-2021-A10-00554 · NIF : 393325T<br/>
       N°COMPTE : 22591300201 ORABANK · Siège social : Centre-Ville, Galerie Hollando Bureau 06

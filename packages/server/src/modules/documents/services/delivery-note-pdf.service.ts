@@ -38,8 +38,9 @@ function getLogoBase64(): string {
 
 // M4: BL — no payment recap (showPaymentRecap in the template is gated to
 // docType === 'invoice' only, so this falls through to false automatically).
-// Uses the SAME line/party data as the parent invoice — a BL doesn't have its
-// own lines, it's a delivery confirmation referencing the invoice.
+// No échéancier either — that's invoice-only. Uses the SAME line/party data as
+// the parent invoice — a BL doesn't have its own lines, it's a delivery
+// confirmation referencing the invoice.
 export async function generateDeliveryNotePdf(
   invoiceId: number,
   requestedByUserId: number,
