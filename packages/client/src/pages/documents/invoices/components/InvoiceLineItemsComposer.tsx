@@ -471,15 +471,6 @@ export function InvoiceLineItemsComposer() {
                           </>
                         )}
 
-                        {line.lineType === "ticket" && (
-                          <div className={cn(canDiscount ? "md:col-span-6" : "md:col-span-7")}>
-                            <Label>Description facture</Label>
-                            <div className="flex h-10 items-center rounded border border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-500">
-                              Générée depuis le passager, le trajet et le prix de vente.
-                            </div>
-                          </div>
-                        )}
-
                         {line.lineType === "shop" && (
                           <div className="md:col-span-2">
                             <Label htmlFor={`unit-price-${index}`}>Prix unitaire</Label>

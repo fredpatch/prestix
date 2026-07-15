@@ -17,6 +17,7 @@ import InvoiceDetailPage from "./pages/documents/invoices/components/InvoiceDeta
 import CreancesPage from "./pages/CreancesPage";
 import CreateProformaPage from "./pages/documents/proforma/components/CreateProformaPage";
 import CreateInvoiceDraftPage from "./pages/documents/invoices/components/CreateInvoiceDraftPage";
+import { PageHeaderProvider, usePageHeader } from "./components/layouts/lib/page-header";
 
 interface AuthUser {
   id: number;
@@ -74,9 +75,9 @@ function BootstrapRoute({ bootstrapNeeded }: { bootstrapNeeded: boolean }) {
 // Placeholder until the real dashboard (M12) lands.
 function DashboardPlaceholder() {
   const { user } = useAuth();
+  usePageHeader({ title: "Tableau de bord" });
   return (
     <div>
-      <h1 className="text-lg font-bold text-brand-gold-dark">Tableau de bord</h1>
       <p className="text-neutral-500 text-sm mt-1">
         Connecté : {user?.fullName} ({user?.role})
       </p>
@@ -128,50 +129,52 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ user, setUser, loading }}>
-      <Routes>
-        <Route path="/bootstrap" element={<BootstrapRoute bootstrapNeeded={bootstrapNeeded} />} />
-        {bootstrapNeeded && <Route path="*" element={<Navigate to="/bootstrap" replace />} />}
+      <PageHeaderProvider>
+        <Routes>
+          <Route path="/bootstrap" element={<BootstrapRoute bootstrapNeeded={bootstrapNeeded} />} />
+          {bootstrapNeeded && <Route path="*" element={<Navigate to="/bootstrap" replace />} />}
 
-        <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout userRole={user?.role} userFullName={user?.fullName} />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<DashboardPlaceholder />} />
-          <Route path="/parties" element={<PartiesPage />} />
-          <Route path="/parties/:id" element={<PartyDetailPage />} />
-          <Route path="/proformas" element={<ProformasPage />} />
-          <Route path="/proformas/new" element={<CreateProformaPage />} />
-          <Route path="/proformas/:id" element={<ProformaDetailPage />} />
-          <Route path="/invoices" element={<InvoicesPage />} />
-          <Route path="/invoices/new" element={<CreateInvoiceDraftPage />} />
-          <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
-          <Route path="/creances" element={<CreancesPage />} />
           <Route
-            path="/users"
             element={
-              <AdminRoute>
-                <UsersPage />
-              </AdminRoute>
+              <ProtectedRoute>
+                <Layout userRole={user?.role} userFullName={user?.fullName} />
+              </ProtectedRoute>
             }
-          />
-          <Route
-            path="/settings"
-            element={
-              <AdminRoute>
-                <SettingsPage />
-              </AdminRoute>
-            }
-          />
-        </Route>
+          >
+            <Route path="/dashboard" element={<DashboardPlaceholder />} />
+            <Route path="/parties" element={<PartiesPage />} />
+            <Route path="/parties/:id" element={<PartyDetailPage />} />
+            <Route path="/proformas" element={<ProformasPage />} />
+            <Route path="/proformas/new" element={<CreateProformaPage />} />
+            <Route path="/proformas/:id" element={<ProformaDetailPage />} />
+            <Route path="/invoices" element={<InvoicesPage />} />
+            <Route path="/invoices/new" element={<CreateInvoiceDraftPage />} />
+            <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="/creances" element={<CreancesPage />} />
+            <Route
+              path="/users"
+              element={
+                <AdminRoute>
+                  <UsersPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <AdminRoute>
+                  <SettingsPage />
+                </AdminRoute>
+              }
+            />
+          </Route>
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </PageHeaderProvider>
     </AuthContext.Provider>
   );
 }

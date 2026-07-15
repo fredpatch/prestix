@@ -68,6 +68,9 @@
 - Added a Proforma line composer with shadcn labels/inputs/selects, ticket-vs-shop line cards, collapse/remove controls, and clearer required-field feedback.
 - Extended ticket detail shape for return dates and GDS references across client and server proforma types.
 - Updated Proformas/Invoices list actions to link into the new creation pages.
+- Added shared layout page-header state so routed pages can set the top-bar title, back target, and badge from one place.
+- Moved list/detail/create page titles and back links into the shared layout header across Parties, Proformas, Invoices, Créances, Users, Settings, and document detail/create views.
+- Simplified document line composers by removing duplicate generated-description panels now that ticket details are explicitly labeled.
 - Validation: client build passes after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing Vite chunk-size warning remains.
 
 ## Validation Notes (2026-07-12)

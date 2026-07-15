@@ -12,6 +12,7 @@ import { Installment, paymentApi } from "@/lib/payment.api";
 import { IssueInvoiceDialog } from "./IssueInvoiceDialog";
 import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { PaymentPlanCard } from "./PaymentPlanCard";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
   draft: "Brouillon",
@@ -32,6 +33,11 @@ export default function InvoiceDetailPage() {
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [creatingBL, setCreatingBL] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  usePageHeader({
+    title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
+    backTo: "/invoices",
+  });
 
   const [newDesc, setNewDesc] = useState("");
   const [newQty, setNewQty] = useState(1);
@@ -119,18 +125,8 @@ export default function InvoiceDetailPage() {
 
   return (
     <div>
-      <Link
-        to="/invoices"
-        className="inline-flex items-center gap-1.5 text-[12px] text-neutral-500 hover:text-brand-gold-dark mb-4"
-      >
-        <ArrowLeft size={13} /> Retour aux factures
-      </Link>
-
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">
-            {invoice.number ?? `Brouillon #${invoice.id}`}
-          </h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {invoice.partySnapshot?.fullName} · {STATUS_LABELS[invoice.status]}
             {invoice.dueDate &&

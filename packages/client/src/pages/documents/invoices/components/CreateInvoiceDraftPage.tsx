@@ -13,6 +13,7 @@ import type { DocumentLineInput } from "@/lib/proforma.api";
 import type { Party } from "@/lib/party.api";
 import { InvoiceLineItemsComposer } from "./InvoiceLineItemsComposer";
 import { defaultTicketLine, type InvoiceFormValues } from "./invoice-form.types";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const partySchema = z
   .custom<Party | null>((value) => value === null || (typeof value === "object" && value !== null))
@@ -189,10 +190,12 @@ export default function CreateInvoiceDraftPage() {
     formState: { errors, isSubmitting, isValid },
   } = methods;
   const values = watch();
-  const lineCountLabel = useMemo(
-    () => `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
-    [values.lines.length],
-  );
+
+  usePageHeader({
+    title: "Nouvelle facture (brouillon)",
+    backTo: "/invoices",
+    badge: `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
+  });
 
   async function submit(formValues: InvoiceFormValues) {
     if (!formValues.party) return;
@@ -230,34 +233,6 @@ export default function CreateInvoiceDraftPage() {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(submit)} className="max-w-6xl">
-        <Link
-          to="/invoices"
-          className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-neutral-500 hover:text-brand-gold-dark"
-        >
-          <ArrowLeft size={13} /> Retour aux factures
-        </Link>
-
-        <div className="mb-6 flex flex-col gap-3 border-b border-neutral-200 pb-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
-              Creation document
-            </p>
-            <h1 className="mt-1 text-[22px] font-bold text-brand-gold-dark">
-              Nouvelle facture (brouillon)
-            </h1>
-            <p className="mt-1 max-w-2xl text-[12px] text-neutral-500">
-              Sélectionnez la partie, ajoutez les lignes, puis complétez les informations de billet
-              demandées avant création.
-            </p>
-          </div>
-          <div className="text-left md:text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
-              Avancement
-            </p>
-            <p className="mt-1 text-[13px] font-semibold text-neutral-900">{lineCountLabel}</p>
-          </div>
-        </div>
-
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="space-y-5">
             <SectionShell

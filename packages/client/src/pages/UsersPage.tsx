@@ -7,6 +7,7 @@ import { CreateUserDialog } from "./users/components/dialogs/CreateUserDialog";
 import { RolesBadge } from "./users/components/RolesBadges";
 import { AccountStatusBadge } from "./users/components/AccountStatusBadge";
 import { EditUserDialog } from "./users/components/dialogs/EditUserDialog";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -58,11 +59,12 @@ export default function UsersPage() {
     }
   }
 
+  usePageHeader({ title: "Utilisateurs" });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">Utilisateurs</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {total} compte{total !== 1 ? "s" : ""}
           </p>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { proformaApi, type Proforma } from "@/lib/proforma.api";
 import { invoiceApi } from "@/lib/invoice.api";
 import { Party, partyApi } from "@/lib/party.api";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const STATUS_LABELS: Record<Proforma["status"], string> = {
   draft: "Valide",
@@ -21,6 +22,8 @@ export default function ProformaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [promoting, setPromoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  usePageHeader({ title: proforma?.number ?? "Proforma", backTo: "/proformas" });
 
   useEffect(() => {
     proformaApi.getById(parseInt(id!)).then((res) => {
@@ -56,16 +59,8 @@ export default function ProformaDetailPage() {
 
   return (
     <div>
-      <Link
-        to="/proformas"
-        className="inline-flex items-center gap-1.5 text-[12px] text-neutral-500 hover:text-brand-gold-dark mb-4"
-      >
-        <ArrowLeft size={13} /> Retour aux proformas
-      </Link>
-
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">{proforma.number}</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {proforma.partySnapshot?.fullName} · {STATUS_LABELS[proforma.status]}
             {proforma.expiresAt &&

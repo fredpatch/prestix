@@ -7,6 +7,7 @@ import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
 import { creditApi, type CreditLot } from "@/lib/credit.api";
 import { useAuth } from "@/App";
 import { EditPartyDialog } from "./EditPartyDialog";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 export default function PartyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,8 @@ export default function PartyDetailPage() {
   const [history, setHistory] = useState<PartyHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
+  usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties" });
 
   const load = useCallback(() => {
     setLoading(true);
@@ -59,16 +62,8 @@ export default function PartyDetailPage() {
 
   return (
     <div>
-      <Link
-        to="/parties"
-        className="inline-flex items-center gap-1.5 text-[12px] text-neutral-500 hover:text-brand-gold-dark mb-4"
-      >
-        <ArrowLeft size={13} /> Retour aux parties
-      </Link>
-
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">{party.fullName}</h1>
           <div className="flex items-center gap-2 mt-1">
             {party.code && <span className="text-[11px] text-neutral-500">{party.code}</span>}
             {party.isClient && (

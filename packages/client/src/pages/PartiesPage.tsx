@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { partyApi, type Party } from "@/lib/party.api";
 import { CreatePartyDialog } from "./party/components/CreatePartyDialog";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 export default function PartiesPage() {
   const [parties, setParties] = useState<Party[]>([]);
@@ -32,11 +33,12 @@ export default function PartiesPage() {
     return () => clearTimeout(timeout);
   }, [load]);
 
+  usePageHeader({ title: "Parties" });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">Parties</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {total} partie{total !== 1 ? "s" : ""}
           </p>

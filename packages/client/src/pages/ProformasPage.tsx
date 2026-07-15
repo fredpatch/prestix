@@ -4,6 +4,7 @@ import { Loader2, Plus } from "lucide-react";
 import { proformaApi, type Proforma } from "@/lib/proforma.api";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const STATUS_STYLES: Record<Proforma["status"], string> = {
   draft: "bg-blue-50 text-blue-700",
@@ -33,11 +34,12 @@ export default function ProformasPage() {
 
   useEffect(load, []);
 
+  usePageHeader({ title: "Proformas" });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">Proformas</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {proformas.length} proforma{proformas.length !== 1 ? "s" : ""}
           </p>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   FileText,
   Receipt,
   AlertTriangle,
+  ArrowLeft,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { authApi } from "@/lib/auth.api";
 import api from "@/lib/axios";
 import { useTheme } from "@/lib/theme";
+import { usePageHeaderValue } from "./lib/page-header";
 
 interface NavItem {
   to: string;
@@ -50,6 +52,7 @@ interface LayoutProps {
 export default function Layout({ userRole, userFullName }: LayoutProps) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const pageHeader = usePageHeaderValue();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [enabledModules, setEnabledModules] = useState<Set<string> | null>(null);
@@ -156,8 +159,25 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
 
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <header className="bg-card border-b border-border flex items-center justify-between px-6 h-[57px] flex-shrink-0">
-          <h1 className="text-brand-gold-dark font-semibold text-sm truncate">PrestiX</h1>
-
+          <div className="flex items-center gap-3 min-w-0">
+            {pageHeader?.backTo && (
+              <Link
+                to={pageHeader.backTo}
+                className="flex items-center justify-center size-7 rounded-md text-muted-foreground hover:text-brand-gold-dark hover:bg-accent shrink-0"
+                title="Retour"
+              >
+                <ArrowLeft size={15} />
+              </Link>
+            )}
+            <h1 className="text-brand-gold-dark font-semibold text-sm truncate">
+              {pageHeader?.title ?? "PrestiX"}
+            </h1>
+            {pageHeader?.badge && (
+              <span className="text-[10.5px] font-medium text-muted-foreground bg-accent px-2 py-0.5 rounded shrink-0">
+                {pageHeader.badge}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-4">
             <Button
               variant="ghost"

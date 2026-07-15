@@ -4,6 +4,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { creanceApi, type CreanceRow } from "@/lib/creance.api";
 import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 export default function CreancesPage() {
   const { user } = useAuth();
@@ -45,11 +46,12 @@ export default function CreancesPage() {
   const totalPrincipal = rows.reduce((sum, r) => sum + parseFloat(r.principalDue), 0);
   const totalPenalty = rows.reduce((sum, r) => sum + parseFloat(r.penaltyDue), 0);
 
+  usePageHeader({ title: "Créances" });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">Créances</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {rows.length} échéance{rows.length !== 1 ? "s" : ""} avec solde dû
           </p>

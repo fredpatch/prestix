@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronUp, Plane, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import {
-  useFieldArray,
-  useFormContext,
-  type FieldErrors,
-  type FieldPath,
-} from "react-hook-form";
+import { useFieldArray, useFormContext, type FieldErrors, type FieldPath } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -90,10 +85,10 @@ function TicketFields({ index, line, error }: TicketFieldsProps) {
   const segment = ticket.segments[0] ?? { from: "", to: "", date: "", tripType: "one_way" };
   const isRoundTrip = segment.tripType === "round_trip";
   const ticketError = error?.ticketDetails as FieldErrors<TicketDetailsInput> | undefined;
-  const segmentError = ticketError?.segments?.[0] as FieldErrors<TicketDetailsInput["segments"][0]> | undefined;
+  const segmentError = ticketError?.segments?.[0] as
+    FieldErrors<TicketDetailsInput["segments"][0]> | undefined;
   const referenceError = ticketError?.references as
-    | FieldErrors<NonNullable<TicketDetailsInput["references"]>>
-    | undefined;
+    FieldErrors<NonNullable<TicketDetailsInput["references"]>> | undefined;
 
   return (
     <motion.div
@@ -130,10 +125,14 @@ function TicketFields({ index, line, error }: TicketFieldsProps) {
           <Select
             value={ticket.travelClass}
             onValueChange={(value) =>
-              setValue(ticketPath(index, "travelClass"), value as TicketDetailsInput["travelClass"], {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
+              setValue(
+                ticketPath(index, "travelClass"),
+                value as TicketDetailsInput["travelClass"],
+                {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                },
+              )
             }
           >
             <SelectTrigger>
@@ -338,7 +337,9 @@ export function ProformaLineItemsComposer() {
             <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
               02 / Lignes
             </p>
-            <h2 className="mt-1 text-[14px] font-semibold text-neutral-900">Contenu de la proforma</h2>
+            <h2 className="mt-1 text-[14px] font-semibold text-neutral-900">
+              Contenu de la proforma
+            </h2>
           </div>
           <Button type="button" size="sm" onClick={() => append(defaultTicketLine())}>
             <Plus size={13} /> Ajouter une ligne
@@ -391,7 +392,9 @@ export function ProformaLineItemsComposer() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => setCollapsed((state) => ({ ...state, [field.id]: !isCollapsed }))}
+                      onClick={() =>
+                        setCollapsed((state) => ({ ...state, [field.id]: !isCollapsed }))
+                      }
                       title={isCollapsed ? "Développer" : "Réduire"}
                     >
                       {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
@@ -423,7 +426,9 @@ export function ProformaLineItemsComposer() {
                           <Label>Type de ligne</Label>
                           <Select
                             value={line.lineType}
-                            onValueChange={(value) => setLineType(index, value as "ticket" | "shop")}
+                            onValueChange={(value) =>
+                              setLineType(index, value as "ticket" | "shop")
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Type" />
@@ -447,7 +452,9 @@ export function ProformaLineItemsComposer() {
                                 placeholder="Article ou service vendu"
                                 {...register(path(index, "description"))}
                               />
-                              <FieldError message={error?.description?.message as string | undefined} />
+                              <FieldError
+                                message={error?.description?.message as string | undefined}
+                              />
                             </div>
                             <div className="md:col-span-2">
                               <Label htmlFor={`quantity-${index}`}>Quantité</Label>
@@ -457,18 +464,11 @@ export function ProformaLineItemsComposer() {
                                 min={1}
                                 {...register(path(index, "quantity"), { valueAsNumber: true })}
                               />
-                              <FieldError message={error?.quantity?.message as string | undefined} />
+                              <FieldError
+                                message={error?.quantity?.message as string | undefined}
+                              />
                             </div>
                           </>
-                        )}
-
-                        {line.lineType === "ticket" && (
-                          <div className={cn(canDiscount ? "md:col-span-6" : "md:col-span-7")}>
-                            <Label>Description proforma</Label>
-                            <div className="flex h-10 items-center rounded border border-neutral-200 bg-neutral-50 px-3 text-[12px] text-neutral-500">
-                              Générée depuis le passager, le trajet et le prix de vente.
-                            </div>
-                          </div>
                         )}
 
                         {line.lineType === "shop" && (
@@ -519,17 +519,11 @@ export function ProformaLineItemsComposer() {
             <p className="mt-1 text-[11px] text-neutral-500">
               Ajoutez une ligne billetterie ou PrestiShop pour continuer.
             </p>
-            <Button type="button" size="sm" className="mt-3" onClick={() => append(defaultTicketLine())}>
-              <Plus size={13} /> Ajouter une ligne
-            </Button>
           </div>
         )}
       </div>
 
       <div className="flex justify-between border-t border-neutral-200 bg-neutral-50 px-4 py-3">
-        <Button type="button" variant="outline" size="sm" onClick={() => append(defaultShopLine())}>
-          <Plus size={13} /> Ligne PrestiShop
-        </Button>
         <p className="text-[12px] font-semibold text-neutral-900">
           Total lignes :{" "}
           {lines.reduce((sum, line) => sum + lineTotal(line), 0).toLocaleString("fr-FR")} XAF

@@ -15,6 +15,7 @@ import {
 import { settingsApi, type Setting } from "@/lib/settings.api";
 import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const MODULE_LABELS: Record<string, string> = {
   auth: "Authentification",
@@ -33,9 +34,10 @@ const MODULE_LABELS: Record<string, string> = {
 };
 
 export default function SettingsPage() {
+  usePageHeader({ title: "Paramètres" });
+
   return (
     <div>
-      <h1 className="text-lg font-bold text-brand-gold-dark mb-1">Paramètres</h1>
       <p className="text-neutral-500 text-sm mb-6">
         Paramètres financiers, visibilité des modules et catalogue de commissions.
       </p>

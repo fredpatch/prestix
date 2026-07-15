@@ -9,4 +9,4 @@ HEAD implementation status:
 - Mounted modules: bootstrap, auth, users, settings, party, party-history, credit, documents (proformas/invoices/delivery-notes/payments), penalties/creances
 - Cross-cutting middleware: authenticate.ts (JWT cookies), authorize.ts (role-level RBAC)
 - Health endpoint: GET /api/health
-- Client UI layer includes Sprint 1 admin screens, Sprint 2 Party list/detail/edit draft, Sprint 3 document list/detail/create/referrer draft, dedicated Proforma/Invoice creation pages, Sprint 4 invoice payment draft, and Sprint 5 creances/payment-penalty draft; epargne data sources remain future work
+- Client UI layer includes Sprint 1 admin screens, Sprint 2 Party list/detail/edit draft, Sprint 3 document list/detail/create/referrer draft, dedicated Proforma/Invoice creation pages, Sprint 4 invoice payment draft, and Sprint 5 creances/payment-penalty draft; routed pages set title/back/badge through `PageHeaderProvider`; epargne data sources remain future work

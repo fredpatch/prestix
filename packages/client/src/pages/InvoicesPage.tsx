@@ -4,6 +4,7 @@ import { Loader2, Plus } from "lucide-react";
 import { invoiceApi, type Invoice } from "@/lib/invoice.api";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const STATUS_STYLES: Record<Invoice["status"], string> = {
   draft: "bg-amber-50 text-amber-700",
@@ -20,6 +21,7 @@ const STATUS_LABELS: Record<Invoice["status"], string> = {
 };
 
 export default function InvoicesPage() {
+  usePageHeader({ title: "Factures" });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +39,6 @@ export default function InvoicesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-brand-gold-dark">Factures</h1>
           <p className="text-neutral-500 text-sm mt-0.5">
             {invoices.length} facture{invoices.length !== 1 ? "s" : ""}
           </p>
