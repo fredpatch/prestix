@@ -4,7 +4,7 @@ Sprint 6 is closed. Sprint 7 - PrestiShop & Stock (M9) is now underway.
 
 ## What's In Scope Today
 
-Cache/changelog sync after the Sprint 7 stock backend draft, then commit and push.
+Cache/changelog sync after the Sprint 7 shop-detail persistence update, then commit and push.
 
 ## State Of The Codebase
 
@@ -30,11 +30,20 @@ manager article setup/restock actions, append-only stock movements, row-locked
 stock balances, issue-time shop stock OUT hooks, negative override audit, and
 invoice cancellation compensation.
 
+Document-side shop details are drafted for Sprint 7: proforma shop lines persist
+article, supplier/selling price, and passenger metadata in `proforma_shop_details`;
+direct invoice drafts/add-line flows persist invoice `shop_details`; proforma
+promotion carries shop details into invoice lines.
+
 ## Validation Snapshot (2026-07-15)
 
 - `npm run typecheck -w packages/server`: PASS after stock backend draft.
 - `npm run build -w packages/server`: PASS after stock backend draft.
+- `npm run db:generate -w packages/server`: PASS, generated `20260715180806_lazy_ultimo`.
+- `npm run typecheck -w packages/server`: PASS after shop-detail persistence update.
+- `npm run build -w packages/server`: PASS after shop-detail persistence update.
 - Runtime stock API smoke is pending.
+- Shop-detail create/read/promote smoke is pending.
 - Invoice issue/cancel stock movement smoke is pending.
 - PDF visual smoke, penalty/creance runtime smoke, and legacy Beta cross-compare are still pending.
 

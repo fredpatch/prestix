@@ -92,8 +92,10 @@
 - Wired invoice issue to create idempotent stock OUT movements for shop lines with `articleId` inside the invoice transaction.
 - Added invoice issue controller support for manager-gated negative stock override requests and stock error responses.
 - Wired invoice cancellation to create compensating stock adjustments for previously recorded shop OUT movements.
+- Added `proforma_shop_details` schema/migration (`20260715180806_lazy_ultimo`) so quoted shop lines can carry article, supplier/selling price, and passenger metadata before promotion.
+- Extended proforma/invoice line views and draft/add/promote flows to persist and return shop details alongside ticket details.
 - Added stock audit logging for article mutations and negative-stock overrides.
-- Validation: server typecheck/build pass; runtime stock API and invoice stock movement smoke still pending.
+- Validation: server typecheck/build pass after shop-detail persistence update; runtime stock API, shop-detail, and invoice stock movement smoke still pending.
 
 ## Validation Notes (2026-07-12)
 

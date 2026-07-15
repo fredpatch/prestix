@@ -1,4 +1,9 @@
-import { TicketDetailsInput, TicketDetailsView } from "./proforma.types.js";
+import {
+  ShopDetailsInput,
+  ShopDetailsView,
+  TicketDetailsInput,
+  TicketDetailsView,
+} from "./proforma.types.js";
 
 export interface InvoiceLineInput {
   lineType: "ticket" | "shop";
@@ -7,6 +12,7 @@ export interface InvoiceLineInput {
   unitPrice: number;
   discount?: number;
   ticketDetails?: TicketDetailsInput;
+  shopDetails?: ShopDetailsInput;
 }
 
 export interface InvoiceLineView {
@@ -18,6 +24,7 @@ export interface InvoiceLineView {
   discount: string;
   lineTotal: string;
   ticketDetails?: TicketDetailsView;
+  shopDetails?: ShopDetailsView;
 }
 
 export interface InvoiceView {

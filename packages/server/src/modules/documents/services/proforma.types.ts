@@ -14,6 +14,13 @@ export interface TicketDetailsInput {
   sellingPrice: number;
 }
 
+export interface ShopDetailsInput {
+  articleId?: number; // nullable — pure service item, no stock linkage
+  supplierPrice: number;
+  sellingPrice: number;
+  passengerName?: string; // dropdown of invoice's ticket passengers, or free-text
+}
+
 export interface ProformaLineInput {
   lineType: "ticket" | "shop";
   description: string;
@@ -21,6 +28,7 @@ export interface ProformaLineInput {
   unitPrice: number;
   discount?: number;
   ticketDetails?: TicketDetailsInput;
+  shopDetails?: ShopDetailsInput;
 }
 
 export interface TicketDetailsView {
@@ -33,6 +41,14 @@ export interface TicketDetailsView {
   sellingPrice: string;
 }
 
+export interface ShopDetailsView {
+  id: number;
+  articleId?: number;
+  supplierPrice: string;
+  sellingPrice: string;
+  passengerName?: string;
+}
+
 export interface ProformaLineView {
   id: number;
   lineType: string;
@@ -42,6 +58,7 @@ export interface ProformaLineView {
   discount: string;
   lineTotal: string;
   ticketDetails?: TicketDetailsView;
+  shopDetails?: ShopDetailsView;
 }
 
 export interface ProformaView {

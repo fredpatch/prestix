@@ -13,6 +13,7 @@ import {
   proformaTicketDetails,
   shopDetails,
   stockMovements,
+  proformaShopDetails,
 } from "../../../db/schema.js";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
@@ -64,14 +65,23 @@ async function toView(
   inv: typeof invoices.$inferSelect,
   lines: (typeof invoiceLines.$inferSelect)[],
 ): Promise<InvoiceView> {
-  const linesWithTickets = await Promise.all(
+  const linesWithDetails = await Promise.all(
     lines.map(async (l) => {
-      if (l.lineType !== "ticket") return { line: l, ticket: undefined };
-      const [ticket] = await db
-        .select()
-        .from(ticketDetails)
-        .where(eq(ticketDetails.invoiceLineId, l.id));
-      return { line: l, ticket };
+      if (l.lineType === "ticket") {
+        const [ticket] = await db
+          .select()
+          .from(ticketDetails)
+          .where(eq(ticketDetails.invoiceLineId, l.id));
+        return { line: l, ticket, shop: undefined };
+      }
+      if (l.lineType === "shop") {
+        const [shop] = await db
+          .select()
+          .from(shopDetails)
+          .where(eq(shopDetails.invoiceLineId, l.id));
+        return { line: l, ticket: undefined, shop };
+      }
+      return { line: l, ticket: undefined, shop: undefined };
     }),
   );
 
@@ -92,7 +102,7 @@ async function toView(
     cancelledAt: inv.cancelledAt ?? undefined,
     cancelReason: inv.cancelReason ?? undefined,
     createdAt: inv.createdAt,
-    lines: linesWithTickets.map(({ line: l, ticket }) => ({
+    lines: linesWithDetails.map(({ line: l, ticket, shop }) => ({
       id: l.id,
       lineType: l.lineType,
       description: l.description,
@@ -109,6 +119,15 @@ async function toView(
             references: ticket.references ?? undefined,
             supplierPrice: ticket.supplierPrice,
             sellingPrice: ticket.sellingPrice,
+          }
+        : undefined,
+      shopDetails: shop
+        ? {
+            id: shop.id,
+            articleId: shop.articleId ?? undefined,
+            supplierPrice: shop.supplierPrice,
+            sellingPrice: shop.sellingPrice,
+            passengerName: shop.passengerName ?? undefined,
           }
         : undefined,
     })),
@@ -179,16 +198,28 @@ export async function createDraftInvoice(params: CreateDraftInvoiceParams): Prom
     // M8: ticket details are now stored in a separate table, linked to the invoice line. This is a no-op for shop lines, but for ticket lines we insert the ticket details here.
     for (let i = 0; i < params.lines.length; i++) {
       const td = params.lines[i].ticketDetails;
-      if (!td) continue;
-      await tx.insert(ticketDetails).values({
-        invoiceLineId: insertedLines[i].id,
-        travelClass: td.travelClass,
-        passengerName: td.passengerName,
-        segments: td.segments,
-        references: td.references,
-        supplierPrice: td.supplierPrice.toFixed(2),
-        sellingPrice: td.sellingPrice.toFixed(2),
-      });
+      if (td) {
+        await tx.insert(ticketDetails).values({
+          invoiceLineId: insertedLines[i].id,
+          travelClass: td.travelClass,
+          passengerName: td.passengerName,
+          segments: td.segments,
+          references: td.references,
+          supplierPrice: td.supplierPrice.toFixed(2),
+          sellingPrice: td.sellingPrice.toFixed(2),
+        });
+      }
+
+      const sd = params.lines[i].shopDetails;
+      if (sd) {
+        await tx.insert(shopDetails).values({
+          invoiceLineId: insertedLines[i].id,
+          articleId: sd.articleId,
+          supplierPrice: sd.supplierPrice.toFixed(2),
+          sellingPrice: sd.sellingPrice.toFixed(2),
+          passengerName: sd.passengerName,
+        });
+      }
     }
 
     await recomputeInvoiceTotals(tx, invoice.id);
@@ -224,13 +255,23 @@ export async function promoteProformaToInvoice(
   if (sourceLines.length === 0) throw new Error("PROFORMA_HAS_NO_LINES");
 
   const sourceTicketDetailsByLineId = new Map<number, typeof proformaTicketDetails.$inferSelect>();
+  const sourceShopDetailsByLineId = new Map<number, typeof proformaShopDetails.$inferSelect>();
+
   for (const l of sourceLines) {
-    if (l.lineType !== "ticket") continue;
-    const [td] = await db
-      .select()
-      .from(proformaTicketDetails)
-      .where(eq(proformaTicketDetails.proformaLineId, l.id));
-    if (td) sourceTicketDetailsByLineId.set(l.id, td);
+    if (l.lineType === "ticket") {
+      const [td] = await db
+        .select()
+        .from(proformaTicketDetails)
+        .where(eq(proformaTicketDetails.proformaLineId, l.id));
+      if (td) sourceTicketDetailsByLineId.set(l.id, td);
+    }
+    if (l.lineType === "shop") {
+      const [sd] = await db
+        .select()
+        .from(proformaShopDetails)
+        .where(eq(proformaShopDetails.proformaLineId, l.id));
+      if (sd) sourceShopDetailsByLineId.set(l.id, sd);
+    }
   }
 
   const [party] = await db.select().from(parties).where(eq(parties.id, proforma.partyId));
@@ -265,16 +306,28 @@ export async function promoteProformaToInvoice(
     // M8: ticket lines carry a linked details row — inserted in the same order
     for (let i = 0; i < sourceLines.length; i++) {
       const td = sourceTicketDetailsByLineId.get(sourceLines[i].id);
-      if (!td) continue;
-      await tx.insert(ticketDetails).values({
-        invoiceLineId: insertedLines[i].id,
-        travelClass: td.travelClass,
-        passengerName: td.passengerName,
-        segments: td.segments,
-        references: td.references,
-        supplierPrice: td.supplierPrice,
-        sellingPrice: td.sellingPrice,
-      });
+      if (td) {
+        await tx.insert(ticketDetails).values({
+          invoiceLineId: insertedLines[i].id,
+          travelClass: td.travelClass,
+          passengerName: td.passengerName,
+          segments: td.segments,
+          references: td.references,
+          supplierPrice: td.supplierPrice,
+          sellingPrice: td.sellingPrice,
+        });
+      }
+
+      const sd = sourceShopDetailsByLineId.get(sourceLines[i].id);
+      if (sd) {
+        await tx.insert(shopDetails).values({
+          invoiceLineId: insertedLines[i].id,
+          articleId: sd.articleId,
+          supplierPrice: sd.supplierPrice,
+          sellingPrice: sd.sellingPrice,
+          passengerName: sd.passengerName,
+        });
+      }
     }
 
     await recomputeInvoiceTotals(tx, invoice.id);
@@ -327,6 +380,17 @@ export async function addLine(
         references: td.references,
         supplierPrice: td.supplierPrice.toFixed(2),
         sellingPrice: td.sellingPrice.toFixed(2),
+      });
+    }
+
+    if (line.shopDetails) {
+      const sd = line.shopDetails;
+      await tx.insert(shopDetails).values({
+        invoiceLineId: inserted.id,
+        articleId: sd.articleId,
+        supplierPrice: sd.supplierPrice.toFixed(2),
+        sellingPrice: sd.sellingPrice.toFixed(2),
+        passengerName: sd.passengerName,
       });
     }
 

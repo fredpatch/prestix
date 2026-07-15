@@ -6,6 +6,7 @@ import {
   users,
   roleLevel,
   proformaTicketDetails,
+  proformaShopDetails,
 } from "../../../db/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
@@ -42,14 +43,23 @@ async function toView(
   p: typeof proformas.$inferSelect,
   lines: (typeof proformaLines.$inferSelect)[],
 ): Promise<ProformaView> {
-  const linesWithTickets = await Promise.all(
+  const linesWithDetails = await Promise.all(
     lines.map(async (l) => {
-      if (l.lineType !== "ticket") return { line: l, ticket: undefined };
-      const [ticket] = await db
-        .select()
-        .from(proformaTicketDetails)
-        .where(eq(proformaTicketDetails.proformaLineId, l.id));
-      return { line: l, ticket };
+      if (l.lineType === "ticket") {
+        const [ticket] = await db
+          .select()
+          .from(proformaTicketDetails)
+          .where(eq(proformaTicketDetails.proformaLineId, l.id));
+        return { line: l, ticket, shop: undefined };
+      }
+      if (l.lineType === "shop") {
+        const [shop] = await db
+          .select()
+          .from(proformaShopDetails)
+          .where(eq(proformaShopDetails.proformaLineId, l.id));
+        return { line: l, ticket: undefined, shop };
+      }
+      return { line: l, ticket: undefined, shop: undefined };
     }),
   );
 
@@ -62,7 +72,7 @@ async function toView(
     status: p.status,
     expiresAt: p.expiresAt ?? undefined,
     createdAt: p.createdAt,
-    lines: linesWithTickets.map(({ line: l, ticket }) => ({
+    lines: linesWithDetails.map(({ line: l, ticket, shop }) => ({
       id: l.id,
       lineType: l.lineType,
       description: l.description,
@@ -79,6 +89,15 @@ async function toView(
             references: ticket.references ?? undefined,
             supplierPrice: ticket.supplierPrice,
             sellingPrice: ticket.sellingPrice,
+          }
+        : undefined,
+      shopDetails: shop
+        ? {
+            id: shop.id,
+            articleId: shop.articleId ?? undefined,
+            supplierPrice: shop.supplierPrice,
+            sellingPrice: shop.sellingPrice,
+            passengerName: shop.passengerName ?? undefined,
           }
         : undefined,
     })),
@@ -140,16 +159,28 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
     // as params.lines/insertedLines so index-matching is safe here.
     for (let i = 0; i < params.lines.length; i++) {
       const td = params.lines[i].ticketDetails;
-      if (!td) continue;
-      await tx.insert(proformaTicketDetails).values({
-        proformaLineId: insertedLines[i].id,
-        travelClass: td.travelClass,
-        passengerName: td.passengerName,
-        segments: td.segments,
-        references: td.references,
-        supplierPrice: td.supplierPrice.toFixed(2),
-        sellingPrice: td.sellingPrice.toFixed(2),
-      });
+      if (td) {
+        await tx.insert(proformaTicketDetails).values({
+          proformaLineId: insertedLines[i].id,
+          travelClass: td.travelClass,
+          passengerName: td.passengerName,
+          segments: td.segments,
+          references: td.references,
+          supplierPrice: td.supplierPrice.toFixed(2),
+          sellingPrice: td.sellingPrice.toFixed(2),
+        });
+      }
+
+      const sd = params.lines[i].shopDetails;
+      if (sd) {
+        await tx.insert(proformaShopDetails).values({
+          proformaLineId: insertedLines[i].id,
+          articleId: sd.articleId,
+          supplierPrice: sd.supplierPrice.toFixed(2),
+          sellingPrice: sd.sellingPrice.toFixed(2),
+          passengerName: sd.passengerName,
+        });
+      }
     }
 
     return { proforma, insertedLines };

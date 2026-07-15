@@ -460,6 +460,17 @@ export const shopDetails = pgTable("shop_details", {
   passengerName: varchar("passenger_name", { length: 255 }), // dropdown or free-text
 });
 
+export const proformaShopDetails = pgTable("proforma_shop_details", {
+  id: serial("id").primaryKey(),
+  proformaLineId: integer("proforma_line_id")
+    .notNull()
+    .references(() => proformaLines.id),
+  articleId: integer("article_id").references(() => stockArticles.id),
+  supplierPrice: numeric("supplier_price", { precision: 12, scale: 2 }).notNull().default("0"),
+  sellingPrice: numeric("selling_price", { precision: 12, scale: 2 }).notNull(),
+  passengerName: varchar("passenger_name", { length: 255 }),
+});
+
 // ─────────────────────────────────────────────────────────────────
 // M10 — Commission Divers
 // ─────────────────────────────────────────────────────────────────
