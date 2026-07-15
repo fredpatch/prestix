@@ -34,6 +34,8 @@ export const invoiceApi = {
     api.post<Invoice>(`/invoices/from-proforma/${proformaId}`),
   addLine: (invoiceId: number, line: DocumentLineInput) =>
     api.post<Invoice>(`/invoices/${invoiceId}/lines`, line),
+  updateLine: (invoiceId: number, lineId: number, patch: Partial<DocumentLineInput>) =>
+    api.patch<Invoice>(`/invoices/${invoiceId}/lines/${lineId}`, patch),
   removeLine: (invoiceId: number, lineId: number) =>
     api.delete<Invoice>(`/invoices/${invoiceId}/lines/${lineId}`),
   issue: (

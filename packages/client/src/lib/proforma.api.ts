@@ -86,4 +86,10 @@ export const proformaApi = {
   getById: (id: number) => api.get<Proforma>(`/proformas/${id}`),
   create: (partyId: number, lines: DocumentLineInput[], referrerPartyId?: number) =>
     api.post<Proforma>("/proformas", { partyId, referrerPartyId, lines }),
+  addLine: (proformaId: number, line: DocumentLineInput) =>
+    api.post<Proforma>(`/proformas/${proformaId}/lines`, line),
+  updateLine: (proformaId: number, lineId: number, patch: Partial<DocumentLineInput>) =>
+    api.patch<Proforma>(`/proformas/${proformaId}/lines/${lineId}`, patch),
+  removeLine: (proformaId: number, lineId: number) =>
+    api.delete<Proforma>(`/proformas/${proformaId}/lines/${lineId}`),
 };
