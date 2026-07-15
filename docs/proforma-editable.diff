@@ -1,0 +1,194 @@
+diff --git a/packages/server/src/modules/documents/controllers/proforma.controller.ts b/packages/server/src/modules/documents/controllers/proforma.controller.ts
+index b7d8baa..bc0f445 100644
+--- a/packages/server/src/modules/documents/controllers/proforma.controller.ts
++++ b/packages/server/src/modules/documents/controllers/proforma.controller.ts
+@@ -10,6 +10,8 @@ function handleError(res: Response, error: unknown): void {
+     DISCOUNT_REQUIRES_MANAGER: 403,
+     DISCOUNT_CANNOT_BE_NEGATIVE: 400,
+     DISCOUNT_EXCEEDS_LINE_AMOUNT: 400,
++    PROFORMA_NOT_EDITABLE: 400,
++    PROFORMA_ALREADY_PROMOTED: 400,
+   };
+   const code = status[message] ?? 500;
+   if (code === 500) console.error("[proforma]", error);
+@@ -52,3 +54,24 @@ export async function create(req: Request, res: Response): Promise<void> {
+     handleError(res, error);
+   }
+ }
++
++export async function addLine(req: Request, res: Response): Promise<void> {
++  try {
++    const proformaId = parseInt(req.params.id);
++    const proforma = await proformaService.addProformaLine(proformaId, req.body, req.user!.userId);
++    res.json(proforma);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
++
++export async function removeLine(req: Request, res: Response): Promise<void> {
++  try {
++    const proformaId = parseInt(req.params.id);
++    const lineId = parseInt(req.params.lineId);
++    const proforma = await proformaService.removeProformaLine(proformaId, lineId, req.user!.userId);
++    res.json(proforma);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
+diff --git a/packages/server/src/modules/documents/routes/proforma.routes.ts b/packages/server/src/modules/documents/routes/proforma.routes.ts
+index 1535846..3570a69 100644
+--- a/packages/server/src/modules/documents/routes/proforma.routes.ts
++++ b/packages/server/src/modules/documents/routes/proforma.routes.ts
+@@ -12,5 +12,7 @@ router.get("/", requireAgent, proformaController.list);
+ router.get("/:id", requireAgent, proformaController.getById);
+ router.get("/:id/pdf", requireAgent, proformaPdfController.download);
+ router.post("/", requireAgent, proformaController.create);
++router.post("/:id/lines", requireAgent, proformaController.addLine);
++router.delete("/:id/lines/:lineId", requireAgent, proformaController.removeLine);
+ 
+ export default router;
+diff --git a/packages/server/src/modules/documents/services/proforma.service.ts b/packages/server/src/modules/documents/services/proforma.service.ts
+index 09feef3..719573f 100644
+--- a/packages/server/src/modules/documents/services/proforma.service.ts
++++ b/packages/server/src/modules/documents/services/proforma.service.ts
+@@ -7,11 +7,12 @@ import {
+   roleLevel,
+   proformaTicketDetails,
+   proformaShopDetails,
++  invoices,
+ } from "../../../db/schema.js";
+ import { eq, and, lt } from "drizzle-orm";
+ import { logAudit } from "../../auth/services/auth.service.js";
+ import { getNextNumber } from "./counters.service.js";
+-import type { CreateProformaParams, ProformaView } from "./proforma.types.js";
++import type { CreateProformaParams, ProformaLineInput, ProformaView } from "./proforma.types.js";
+ 
+ const PROFORMA_VALIDITY_HOURS = 48;
+ 
+@@ -39,6 +40,21 @@ async function assertCanDiscount(userId: number, lines: { discount?: number }[])
+   }
+ }
+ 
++// A proforma is editable while it's still a live, unresolved quote — locked
++// once expired/cancelled (nothing left to negotiate) or once an invoice has
++// been promoted from it (that FK reference IS the "promoted" signal — there's
++// no separate stored status for it, by design from Sprint 3).
++async function assertEditable(id: number): Promise<typeof proformas.$inferSelect> {
++  const [proforma] = await db.select().from(proformas).where(eq(proformas.id, id));
++  if (!proforma) throw new Error("PROFORMA_NOT_FOUND");
++  if (proforma.status !== "draft") throw new Error("PROFORMA_NOT_EDITABLE");
++
++  const [promotedInvoice] = await db.select().from(invoices).where(eq(invoices.proformaId, id));
++  if (promotedInvoice) throw new Error("PROFORMA_ALREADY_PROMOTED");
++
++  return proforma;
++}
++
+ async function toView(
+   p: typeof proformas.$inferSelect,
+   lines: (typeof proformaLines.$inferSelect)[],
+@@ -197,6 +213,103 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
+   return toView(result.proforma, result.insertedLines);
+ }
+ 
++// Real gap fixed here: proformas were previously immutable after creation —
++// "create a new one instead" was the answer to any edit need. That was wrong
++// for the actual negotiation workflow (client says "not quite, I also want
++// X" — the agent needs to adjust the SAME quote, not spawn a new number every
++// round). Editing resets the 48h clock — an active negotiation shouldn't
++// silently expire mid-conversation (explicit decision, not a default).
++export async function addProformaLine(
++  proformaId: number,
++  line: ProformaLineInput,
++  userId: number,
++): Promise<ProformaView> {
++  await assertEditable(proformaId);
++  assertDiscountBounds([line]);
++  await assertCanDiscount(userId, [line]);
++
++  const quantity = line.quantity ?? 1;
++  const discount = line.discount ?? 0;
++  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
++
++  await db.transaction(async (tx: any) => {
++    const [inserted] = await tx
++      .insert(proformaLines)
++      .values({
++        proformaId,
++        lineType: line.lineType,
++        description: line.description,
++        quantity,
++        unitPrice: line.unitPrice.toFixed(2),
++        discount: discount.toFixed(2),
++        lineTotal: lineTotal(line.unitPrice, quantity, discount).toFixed(2),
++      })
++      .returning();
++
++    if (line.ticketDetails) {
++      const td = line.ticketDetails;
++      await tx.insert(proformaTicketDetails).values({
++        proformaLineId: inserted.id,
++        travelClass: td.travelClass,
++        passengerName: td.passengerName,
++        segments: td.segments,
++        references: td.references,
++        supplierPrice: td.supplierPrice.toFixed(2),
++        sellingPrice: td.sellingPrice.toFixed(2),
++      });
++    }
++
++    if (line.shopDetails) {
++      const sd = line.shopDetails;
++      await tx.insert(proformaShopDetails).values({
++        proformaLineId: inserted.id,
++        articleId: sd.articleId,
++        supplierPrice: sd.supplierPrice.toFixed(2),
++        sellingPrice: sd.sellingPrice.toFixed(2),
++        passengerName: sd.passengerName,
++      });
++    }
++
++    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
++  });
++
++  await logAudit({
++    userId,
++    action: "PROFORMA_LINE_ADDED",
++    entityType: "proformas",
++    entityId: String(proformaId),
++  });
++
++  return getProformaById(proformaId);
++}
++
++export async function removeProformaLine(
++  proformaId: number,
++  lineId: number,
++  userId: number,
++): Promise<ProformaView> {
++  await assertEditable(proformaId);
++
++  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
++
++  await db.transaction(async (tx: any) => {
++    await tx
++      .delete(proformaLines)
++      .where(and(eq(proformaLines.id, lineId), eq(proformaLines.proformaId, proformaId)));
++    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
++  });
++
++  await logAudit({
++    userId,
++    action: "PROFORMA_LINE_REMOVED",
++    entityType: "proformas",
++    entityId: String(proformaId),
++    metadata: { lineId },
++  });
++
++  return getProformaById(proformaId);
++}
++
+ export async function getProformaById(id: number): Promise<ProformaView> {
+   const [proforma] = await db.select().from(proformas).where(eq(proformas.id, id));
+   if (!proforma) throw new Error("PROFORMA_NOT_FOUND");

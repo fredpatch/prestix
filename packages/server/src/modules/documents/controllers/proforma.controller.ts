@@ -10,6 +10,8 @@ function handleError(res: Response, error: unknown): void {
     DISCOUNT_REQUIRES_MANAGER: 403,
     DISCOUNT_CANNOT_BE_NEGATIVE: 400,
     DISCOUNT_EXCEEDS_LINE_AMOUNT: 400,
+    PROFORMA_NOT_EDITABLE: 400,
+    PROFORMA_ALREADY_PROMOTED: 400,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[proforma]", error);
@@ -48,6 +50,27 @@ export async function create(req: Request, res: Response): Promise<void> {
       referrerPartyId,
     });
     res.status(201).json(proforma);
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+export async function addLine(req: Request, res: Response): Promise<void> {
+  try {
+    const proformaId = parseInt(req.params.id);
+    const proforma = await proformaService.addProformaLine(proformaId, req.body, req.user!.userId);
+    res.json(proforma);
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+export async function removeLine(req: Request, res: Response): Promise<void> {
+  try {
+    const proformaId = parseInt(req.params.id);
+    const lineId = parseInt(req.params.lineId);
+    const proforma = await proformaService.removeProformaLine(proformaId, lineId, req.user!.userId);
+    res.json(proforma);
   } catch (error) {
     handleError(res, error);
   }

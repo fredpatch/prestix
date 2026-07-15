@@ -7,11 +7,12 @@ import {
   roleLevel,
   proformaTicketDetails,
   proformaShopDetails,
+  invoices,
 } from "../../../db/schema.js";
 import { eq, and, lt } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { getNextNumber } from "./counters.service.js";
-import type { CreateProformaParams, ProformaView } from "./proforma.types.js";
+import type { CreateProformaParams, ProformaLineInput, ProformaView } from "./proforma.types.js";
 
 const PROFORMA_VALIDITY_HOURS = 48;
 
@@ -37,6 +38,21 @@ async function assertCanDiscount(userId: number, lines: { discount?: number }[])
   if (!actor || roleLevel[actor.role] < roleLevel.manager) {
     throw new Error("DISCOUNT_REQUIRES_MANAGER");
   }
+}
+
+// A proforma is editable while it's still a live, unresolved quote — locked
+// once expired/cancelled (nothing left to negotiate) or once an invoice has
+// been promoted from it (that FK reference IS the "promoted" signal — there's
+// no separate stored status for it, by design from Sprint 3).
+async function assertEditable(id: number): Promise<typeof proformas.$inferSelect> {
+  const [proforma] = await db.select().from(proformas).where(eq(proformas.id, id));
+  if (!proforma) throw new Error("PROFORMA_NOT_FOUND");
+  if (proforma.status !== "draft") throw new Error("PROFORMA_NOT_EDITABLE");
+
+  const [promotedInvoice] = await db.select().from(invoices).where(eq(invoices.proformaId, id));
+  if (promotedInvoice) throw new Error("PROFORMA_ALREADY_PROMOTED");
+
+  return proforma;
 }
 
 async function toView(
@@ -195,6 +211,103 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
   });
 
   return toView(result.proforma, result.insertedLines);
+}
+
+// Real gap fixed here: proformas were previously immutable after creation —
+// "create a new one instead" was the answer to any edit need. That was wrong
+// for the actual negotiation workflow (client says "not quite, I also want
+// X" — the agent needs to adjust the SAME quote, not spawn a new number every
+// round). Editing resets the 48h clock — an active negotiation shouldn't
+// silently expire mid-conversation (explicit decision, not a default).
+export async function addProformaLine(
+  proformaId: number,
+  line: ProformaLineInput,
+  userId: number,
+): Promise<ProformaView> {
+  await assertEditable(proformaId);
+  assertDiscountBounds([line]);
+  await assertCanDiscount(userId, [line]);
+
+  const quantity = line.quantity ?? 1;
+  const discount = line.discount ?? 0;
+  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
+
+  await db.transaction(async (tx: any) => {
+    const [inserted] = await tx
+      .insert(proformaLines)
+      .values({
+        proformaId,
+        lineType: line.lineType,
+        description: line.description,
+        quantity,
+        unitPrice: line.unitPrice.toFixed(2),
+        discount: discount.toFixed(2),
+        lineTotal: lineTotal(line.unitPrice, quantity, discount).toFixed(2),
+      })
+      .returning();
+
+    if (line.ticketDetails) {
+      const td = line.ticketDetails;
+      await tx.insert(proformaTicketDetails).values({
+        proformaLineId: inserted.id,
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      });
+    }
+
+    if (line.shopDetails) {
+      const sd = line.shopDetails;
+      await tx.insert(proformaShopDetails).values({
+        proformaLineId: inserted.id,
+        articleId: sd.articleId,
+        supplierPrice: sd.supplierPrice.toFixed(2),
+        sellingPrice: sd.sellingPrice.toFixed(2),
+        passengerName: sd.passengerName,
+      });
+    }
+
+    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
+  });
+
+  await logAudit({
+    userId,
+    action: "PROFORMA_LINE_ADDED",
+    entityType: "proformas",
+    entityId: String(proformaId),
+  });
+
+  return getProformaById(proformaId);
+}
+
+export async function removeProformaLine(
+  proformaId: number,
+  lineId: number,
+  userId: number,
+): Promise<ProformaView> {
+  await assertEditable(proformaId);
+
+  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
+
+  await db.transaction(async (tx: any) => {
+    await tx
+      .delete(proformaLines)
+      .where(and(eq(proformaLines.id, lineId), eq(proformaLines.proformaId, proformaId)));
+    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
+  });
+
+  await logAudit({
+    userId,
+    action: "PROFORMA_LINE_REMOVED",
+    entityType: "proformas",
+    entityId: String(proformaId),
+    metadata: { lineId },
+  });
+
+  return getProformaById(proformaId);
 }
 
 export async function getProformaById(id: number): Promise<ProformaView> {
