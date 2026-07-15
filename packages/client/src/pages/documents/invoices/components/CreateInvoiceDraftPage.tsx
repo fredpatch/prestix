@@ -6,7 +6,6 @@ import { PartySelect } from "@/pages/documents/PartySelect";
 import { invoiceApi } from "@/lib/invoice.api";
 import type { DocumentLineInput } from "@/lib/proforma.api";
 import type { Party } from "@/lib/party.api";
-import { LineItemsBuilder } from "@/components/customs/LineItemsBuilder";
 
 export default function CreateInvoiceDraftPage() {
   const navigate = useNavigate();
@@ -71,7 +70,9 @@ export default function CreateInvoiceDraftPage() {
         </div>
         <div>
           <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Lignes</label>
-          <LineItemsBuilder lines={lines} onChange={setLines} />
+          <p className="text-[11px] text-neutral-500 mb-1.5">
+            Ajoutez des lignes de facture pour les billets ou les articles de boutique.
+          </p>
         </div>
         {error && <p className="text-[11px] text-red-600">{error}</p>}
 
