@@ -23,6 +23,7 @@ function handleError(res: Response, error: unknown): void {
     MOVEMENT_ALREADY_RECORDED: 409,
     INSUFFICIENT_STOCK: 400,
     NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER: 403,
+    INVOICE_LINE_NOT_FOUND: 404,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[invoice]", error);
@@ -91,6 +92,17 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
     const invoiceId = parseInt(req.params.id);
     const lineId = parseInt(req.params.lineId);
     const invoice = await invoiceService.removeLine(invoiceId, lineId, req.user!.userId);
+    res.json(invoice);
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+export async function updateLine(req: Request, res: Response): Promise<void> {
+  try {
+    const invoiceId = parseInt(req.params.id);
+    const lineId = parseInt(req.params.lineId);
+    const invoice = await invoiceService.updateLine(invoiceId, lineId, req.body, req.user!.userId);
     res.json(invoice);
   } catch (error) {
     handleError(res, error);

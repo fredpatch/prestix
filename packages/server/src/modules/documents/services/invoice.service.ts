@@ -430,6 +430,99 @@ export async function removeLine(
   return getInvoiceById(invoiceId);
 }
 
+// Same real in-place edit as proforma's updateProformaLine — draft-only,
+// re-validates discount bounds/role against the NEW values, recomputes
+// invoice totals. Type of line can't change here; remove+re-add for that.
+export async function updateLine(
+  invoiceId: number,
+  lineId: number,
+  patch: Partial<InvoiceLineInput>,
+  userId: number,
+): Promise<InvoiceView> {
+  await assertDraft(invoiceId);
+
+  const [existing] = await db
+    .select()
+    .from(invoiceLines)
+    .where(and(eq(invoiceLines.id, lineId), eq(invoiceLines.invoiceId, invoiceId)));
+  if (!existing) throw new Error("INVOICE_LINE_NOT_FOUND");
+
+  const unitPrice = patch.unitPrice ?? parseFloat(existing.unitPrice);
+  const quantity = patch.quantity ?? existing.quantity;
+  const discount = patch.discount ?? parseFloat(existing.discount);
+
+  assertDiscountBounds([{ unitPrice, quantity, discount }]);
+  await assertCanDiscount(userId, [{ discount }]);
+
+  await db.transaction(async (tx: any) => {
+    await tx
+      .update(invoiceLines)
+      .set({
+        description: patch.description ?? existing.description,
+        quantity,
+        unitPrice: unitPrice.toFixed(2),
+        discount: discount.toFixed(2),
+        lineTotal: lineTotal(unitPrice, quantity, discount).toFixed(2),
+      })
+      .where(eq(invoiceLines.id, lineId));
+
+    if (existing.lineType === "ticket" && patch.ticketDetails) {
+      const td = patch.ticketDetails;
+      const [currentDetails] = await tx
+        .select()
+        .from(ticketDetails)
+        .where(eq(ticketDetails.invoiceLineId, lineId));
+
+      const values = {
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      };
+
+      if (currentDetails) {
+        await tx.update(ticketDetails).set(values).where(eq(ticketDetails.invoiceLineId, lineId));
+      } else {
+        await tx.insert(ticketDetails).values({ invoiceLineId: lineId, ...values });
+      }
+    }
+
+    if (existing.lineType === "shop" && patch.shopDetails) {
+      const sd = patch.shopDetails;
+      const [currentDetails] = await tx
+        .select()
+        .from(shopDetails)
+        .where(eq(shopDetails.invoiceLineId, lineId));
+
+      const values = {
+        articleId: sd.articleId,
+        supplierPrice: sd.supplierPrice.toFixed(2),
+        sellingPrice: sd.sellingPrice.toFixed(2),
+        passengerName: sd.passengerName,
+      };
+
+      if (currentDetails) {
+        await tx.update(shopDetails).set(values).where(eq(shopDetails.invoiceLineId, lineId));
+      } else {
+        await tx.insert(shopDetails).values({ invoiceLineId: lineId, ...values });
+      }
+    }
+
+    await recomputeInvoiceTotals(tx, invoiceId);
+  });
+
+  await logAudit({
+    userId,
+    action: "INVOICE_LINE_UPDATED",
+    entityType: "invoices",
+    entityId: String(invoiceId),
+    metadata: { lineId, patch },
+  });
+  return getInvoiceById(invoiceId);
+}
+
 // The single commitment point — M4: "one DB transaction: status → issued, allocate
 // invoice number, mark attached orders invoiced, decrement stock. All-or-nothing.
 // Idempotent via requestId."

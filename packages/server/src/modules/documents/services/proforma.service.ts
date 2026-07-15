@@ -310,6 +310,111 @@ export async function removeProformaLine(
   return getProformaById(proformaId);
 }
 
+// Real in-place edit — "1 bag → 2 bags" no longer means delete-then-recreate.
+// Type of line (ticket vs shop) can't change here; that's a structural
+// difference big enough to warrant remove+re-add instead, same as before.
+export async function updateProformaLine(
+  proformaId: number,
+  lineId: number,
+  patch: Partial<ProformaLineInput>,
+  userId: number,
+): Promise<ProformaView> {
+  await assertEditable(proformaId);
+
+  const [existing] = await db
+    .select()
+    .from(proformaLines)
+    .where(and(eq(proformaLines.id, lineId), eq(proformaLines.proformaId, proformaId)));
+  if (!existing) throw new Error("PROFORMA_LINE_NOT_FOUND");
+
+  const unitPrice = patch.unitPrice ?? parseFloat(existing.unitPrice);
+  const quantity = patch.quantity ?? existing.quantity;
+  const discount = patch.discount ?? parseFloat(existing.discount);
+
+  assertDiscountBounds([{ unitPrice, quantity, discount }]);
+  await assertCanDiscount(userId, [{ discount }]);
+
+  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
+
+  await db.transaction(async (tx: any) => {
+    await tx
+      .update(proformaLines)
+      .set({
+        description: patch.description ?? existing.description,
+        quantity,
+        unitPrice: unitPrice.toFixed(2),
+        discount: discount.toFixed(2),
+        lineTotal: lineTotal(unitPrice, quantity, discount).toFixed(2),
+      })
+      .where(eq(proformaLines.id, lineId));
+
+    // Upsert-shaped: update the existing detail row if one exists, insert if
+    // this line never had one (e.g. a shop line's article was left blank
+    // originally and the agent now picks one on edit).
+    if (existing.lineType === "ticket" && patch.ticketDetails) {
+      const td = patch.ticketDetails;
+      const [currentDetails] = await tx
+        .select()
+        .from(proformaTicketDetails)
+        .where(eq(proformaTicketDetails.proformaLineId, lineId));
+
+      const values = {
+        travelClass: td.travelClass,
+        passengerName: td.passengerName,
+        segments: td.segments,
+        references: td.references,
+        supplierPrice: td.supplierPrice.toFixed(2),
+        sellingPrice: td.sellingPrice.toFixed(2),
+      };
+
+      if (currentDetails) {
+        await tx
+          .update(proformaTicketDetails)
+          .set(values)
+          .where(eq(proformaTicketDetails.proformaLineId, lineId));
+      } else {
+        await tx.insert(proformaTicketDetails).values({ proformaLineId: lineId, ...values });
+      }
+    }
+
+    if (existing.lineType === "shop" && patch.shopDetails) {
+      const sd = patch.shopDetails;
+      const [currentDetails] = await tx
+        .select()
+        .from(proformaShopDetails)
+        .where(eq(proformaShopDetails.proformaLineId, lineId));
+
+      const values = {
+        articleId: sd.articleId,
+        supplierPrice: sd.supplierPrice.toFixed(2),
+        sellingPrice: sd.sellingPrice.toFixed(2),
+        passengerName: sd.passengerName,
+      };
+
+      if (currentDetails) {
+        await tx
+          .update(proformaShopDetails)
+          .set(values)
+          .where(eq(proformaShopDetails.proformaLineId, lineId));
+      } else {
+        await tx.insert(proformaShopDetails).values({ proformaLineId: lineId, ...values });
+      }
+    }
+
+    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
+  });
+
+  await logAudit({
+    userId,
+    action: "PROFORMA_LINE_UPDATED",
+    entityType: "proformas",
+    entityId: String(proformaId),
+    metadata: { lineId, patch },
+  });
+
+  return getProformaById(proformaId);
+}
+
 export async function getProformaById(id: number): Promise<ProformaView> {
   const [proforma] = await db.select().from(proformas).where(eq(proformas.id, id));
   if (!proforma) throw new Error("PROFORMA_NOT_FOUND");

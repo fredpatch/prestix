@@ -13,6 +13,7 @@ router.get("/:id", requireAgent, proformaController.getById);
 router.get("/:id/pdf", requireAgent, proformaPdfController.download);
 router.post("/", requireAgent, proformaController.create);
 router.post("/:id/lines", requireAgent, proformaController.addLine);
+router.patch("/:id/lines/:lineId", requireAgent, proformaController.updateLine);
 router.delete("/:id/lines/:lineId", requireAgent, proformaController.removeLine);
 
 export default router;

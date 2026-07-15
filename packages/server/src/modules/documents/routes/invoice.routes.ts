@@ -14,6 +14,7 @@ router.get("/:id/pdf", requireAgent, invoicePdfController.download);
 router.post("/", requireAgent, invoiceController.createDraft);
 router.post("/from-proforma/:proformaId", requireAgent, invoiceController.promoteFromProforma);
 router.post("/:id/lines", requireAgent, invoiceController.addLine);
+router.patch("/:id/lines/:lineId", requireAgent, invoiceController.updateLine);
 router.delete("/:id/lines/:lineId", requireAgent, invoiceController.removeLine);
 router.post("/:id/issue", requireAgent, invoiceController.issue);
 

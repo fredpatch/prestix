@@ -12,6 +12,7 @@ function handleError(res: Response, error: unknown): void {
     DISCOUNT_EXCEEDS_LINE_AMOUNT: 400,
     PROFORMA_NOT_EDITABLE: 400,
     PROFORMA_ALREADY_PROMOTED: 400,
+    PROFORMA_LINE_NOT_FOUND: 404,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[proforma]", error);
@@ -70,6 +71,22 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
     const proformaId = parseInt(req.params.id);
     const lineId = parseInt(req.params.lineId);
     const proforma = await proformaService.removeProformaLine(proformaId, lineId, req.user!.userId);
+    res.json(proforma);
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+export async function updateLine(req: Request, res: Response): Promise<void> {
+  try {
+    const proformaId = parseInt(req.params.id);
+    const lineId = parseInt(req.params.lineId);
+    const proforma = await proformaService.updateProformaLine(
+      proformaId,
+      lineId,
+      req.body,
+      req.user!.userId,
+    );
     res.json(proforma);
   } catch (error) {
     handleError(res, error);

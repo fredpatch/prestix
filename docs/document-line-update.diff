@@ -1,0 +1,306 @@
+diff --git a/packages/server/src/modules/documents/controllers/invoice.controller.ts b/packages/server/src/modules/documents/controllers/invoice.controller.ts
+index 4d5dbe6..083acb3 100644
+--- a/packages/server/src/modules/documents/controllers/invoice.controller.ts
++++ b/packages/server/src/modules/documents/controllers/invoice.controller.ts
+@@ -23,6 +23,7 @@ function handleError(res: Response, error: unknown): void {
+     MOVEMENT_ALREADY_RECORDED: 409,
+     INSUFFICIENT_STOCK: 400,
+     NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER: 403,
++    INVOICE_LINE_NOT_FOUND: 404,
+   };
+   const code = status[message] ?? 500;
+   if (code === 500) console.error("[invoice]", error);
+@@ -97,6 +98,17 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
+   }
+ }
+ 
++export async function updateLine(req: Request, res: Response): Promise<void> {
++  try {
++    const invoiceId = parseInt(req.params.id);
++    const lineId = parseInt(req.params.lineId);
++    const invoice = await invoiceService.updateLine(invoiceId, lineId, req.body, req.user!.userId);
++    res.json(invoice);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
++
+ export async function issue(req: Request, res: Response): Promise<void> {
+   try {
+     const invoiceId = parseInt(req.params.id);
+diff --git a/packages/server/src/modules/documents/controllers/proforma.controller.ts b/packages/server/src/modules/documents/controllers/proforma.controller.ts
+index bc0f445..40f6279 100644
+--- a/packages/server/src/modules/documents/controllers/proforma.controller.ts
++++ b/packages/server/src/modules/documents/controllers/proforma.controller.ts
+@@ -12,6 +12,7 @@ function handleError(res: Response, error: unknown): void {
+     DISCOUNT_EXCEEDS_LINE_AMOUNT: 400,
+     PROFORMA_NOT_EDITABLE: 400,
+     PROFORMA_ALREADY_PROMOTED: 400,
++    PROFORMA_LINE_NOT_FOUND: 404,
+   };
+   const code = status[message] ?? 500;
+   if (code === 500) console.error("[proforma]", error);
+@@ -75,3 +76,19 @@ export async function removeLine(req: Request, res: Response): Promise<void> {
+     handleError(res, error);
+   }
+ }
++
++export async function updateLine(req: Request, res: Response): Promise<void> {
++  try {
++    const proformaId = parseInt(req.params.id);
++    const lineId = parseInt(req.params.lineId);
++    const proforma = await proformaService.updateProformaLine(
++      proformaId,
++      lineId,
++      req.body,
++      req.user!.userId,
++    );
++    res.json(proforma);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
+diff --git a/packages/server/src/modules/documents/routes/invoice.routes.ts b/packages/server/src/modules/documents/routes/invoice.routes.ts
+index d1687e8..3155b65 100644
+--- a/packages/server/src/modules/documents/routes/invoice.routes.ts
++++ b/packages/server/src/modules/documents/routes/invoice.routes.ts
+@@ -14,6 +14,7 @@ router.get("/:id/pdf", requireAgent, invoicePdfController.download);
+ router.post("/", requireAgent, invoiceController.createDraft);
+ router.post("/from-proforma/:proformaId", requireAgent, invoiceController.promoteFromProforma);
+ router.post("/:id/lines", requireAgent, invoiceController.addLine);
++router.patch("/:id/lines/:lineId", requireAgent, invoiceController.updateLine);
+ router.delete("/:id/lines/:lineId", requireAgent, invoiceController.removeLine);
+ router.post("/:id/issue", requireAgent, invoiceController.issue);
+ 
+diff --git a/packages/server/src/modules/documents/routes/proforma.routes.ts b/packages/server/src/modules/documents/routes/proforma.routes.ts
+index 3570a69..225ae55 100644
+--- a/packages/server/src/modules/documents/routes/proforma.routes.ts
++++ b/packages/server/src/modules/documents/routes/proforma.routes.ts
+@@ -13,6 +13,7 @@ router.get("/:id", requireAgent, proformaController.getById);
+ router.get("/:id/pdf", requireAgent, proformaPdfController.download);
+ router.post("/", requireAgent, proformaController.create);
+ router.post("/:id/lines", requireAgent, proformaController.addLine);
++router.patch("/:id/lines/:lineId", requireAgent, proformaController.updateLine);
+ router.delete("/:id/lines/:lineId", requireAgent, proformaController.removeLine);
+ 
+ export default router;
+diff --git a/packages/server/src/modules/documents/services/invoice.service.ts b/packages/server/src/modules/documents/services/invoice.service.ts
+index cdd8a07..0995f9d 100644
+--- a/packages/server/src/modules/documents/services/invoice.service.ts
++++ b/packages/server/src/modules/documents/services/invoice.service.ts
+@@ -430,6 +430,99 @@ export async function removeLine(
+   return getInvoiceById(invoiceId);
+ }
+ 
++// Same real in-place edit as proforma's updateProformaLine — draft-only,
++// re-validates discount bounds/role against the NEW values, recomputes
++// invoice totals. Type of line can't change here; remove+re-add for that.
++export async function updateLine(
++  invoiceId: number,
++  lineId: number,
++  patch: Partial<InvoiceLineInput>,
++  userId: number,
++): Promise<InvoiceView> {
++  await assertDraft(invoiceId);
++
++  const [existing] = await db
++    .select()
++    .from(invoiceLines)
++    .where(and(eq(invoiceLines.id, lineId), eq(invoiceLines.invoiceId, invoiceId)));
++  if (!existing) throw new Error("INVOICE_LINE_NOT_FOUND");
++
++  const unitPrice = patch.unitPrice ?? parseFloat(existing.unitPrice);
++  const quantity = patch.quantity ?? existing.quantity;
++  const discount = patch.discount ?? parseFloat(existing.discount);
++
++  assertDiscountBounds([{ unitPrice, quantity, discount }]);
++  await assertCanDiscount(userId, [{ discount }]);
++
++  await db.transaction(async (tx: any) => {
++    await tx
++      .update(invoiceLines)
++      .set({
++        description: patch.description ?? existing.description,
++        quantity,
++        unitPrice: unitPrice.toFixed(2),
++        discount: discount.toFixed(2),
++        lineTotal: lineTotal(unitPrice, quantity, discount).toFixed(2),
++      })
++      .where(eq(invoiceLines.id, lineId));
++
++    if (existing.lineType === "ticket" && patch.ticketDetails) {
++      const td = patch.ticketDetails;
++      const [currentDetails] = await tx
++        .select()
++        .from(ticketDetails)
++        .where(eq(ticketDetails.invoiceLineId, lineId));
++
++      const values = {
++        travelClass: td.travelClass,
++        passengerName: td.passengerName,
++        segments: td.segments,
++        references: td.references,
++        supplierPrice: td.supplierPrice.toFixed(2),
++        sellingPrice: td.sellingPrice.toFixed(2),
++      };
++
++      if (currentDetails) {
++        await tx.update(ticketDetails).set(values).where(eq(ticketDetails.invoiceLineId, lineId));
++      } else {
++        await tx.insert(ticketDetails).values({ invoiceLineId: lineId, ...values });
++      }
++    }
++
++    if (existing.lineType === "shop" && patch.shopDetails) {
++      const sd = patch.shopDetails;
++      const [currentDetails] = await tx
++        .select()
++        .from(shopDetails)
++        .where(eq(shopDetails.invoiceLineId, lineId));
++
++      const values = {
++        articleId: sd.articleId,
++        supplierPrice: sd.supplierPrice.toFixed(2),
++        sellingPrice: sd.sellingPrice.toFixed(2),
++        passengerName: sd.passengerName,
++      };
++
++      if (currentDetails) {
++        await tx.update(shopDetails).set(values).where(eq(shopDetails.invoiceLineId, lineId));
++      } else {
++        await tx.insert(shopDetails).values({ invoiceLineId: lineId, ...values });
++      }
++    }
++
++    await recomputeInvoiceTotals(tx, invoiceId);
++  });
++
++  await logAudit({
++    userId,
++    action: "INVOICE_LINE_UPDATED",
++    entityType: "invoices",
++    entityId: String(invoiceId),
++    metadata: { lineId, patch },
++  });
++  return getInvoiceById(invoiceId);
++}
++
+ // The single commitment point — M4: "one DB transaction: status → issued, allocate
+ // invoice number, mark attached orders invoiced, decrement stock. All-or-nothing.
+ // Idempotent via requestId."
+diff --git a/packages/server/src/modules/documents/services/proforma.service.ts b/packages/server/src/modules/documents/services/proforma.service.ts
+index 719573f..457c08b 100644
+--- a/packages/server/src/modules/documents/services/proforma.service.ts
++++ b/packages/server/src/modules/documents/services/proforma.service.ts
+@@ -310,6 +310,111 @@ export async function removeProformaLine(
+   return getProformaById(proformaId);
+ }
+ 
++// Real in-place edit — "1 bag → 2 bags" no longer means delete-then-recreate.
++// Type of line (ticket vs shop) can't change here; that's a structural
++// difference big enough to warrant remove+re-add instead, same as before.
++export async function updateProformaLine(
++  proformaId: number,
++  lineId: number,
++  patch: Partial<ProformaLineInput>,
++  userId: number,
++): Promise<ProformaView> {
++  await assertEditable(proformaId);
++
++  const [existing] = await db
++    .select()
++    .from(proformaLines)
++    .where(and(eq(proformaLines.id, lineId), eq(proformaLines.proformaId, proformaId)));
++  if (!existing) throw new Error("PROFORMA_LINE_NOT_FOUND");
++
++  const unitPrice = patch.unitPrice ?? parseFloat(existing.unitPrice);
++  const quantity = patch.quantity ?? existing.quantity;
++  const discount = patch.discount ?? parseFloat(existing.discount);
++
++  assertDiscountBounds([{ unitPrice, quantity, discount }]);
++  await assertCanDiscount(userId, [{ discount }]);
++
++  const newExpiresAt = new Date(Date.now() + PROFORMA_VALIDITY_HOURS * 60 * 60 * 1000);
++
++  await db.transaction(async (tx: any) => {
++    await tx
++      .update(proformaLines)
++      .set({
++        description: patch.description ?? existing.description,
++        quantity,
++        unitPrice: unitPrice.toFixed(2),
++        discount: discount.toFixed(2),
++        lineTotal: lineTotal(unitPrice, quantity, discount).toFixed(2),
++      })
++      .where(eq(proformaLines.id, lineId));
++
++    // Upsert-shaped: update the existing detail row if one exists, insert if
++    // this line never had one (e.g. a shop line's article was left blank
++    // originally and the agent now picks one on edit).
++    if (existing.lineType === "ticket" && patch.ticketDetails) {
++      const td = patch.ticketDetails;
++      const [currentDetails] = await tx
++        .select()
++        .from(proformaTicketDetails)
++        .where(eq(proformaTicketDetails.proformaLineId, lineId));
++
++      const values = {
++        travelClass: td.travelClass,
++        passengerName: td.passengerName,
++        segments: td.segments,
++        references: td.references,
++        supplierPrice: td.supplierPrice.toFixed(2),
++        sellingPrice: td.sellingPrice.toFixed(2),
++      };
++
++      if (currentDetails) {
++        await tx
++          .update(proformaTicketDetails)
++          .set(values)
++          .where(eq(proformaTicketDetails.proformaLineId, lineId));
++      } else {
++        await tx.insert(proformaTicketDetails).values({ proformaLineId: lineId, ...values });
++      }
++    }
++
++    if (existing.lineType === "shop" && patch.shopDetails) {
++      const sd = patch.shopDetails;
++      const [currentDetails] = await tx
++        .select()
++        .from(proformaShopDetails)
++        .where(eq(proformaShopDetails.proformaLineId, lineId));
++
++      const values = {
++        articleId: sd.articleId,
++        supplierPrice: sd.supplierPrice.toFixed(2),
++        sellingPrice: sd.sellingPrice.toFixed(2),
++        passengerName: sd.passengerName,
++      };
++
++      if (currentDetails) {
++        await tx
++          .update(proformaShopDetails)
++          .set(values)
++          .where(eq(proformaShopDetails.proformaLineId, lineId));
++      } else {
++        await tx.insert(proformaShopDetails).values({ proformaLineId: lineId, ...values });
++      }
++    }
++
++    await tx.update(proformas).set({ expiresAt: newExpiresAt }).where(eq(proformas.id, proformaId));
++  });
++
++  await logAudit({
++    userId,
++    action: "PROFORMA_LINE_UPDATED",
++    entityType: "proformas",
++    entityId: String(proformaId),
++    metadata: { lineId, patch },
++  });
++
++  return getProformaById(proformaId);
++}
++
+ export async function getProformaById(id: number): Promise<ProformaView> {
+   const [proforma] = await db.select().from(proformas).where(eq(proformas.id, id));
+   if (!proforma) throw new Error("PROFORMA_NOT_FOUND");
