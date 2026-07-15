@@ -138,7 +138,7 @@
 
 ## Sprint 7 – PrestiShop & Stock (M9) | 1.5 weeks
 
-- [~] **Shop line: article, qty, price (editable), passenger (dropdown/free-text)** — CRITICAL — backend proforma/invoice shop-detail persistence drafted, client composers now expose stock article and passenger fields; runtime smoke pending
+- [~] **Shop line: article, qty, price (editable), passenger (dropdown/free-text)** — CRITICAL — backend proforma/invoice shop-detail persistence drafted, client composers and create-page validation now carry stock article/passenger fields; runtime smoke pending
 - [~] Stock articles/items/movements (append-only IN/OUT/ADJUST) — CRITICAL — backend service/controller/routes mounted at `/api/stock`; client stock page/API drafted with article list, inactive toggle, create, restock, and active toggle; runtime smoke pending
 - [~] **Stock OUT on issue (idempotent refType+refId)** — CRITICAL — `issueInvoice()` records shop `articleId` OUT movements inside the invoice transaction; runtime smoke pending
 - [~] Negative-on-issue → manager+ override (new vs legacy); manual blocks negative — HIGH — service enforces manual negative blocking and issue-only override/audit flag; controller gates override to manager+; runtime smoke pending

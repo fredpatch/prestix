@@ -1,6 +1,6 @@
 ## Task
 
-Sync cache/changelog after Sprint 7 stock client/PDF shop-line update, then commit and push all current changes.
+Sync cache/changelog after Sprint 7 create-page shopDetails validation update, then commit and push all current changes.
 
 ## Current Sprint 7 State
 
@@ -15,6 +15,8 @@ metadata before promotion; invoice `shop_details` is populated from direct invoi
 drafts, added lines, and proforma promotion. Client stock UI is drafted with a
 `/stock` page, stock API wrapper, manager create/restock/activate controls, and
 stock article/passenger fields in both Proforma and Invoice line composers.
+The Proforma/Invoice create-page validation schemas now accept `shopDetails` so
+those fields survive form validation/submission.
 
 ## Last Validation Run (2026-07-15)
 
@@ -22,6 +24,7 @@ stock article/passenger fields in both Proforma and Invoice line composers.
 - Server build: PASS (`npm run build -w packages/server`)
 - Migration generation: PASS (`npm run db:generate -w packages/server`, generated `20260715180806_lazy_ultimo`)
 - Client build: PASS after elevated rerun for known Vite/esbuild `spawn EPERM` (`npm run build -w packages/client`)
+- Client build: PASS after create-page `shopDetails` validation update (`npm run build -w packages/client`, elevated rerun for known Vite/esbuild `spawn EPERM`)
 
 ## Immediate Next Technical Check
 
@@ -32,6 +35,7 @@ stock article/passenger fields in both Proforma and Invoice line composers.
 - Smoke invoice cancellation stock compensation for recorded shop OUT movements.
 - Smoke `/stock` page create/restock/active toggle and article list behavior.
 - Smoke stock article picker and passenger assignment in Proforma/Invoice line composers.
+- Smoke Proforma/Invoice create submit with shop `shopDetails` payloads.
 
 ## Note
 

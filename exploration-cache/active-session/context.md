@@ -4,7 +4,7 @@ Sprint 6 is closed. Sprint 7 - PrestiShop & Stock (M9) is now underway.
 
 ## What's In Scope Today
 
-Cache/changelog sync after the Sprint 7 stock client/PDF shop-line update, then commit and push.
+Cache/changelog sync after the Sprint 7 create-page `shopDetails` validation update, then commit and push.
 
 ## State Of The Codebase
 
@@ -40,6 +40,8 @@ Stock client draft is in place: `/stock` route/nav, stock API wrapper, article
 list/inactive toggle, manager create/restock/activate controls, and stock
 article/passenger fields in Proforma and Invoice line composers. Document PDFs
 now print shop lines as PrestiShop rows and use assigned shop passengers when set.
+The Proforma/Invoice create-page Zod schemas accept `shopDetails`, so composer
+shop metadata is not dropped during form validation/submission.
 
 ## Validation Snapshot (2026-07-15)
 
@@ -49,6 +51,7 @@ now print shop lines as PrestiShop rows and use assigned shop passengers when se
 - `npm run typecheck -w packages/server`: PASS after shop-detail persistence update.
 - `npm run build -w packages/server`: PASS after shop-detail persistence update.
 - `npm run build -w packages/client`: PASS after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing chunk-size warning remains.
+- `npm run build -w packages/client`: PASS after create-page `shopDetails` validation update; elevated rerun required for the known Vite/esbuild `spawn EPERM`, existing chunk-size warning remains.
 - Runtime stock API smoke is pending.
 - Shop-detail create/read/promote smoke is pending.
 - Invoice issue/cancel stock movement smoke is pending.

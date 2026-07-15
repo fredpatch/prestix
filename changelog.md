@@ -95,9 +95,10 @@
 - Added `proforma_shop_details` schema/migration (`20260715180806_lazy_ultimo`) so quoted shop lines can carry article, supplier/selling price, and passenger metadata before promotion.
 - Extended proforma/invoice line views and draft/add/promote flows to persist and return shop details alongside ticket details.
 - Added stock client API wrapper, `/stock` route/nav entry, stock article list with inactive toggle, manager create/restock/activate actions, and stock article picker fields in Proforma/Invoice line composers.
+- Updated Proforma/Invoice create-page validation schemas to accept `shopDetails`, preserving stock article, supplier price, selling price, and passenger assignments on submit.
 - Updated document PDF exports so shop lines print as PrestiShop rows and use the assigned shop passenger when present.
 - Added stock audit logging for article mutations and negative-stock overrides.
-- Validation: server typecheck/build pass; client build passes after elevated rerun for the known Vite/esbuild `spawn EPERM`, with the existing chunk-size warning; runtime stock API, shop-detail, and invoice stock movement smoke still pending.
+- Validation: server typecheck/build pass; client build passes after elevated reruns for the known Vite/esbuild `spawn EPERM`, with the existing chunk-size warning; runtime stock API, shop-detail, and invoice stock movement smoke still pending.
 
 ## Validation Notes (2026-07-12)
 

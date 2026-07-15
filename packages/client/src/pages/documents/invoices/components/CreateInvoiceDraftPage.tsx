@@ -45,6 +45,13 @@ const ticketSchema = z.object({
   sellingPrice: z.coerce.number().min(1, "Renseignez le prix de vente."),
 });
 
+const shopSchema = z.object({
+  articleId: z.number().optional(),
+  supplierPrice: z.coerce.number().min(0, "Le prix fournisseur doit être positif.").optional(),
+  sellingPrice: z.coerce.number().min(0).optional(),
+  passengerName: z.string().optional(),
+});
+
 const lineSchema = z
   .object({
     lineType: z.enum(["ticket", "shop"]),
@@ -53,6 +60,7 @@ const lineSchema = z
     unitPrice: z.coerce.number().min(1, "Renseignez un prix."),
     discount: z.coerce.number().min(0, "La remise doit etre positive.").optional(),
     ticketDetails: ticketSchema.optional(),
+    shopDetails: shopSchema.optional(),
   })
   .superRefine((line, ctx) => {
     const gross = line.unitPrice * (line.quantity ?? 1);
