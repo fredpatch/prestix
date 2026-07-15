@@ -79,11 +79,14 @@
 - Added Delivery Note PDF export endpoint at `/api/delivery-notes/invoice/:invoiceId/pdf`, reusing invoice line/party data without payment recap.
 - Added `DOCUMENT_PRINTED` audit logging for invoice, proforma, and delivery-note PDF generation.
 - Added client PDF actions on Proforma detail and generated delivery-note display on Invoice detail.
+- Added ticket return-date rendering in invoice/proforma/BL PDFs.
+- Added invoice payment schedule rendering for multi-installment invoices.
+- Tightened the shared print template spacing, table sizing, totals, signature, and footer layout for denser PDF output.
+- Restored TypeScript `ignoreDeprecations` settings to the repo-compatible `5.0` value in base/server configs.
 - Validation: server typecheck/build and client build pass; client build required elevated rerun for the known Vite/esbuild `spawn EPERM`, and the existing Vite chunk-size warning remains.
 
 ## Validation Notes (2026-07-12)
 
-- `npm run typecheck -w packages/server`: FAIL (TS5103, invalid `ignoreDeprecations`)
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)
 - `docker compose up -d postgres api`: blocked (Docker daemon unavailable)
 - `npm run format` from repo root: PASS

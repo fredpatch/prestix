@@ -106,6 +106,10 @@
 - [~] Payment allocation: agent chooses principal/penalty (+UI warn) — HIGH — backend accepts `allocationTarget`, splits principal vs penalty rows, keeps principal status separate, and invoice payment dialog now exposes principal/penalty priority with warning; runtime smoke pending
 - [~] Créances view; overdue = receivables aggregation (single source) — HIGH — `/api/creances` backend route and client page drafted with principal/penalty due aggregation, overdue filter, nav, and invoice links; runtime smoke pending
 
+## Cross-sprint document PDF hardening (2026-07-15)
+
+- [~] Invoice/Proforma/BL print exports — shared template now renders ticket return dates, invoice payment schedules, denser table/signature/footer spacing, and print audit logging; server typecheck/build and client build pass; visual endpoint smoke and audit-row verification still pending
+
 ## Sprint 6 – Remises & Billetterie (M7, M8) | 2 weeks
 
 - [ ] Line-level fixed discount (manager+), ≥0, ≤ line — HIGH

@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-15",
-  "currentSprint": "Document PDF export",
+  "currentSprint": "Document PDF print refinement",
   "files": [
     "index.md",
     "quick-ref.md",

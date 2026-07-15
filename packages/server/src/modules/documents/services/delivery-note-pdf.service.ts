@@ -57,7 +57,8 @@ export async function generateDeliveryNotePdf(
   const items: PrintLineItem[] = invoice.lines.map((l) => {
     if (l.ticketDetails) {
       const td = l.ticketDetails;
-      const segments = td.segments as Array<{ from: string; to: string; date: string }> | undefined;
+      const segments = td.segments as
+        Array<{ from: string; to: string; date: string; returnDate?: string }> | undefined;
       const firstSegment = segments?.[0];
       return {
         clientName: td.passengerName,
@@ -66,6 +67,7 @@ export async function generateDeliveryNotePdf(
           ? `${firstSegment.from} → ${segments![segments!.length - 1].to}`
           : l.description,
         date: firstSegment ? fmtDateShort(firstSegment.date) : undefined,
+        returnDate: firstSegment?.returnDate ? fmtDateShort(firstSegment.returnDate) : undefined,
         travelClass: TRAVEL_CLASS_ABBREV[td.travelClass] ?? td.travelClass,
         unitPrice: parseFloat(l.unitPrice),
         discount: parseFloat(l.discount),

@@ -11,6 +11,7 @@ import {
 } from "../templates/invoice-print.template.js";
 import { getInvoiceById } from "./invoice.service.js";
 import { logAudit } from "@/modules/auth/services/auth.service.js";
+import { listInstallmentsByInvoice } from "./payment.service.js";
 
 // M8: display-only abbreviation layer over the stored enum — changing this map
 // later is a no-op, no data migration (spec's whole point of keeping it separate
@@ -29,6 +30,12 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   virement: "VIREMENT",
   credit: "CRÉDIT",
   epargne: "ÉPARGNE",
+};
+
+const INSTALLMENT_STATUS_MAP: Record<string, "unpaid" | "partial" | "paid"> = {
+  unpaid: "unpaid",
+  partial: "partial",
+  paid: "paid",
 };
 
 let cachedLogoBase64: string | null = null;
@@ -67,7 +74,8 @@ export async function generateInvoicePdf(
   const items: PrintLineItem[] = invoice.lines.map((l) => {
     if (l.ticketDetails) {
       const td = l.ticketDetails;
-      const segments = td.segments as Array<{ from: string; to: string; date: string }> | undefined;
+      const segments = td.segments as
+        Array<{ from: string; to: string; date: string; returnDate?: string }> | undefined;
       const firstSegment = segments?.[0];
       return {
         clientName: td.passengerName,
@@ -76,6 +84,7 @@ export async function generateInvoicePdf(
           ? `${firstSegment.from} → ${segments![segments!.length - 1].to}`
           : l.description,
         date: firstSegment ? fmtDateShort(firstSegment.date) : undefined,
+        returnDate: firstSegment?.returnDate ? fmtDateShort(firstSegment.returnDate) : undefined,
         travelClass: TRAVEL_CLASS_ABBREV[td.travelClass] ?? td.travelClass,
         unitPrice: parseFloat(l.unitPrice),
         discount: parseFloat(l.discount),
@@ -91,6 +100,8 @@ export async function generateInvoicePdf(
       total: parseFloat(l.lineTotal),
     };
   });
+
+  const installmentRows = await listInstallmentsByInvoice(invoiceId);
 
   const printData: PrintInvoiceData = {
     docType: "invoice",
@@ -109,6 +120,13 @@ export async function generateInvoicePdf(
     paidAmount,
     balanceDue: Math.max(0, parseFloat(invoice.totalAmount) - paidAmount),
     receivedOn: invoice.paymentStatus === "paid" ? fmtDateShort(new Date()) : undefined,
+    installments: installmentRows.map((inst) => ({
+      sequence: inst.sequence,
+      dueDate: fmtDateShort(inst.expectedDate),
+      expectedAmount: parseFloat(inst.expectedAmount),
+      paidAmount: parseFloat(inst.paidAmount),
+      status: INSTALLMENT_STATUS_MAP[inst.status] ?? "unpaid",
+    })),
   };
 
   const html = renderInvoiceHtml(printData);
