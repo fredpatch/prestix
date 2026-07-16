@@ -106,15 +106,15 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <motion.aside
-        animate={{ width: sidebarOpen ? 180 : 45 }}
+        animate={{ width: sidebarOpen ? 180 : 52 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className="flex flex-col bg-brand-gold-dark overflow-hidden flex-shrink-0"
       >
-        <div className="flex items-center gap-3 px-3 py-4 border-b border-white/10 h-[57px] overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-white/10 h-[57px] overflow-hidden">
           <img
             src="/brand/logo.jpg"
             alt="PrestiX"
-            className="w-8 h-8 rounded-lg object-contain bg-white/10 flex-shrink-0"
+            className="w-9 h-9 rounded-lg object-contain bg-white/10 flex-shrink-0"
           />
           <div
             className={cn(
@@ -122,12 +122,12 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
               sidebarOpen ? "opacity-100" : "opacity-0",
             )}
           >
-            <p className="text-white font-bold text-sm leading-tight">PrestiX</p>
-            <p className="text-brand-gold-light text-[10px] leading-tight">Le Prestigieux</p>
+            <p className="text-white font-semibold text-[11px] leading-tight">PrestiX</p>
+            <p className="text-brand-gold-light text-[11px] leading-tight">Le Prestigieux</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
+        <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-4">
           {visibleItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -144,7 +144,7 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
                   )
                 }
               >
-                <Icon size={15} className="flex-shrink-0" strokeWidth={1.75} />
+                <Icon size={16} className="flex-shrink-0" strokeWidth={1.75} />
                 <span
                   className={cn(
                     "text-[12px] font-medium truncate whitespace-nowrap transition-opacity duration-150",
