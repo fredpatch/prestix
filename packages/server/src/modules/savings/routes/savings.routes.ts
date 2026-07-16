@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../../../middleware/authenticate.js";
-import { requireAgent, requireManager, requireAdmin, requireSuperAdmin } from "../../../middleware/authorize.js";
+import { requireAgent, requireAdmin, requireSuperAdmin } from "../../../middleware/authorize.js";
 import * as savingsController from "../controllers/savings.controller.js";
 
 const router = Router();
@@ -12,8 +12,13 @@ router.get("/party/:partyId", requireAgent, savingsController.getAccountByParty)
 router.get("/:accountId/transactions", requireAgent, savingsController.listTransactions);
 router.post("/:accountId/deposits", requireAgent, savingsController.deposit);
 
-// manager+ — the privileged action per spec.
-router.post("/:accountId/withdrawals", requireManager, savingsController.withdraw);
+// admin+ — deliberately raised above the spec's original manager+ (confirmed
+// with Fred): standalone cash withdrawal is NOT a normal, routine action.
+// Money only ever leaves an épargne account by being spent — a ticket or shop
+// purchase via épargne-as-payment (M5 integration). This exists purely as an
+// admin-level exceptional override for special cases, not a peer action to
+// deposit.
+router.post("/:accountId/withdrawals", requireAdmin, savingsController.withdraw);
 
 // admin+ — the one correction mechanism, same bar as invoice cancellation.
 router.post("/transactions/:transactionId/reverse", requireAdmin, savingsController.reverse);

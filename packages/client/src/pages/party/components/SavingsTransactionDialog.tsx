@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Wallet } from "lucide-react";
+import { Loader2, Wallet, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogTrigger,
@@ -28,17 +28,19 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
   const [open, setOpen] = useState(false);
   const [nature, setNature] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState(0);
-  const [quantity, setQuantity] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Withdrawal is manager+ per spec — deposits are open to any agent.
-  const canWithdraw = user && ["manager", "admin", "super_admin"].includes(user.role);
+  // Withdrawal is admin+ (confirmed correction from Fred): money normally
+  // only leaves an épargne account by being spent — a ticket or shop
+  // purchase via épargne-as-payment (M5 integration), never withdrawn as
+  // cash on demand. This dialog's "Retrait" option is deliberately framed as
+  // an exceptional override for special cases, not a routine peer of Dépôt.
+  const canWithdraw = user && ["admin", "super_admin"].includes(user.role);
 
   function reset() {
     setNature("deposit");
     setAmount(0);
-    setQuantity(1);
     setError(null);
   }
 
@@ -47,9 +49,9 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
     setError(null);
     try {
       if (nature === "deposit") {
-        await savingsApi.deposit(account.id, amount, quantity);
+        await savingsApi.deposit(account.id, amount);
       } else {
-        await savingsApi.withdraw(account.id, amount, quantity);
+        await savingsApi.withdraw(account.id, amount);
       }
       setOpen(false);
       reset();
@@ -62,8 +64,6 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
     }
   }
 
-  const total = amount * quantity;
-
   return (
     <Dialog
       open={open}
@@ -74,7 +74,7 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
     >
       <DialogTrigger>
         <Button variant="outline" size="sm">
-          <Wallet size={13} /> Dépôt / Retrait
+          <Wallet size={13} /> Dépôt
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -84,7 +84,10 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
 
         <div className="space-y-3">
           <p className="text-[11.5px] text-neutral-500">
-            Solde actuel : <span className="font-medium text-neutral-800">{parseFloat(account.balance).toLocaleString("fr-FR")} XAF</span>
+            Solde actuel :{" "}
+            <span className="font-medium text-neutral-800">
+              {parseFloat(account.balance).toLocaleString("fr-FR")} XAF
+            </span>
           </p>
 
           <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
@@ -99,28 +102,32 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
               type="button"
               onClick={() => canWithdraw && setNature("withdraw")}
               disabled={!canWithdraw}
-              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
+              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-red-600 text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
             >
-              Retrait
+              Retrait exceptionnel
             </button>
           </div>
+
           {nature === "withdraw" && !canWithdraw && (
-            <p className="text-[10.5px] text-amber-600">Le retrait nécessite un rôle manager ou supérieur.</p>
+            <p className="text-[10.5px] text-amber-600">
+              Le retrait direct nécessite un rôle admin. En temps normal, l'épargne se dépense sur un
+              billet ou un article — jamais retirée en espèces.
+            </p>
+          )}
+          {nature === "withdraw" && canWithdraw && (
+            <div className="flex items-start gap-1.5 text-[10.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              <span>
+                Retrait direct exceptionnel — l'épargne ne devrait normalement jamais sortir en espèces,
+                seulement être dépensée sur un billet ou un article.
+              </span>
+            </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant unitaire</label>
-              <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
-            </div>
-            <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Quantité</label>
-              <Input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} min={1} />
-            </div>
+          <div>
+            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant</label>
+            <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
           </div>
-          {quantity > 1 && (
-            <p className="text-[10.5px] text-neutral-500">Total : {total.toLocaleString("fr-FR")} XAF</p>
-          )}
 
           {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
@@ -132,6 +139,7 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
           <Button
             onClick={handleSubmit}
             disabled={submitting || amount <= 0 || (nature === "withdraw" && !canWithdraw)}
+            variant={nature === "withdraw" ? "destructive" : "default"}
           >
             {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
           </Button>

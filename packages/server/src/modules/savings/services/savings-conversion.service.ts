@@ -96,18 +96,33 @@ export async function convertExpiredCreditLots(): Promise<{ converted: number; h
         })
         .returning();
 
-      if (openingDeposit > 0) {
-        await tx.insert(savingsTransactions).values({
-          accountId: account.id,
-          nature: "deposit",
-          amount: openingDeposit.toFixed(2),
-          quantity: 1,
-          totalAmount: openingDeposit.toFixed(2),
-          status: "recorded",
-          agentId: null,
-          recordedAt: new Date(),
-        });
-      }
+      const now = new Date();
+
+      // Same visible fee trail as direct subscription (savings.service.ts) —
+      // the FULL remaining credit lands as a deposit, then the fee is taken
+      // back out as its own withdrawal, rather than silently only ever
+      // depositing the fee-reduced remainder. Consistent accounting
+      // regardless of which of the two entry paths opened the account.
+      await tx.insert(savingsTransactions).values({
+        accountId: account.id,
+        nature: "deposit",
+        amount: remaining.toFixed(2),
+        quantity: 1,
+        totalAmount: remaining.toFixed(2),
+        status: "recorded",
+        agentId: null,
+        recordedAt: now,
+      });
+      await tx.insert(savingsTransactions).values({
+        accountId: account.id,
+        nature: "withdraw",
+        amount: feeAmount.toFixed(2),
+        quantity: 1,
+        totalAmount: feeAmount.toFixed(2),
+        status: "recorded",
+        agentId: null,
+        recordedAt: now,
+      });
 
       await tx.update(creditLots).set({ convertedAt: new Date() }).where(eq(creditLots.id, lot.id));
     });

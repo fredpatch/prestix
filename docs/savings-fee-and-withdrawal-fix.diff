@@ -1,0 +1,288 @@
+diff --git a/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx b/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx
+index 79d48ca..9d5a026 100644
+--- a/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx
++++ b/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx
+@@ -1,5 +1,5 @@
+ import { useState } from "react";
+-import { Loader2, Wallet } from "lucide-react";
++import { Loader2, Wallet, AlertTriangle } from "lucide-react";
+ import {
+   Dialog,
+   DialogTrigger,
+@@ -28,17 +28,19 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+   const [open, setOpen] = useState(false);
+   const [nature, setNature] = useState<"deposit" | "withdraw">("deposit");
+   const [amount, setAmount] = useState(0);
+-  const [quantity, setQuantity] = useState(1);
+   const [submitting, setSubmitting] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+ 
+-  // Withdrawal is manager+ per spec — deposits are open to any agent.
+-  const canWithdraw = user && ["manager", "admin", "super_admin"].includes(user.role);
++  // Withdrawal is admin+ (confirmed correction from Fred): money normally
++  // only leaves an épargne account by being spent — a ticket or shop
++  // purchase via épargne-as-payment (M5 integration), never withdrawn as
++  // cash on demand. This dialog's "Retrait" option is deliberately framed as
++  // an exceptional override for special cases, not a routine peer of Dépôt.
++  const canWithdraw = user && ["admin", "super_admin"].includes(user.role);
+ 
+   function reset() {
+     setNature("deposit");
+     setAmount(0);
+-    setQuantity(1);
+     setError(null);
+   }
+ 
+@@ -47,9 +49,9 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+     setError(null);
+     try {
+       if (nature === "deposit") {
+-        await savingsApi.deposit(account.id, amount, quantity);
++        await savingsApi.deposit(account.id, amount);
+       } else {
+-        await savingsApi.withdraw(account.id, amount, quantity);
++        await savingsApi.withdraw(account.id, amount);
+       }
+       setOpen(false);
+       reset();
+@@ -62,8 +64,6 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+     }
+   }
+ 
+-  const total = amount * quantity;
+-
+   return (
+     <Dialog
+       open={open}
+@@ -74,7 +74,7 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+     >
+       <DialogTrigger>
+         <Button variant="outline" size="sm">
+-          <Wallet size={13} /> Dépôt / Retrait
++          <Wallet size={13} /> Dépôt
+         </Button>
+       </DialogTrigger>
+       <DialogContent>
+@@ -84,7 +84,10 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+ 
+         <div className="space-y-3">
+           <p className="text-[11.5px] text-neutral-500">
+-            Solde actuel : <span className="font-medium text-neutral-800">{parseFloat(account.balance).toLocaleString("fr-FR")} XAF</span>
++            Solde actuel :{" "}
++            <span className="font-medium text-neutral-800">
++              {parseFloat(account.balance).toLocaleString("fr-FR")} XAF
++            </span>
+           </p>
+ 
+           <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+@@ -99,29 +102,33 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+               type="button"
+               onClick={() => canWithdraw && setNature("withdraw")}
+               disabled={!canWithdraw}
+-              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
++              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-red-600 text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
+             >
+-              Retrait
++              Retrait exceptionnel
+             </button>
+           </div>
++
+           {nature === "withdraw" && !canWithdraw && (
+-            <p className="text-[10.5px] text-amber-600">Le retrait nécessite un rôle manager ou supérieur.</p>
++            <p className="text-[10.5px] text-amber-600">
++              Le retrait direct nécessite un rôle admin. En temps normal, l'épargne se dépense sur un
++              billet ou un article — jamais retirée en espèces.
++            </p>
+           )}
+-
+-          <div className="grid grid-cols-2 gap-3">
+-            <div>
+-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant unitaire</label>
+-              <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
+-            </div>
+-            <div>
+-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Quantité</label>
+-              <Input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} min={1} />
++          {nature === "withdraw" && canWithdraw && (
++            <div className="flex items-start gap-1.5 text-[10.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
++              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
++              <span>
++                Retrait direct exceptionnel — l'épargne ne devrait normalement jamais sortir en espèces,
++                seulement être dépensée sur un billet ou un article.
++              </span>
+             </div>
+-          </div>
+-          {quantity > 1 && (
+-            <p className="text-[10.5px] text-neutral-500">Total : {total.toLocaleString("fr-FR")} XAF</p>
+           )}
+ 
++          <div>
++            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant</label>
++            <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
++          </div>
++
+           {error && <p className="text-[11px] text-red-600">{error}</p>}
+         </div>
+ 
+@@ -132,6 +139,7 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
+           <Button
+             onClick={handleSubmit}
+             disabled={submitting || amount <= 0 || (nature === "withdraw" && !canWithdraw)}
++            variant={nature === "withdraw" ? "destructive" : "default"}
+           >
+             {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
+           </Button>
+diff --git a/packages/server/src/modules/savings/routes/savings.routes.ts b/packages/server/src/modules/savings/routes/savings.routes.ts
+index e825efd..880ded7 100644
+--- a/packages/server/src/modules/savings/routes/savings.routes.ts
++++ b/packages/server/src/modules/savings/routes/savings.routes.ts
+@@ -1,6 +1,6 @@
+ import { Router } from "express";
+ import { authenticate } from "../../../middleware/authenticate.js";
+-import { requireAgent, requireManager, requireAdmin, requireSuperAdmin } from "../../../middleware/authorize.js";
++import { requireAgent, requireAdmin, requireSuperAdmin } from "../../../middleware/authorize.js";
+ import * as savingsController from "../controllers/savings.controller.js";
+ 
+ const router = Router();
+@@ -12,8 +12,13 @@ router.get("/party/:partyId", requireAgent, savingsController.getAccountByParty)
+ router.get("/:accountId/transactions", requireAgent, savingsController.listTransactions);
+ router.post("/:accountId/deposits", requireAgent, savingsController.deposit);
+ 
+-// manager+ — the privileged action per spec.
+-router.post("/:accountId/withdrawals", requireManager, savingsController.withdraw);
++// admin+ — deliberately raised above the spec's original manager+ (confirmed
++// with Fred): standalone cash withdrawal is NOT a normal, routine action.
++// Money only ever leaves an épargne account by being spent — a ticket or shop
++// purchase via épargne-as-payment (M5 integration). This exists purely as an
++// admin-level exceptional override for special cases, not a peer action to
++// deposit.
++router.post("/:accountId/withdrawals", requireAdmin, savingsController.withdraw);
+ 
+ // admin+ — the one correction mechanism, same bar as invoice cancellation.
+ router.post("/transactions/:transactionId/reverse", requireAdmin, savingsController.reverse);
+diff --git a/packages/server/src/modules/savings/services/savings-conversion.service.ts b/packages/server/src/modules/savings/services/savings-conversion.service.ts
+index daefa10..cf32c49 100644
+--- a/packages/server/src/modules/savings/services/savings-conversion.service.ts
++++ b/packages/server/src/modules/savings/services/savings-conversion.service.ts
+@@ -96,18 +96,33 @@ export async function convertExpiredCreditLots(): Promise<{ converted: number; h
+         })
+         .returning();
+ 
+-      if (openingDeposit > 0) {
+-        await tx.insert(savingsTransactions).values({
+-          accountId: account.id,
+-          nature: "deposit",
+-          amount: openingDeposit.toFixed(2),
+-          quantity: 1,
+-          totalAmount: openingDeposit.toFixed(2),
+-          status: "recorded",
+-          agentId: null,
+-          recordedAt: new Date(),
+-        });
+-      }
++      const now = new Date();
++
++      // Same visible fee trail as direct subscription (savings.service.ts) —
++      // the FULL remaining credit lands as a deposit, then the fee is taken
++      // back out as its own withdrawal, rather than silently only ever
++      // depositing the fee-reduced remainder. Consistent accounting
++      // regardless of which of the two entry paths opened the account.
++      await tx.insert(savingsTransactions).values({
++        accountId: account.id,
++        nature: "deposit",
++        amount: remaining.toFixed(2),
++        quantity: 1,
++        totalAmount: remaining.toFixed(2),
++        status: "recorded",
++        agentId: null,
++        recordedAt: now,
++      });
++      await tx.insert(savingsTransactions).values({
++        accountId: account.id,
++        nature: "withdraw",
++        amount: feeAmount.toFixed(2),
++        quantity: 1,
++        totalAmount: feeAmount.toFixed(2),
++        status: "recorded",
++        agentId: null,
++        recordedAt: now,
++      });
+ 
+       await tx.update(creditLots).set({ convertedAt: new Date() }).where(eq(creditLots.id, lot.id));
+     });
+diff --git a/packages/server/src/modules/savings/services/savings.service.ts b/packages/server/src/modules/savings/services/savings.service.ts
+index e1e8bbf..903ab7f 100644
+--- a/packages/server/src/modules/savings/services/savings.service.ts
++++ b/packages/server/src/modules/savings/services/savings.service.ts
+@@ -93,25 +93,60 @@ export async function createDirectSubscription(
+ 
+   const feeAmount = await getIntValue("epargne_inscription_fee", 5000);
+ 
+-  const [inserted] = await db
+-    .insert(savingsAccounts)
+-    .values({
+-      partyId: params.partyId,
+-      currency: CURRENCY,
+-      inscriptionFeeAmount: feeAmount.toFixed(2),
+-      subscriptionSource: "direct",
+-    })
+-    .returning();
++  // The fee is real money changing hands, so it gets a real, visible trail in
++  // the ledger — not just a number snapshotted on the account row. Recorded
++  // as a deposit immediately offset by a withdrawal of the same amount, both
++  // inside the SAME transaction as opening the account: nets to zero balance
++  // (the fee is agency revenue, not the client's own money), but anyone
++  // looking at this party's history sees exactly what happened, not an
++  // invisible number. The offsetting withdrawal here does NOT go through the
++  // manager+/admin+ gate — it's the same collection event as the deposit
++  // beside it, not an agent independently requesting money out.
++  const account = await db.transaction(async (tx: any) => {
++    const [inserted] = await tx
++      .insert(savingsAccounts)
++      .values({
++        partyId: params.partyId,
++        currency: CURRENCY,
++        inscriptionFeeAmount: feeAmount.toFixed(2),
++        subscriptionSource: "direct",
++      })
++      .returning();
++
++    const now = new Date();
++    await tx.insert(savingsTransactions).values({
++      accountId: inserted.id,
++      nature: "deposit",
++      amount: feeAmount.toFixed(2),
++      quantity: 1,
++      totalAmount: feeAmount.toFixed(2),
++      status: "recorded",
++      agentId: params.agentId,
++      recordedAt: now,
++    });
++    await tx.insert(savingsTransactions).values({
++      accountId: inserted.id,
++      nature: "withdraw",
++      amount: feeAmount.toFixed(2),
++      quantity: 1,
++      totalAmount: feeAmount.toFixed(2),
++      status: "recorded",
++      agentId: params.agentId,
++      recordedAt: now,
++    });
++
++    return inserted;
++  });
+ 
+   await logAudit({
+     userId: params.agentId,
+     action: "SAVINGS_ACCOUNT_OPENED",
+     entityType: "savings_accounts",
+-    entityId: String(inserted.id),
++    entityId: String(account.id),
+     metadata: { partyId: params.partyId, entryPath: "direct", feeAmount },
+   });
+ 
+-  return toAccountView(inserted);
++  return toAccountView(account);
+ }
+ 
+ // Deposits are unrestricted (any amount, any agent) — the guard that matters

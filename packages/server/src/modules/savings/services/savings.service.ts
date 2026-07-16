@@ -93,25 +93,60 @@ export async function createDirectSubscription(
 
   const feeAmount = await getIntValue("epargne_inscription_fee", 5000);
 
-  const [inserted] = await db
-    .insert(savingsAccounts)
-    .values({
-      partyId: params.partyId,
-      currency: CURRENCY,
-      inscriptionFeeAmount: feeAmount.toFixed(2),
-      subscriptionSource: "direct",
-    })
-    .returning();
+  // The fee is real money changing hands, so it gets a real, visible trail in
+  // the ledger — not just a number snapshotted on the account row. Recorded
+  // as a deposit immediately offset by a withdrawal of the same amount, both
+  // inside the SAME transaction as opening the account: nets to zero balance
+  // (the fee is agency revenue, not the client's own money), but anyone
+  // looking at this party's history sees exactly what happened, not an
+  // invisible number. The offsetting withdrawal here does NOT go through the
+  // manager+/admin+ gate — it's the same collection event as the deposit
+  // beside it, not an agent independently requesting money out.
+  const account = await db.transaction(async (tx: any) => {
+    const [inserted] = await tx
+      .insert(savingsAccounts)
+      .values({
+        partyId: params.partyId,
+        currency: CURRENCY,
+        inscriptionFeeAmount: feeAmount.toFixed(2),
+        subscriptionSource: "direct",
+      })
+      .returning();
+
+    const now = new Date();
+    await tx.insert(savingsTransactions).values({
+      accountId: inserted.id,
+      nature: "deposit",
+      amount: feeAmount.toFixed(2),
+      quantity: 1,
+      totalAmount: feeAmount.toFixed(2),
+      status: "recorded",
+      agentId: params.agentId,
+      recordedAt: now,
+    });
+    await tx.insert(savingsTransactions).values({
+      accountId: inserted.id,
+      nature: "withdraw",
+      amount: feeAmount.toFixed(2),
+      quantity: 1,
+      totalAmount: feeAmount.toFixed(2),
+      status: "recorded",
+      agentId: params.agentId,
+      recordedAt: now,
+    });
+
+    return inserted;
+  });
 
   await logAudit({
     userId: params.agentId,
     action: "SAVINGS_ACCOUNT_OPENED",
     entityType: "savings_accounts",
-    entityId: String(inserted.id),
+    entityId: String(account.id),
     metadata: { partyId: params.partyId, entryPath: "direct", feeAmount },
   });
 
-  return toAccountView(inserted);
+  return toAccountView(account);
 }
 
 // Deposits are unrestricted (any amount, any agent) — the guard that matters
