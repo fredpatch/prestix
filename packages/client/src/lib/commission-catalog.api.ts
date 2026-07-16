@@ -7,6 +7,7 @@ export interface CommissionType {
   label: string;
   icon?: string;
   active: boolean;
+  fieldSchema?: Record<string, string>; // e.g. { operateur: "string" }, values follow the "string"/"string?"/"period"/"enum:a,b" convention
 }
 
 export const commissionCatalogApi = {

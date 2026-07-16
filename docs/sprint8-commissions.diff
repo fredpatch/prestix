@@ -1,0 +1,854 @@
+diff --git a/packages/client/src/App.tsx b/packages/client/src/App.tsx
+index 2e5f64d..177c999 100644
+--- a/packages/client/src/App.tsx
++++ b/packages/client/src/App.tsx
+@@ -19,6 +19,7 @@ import CreateProformaPage from "./pages/documents/proforma/components/CreateProf
+ import CreateInvoiceDraftPage from "./pages/documents/invoices/components/CreateInvoiceDraftPage";
+ import { PageHeaderProvider, usePageHeader } from "./components/layouts/lib/page-header";
+ import StockArticlesPage from "./pages/StockArticlesPage";
++import CommissionsPage from "./pages/CommissionsPage";
+ 
+ interface AuthUser {
+   id: number;
+@@ -155,6 +156,7 @@ export default function App() {
+             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+             <Route path="/creances" element={<CreancesPage />} />
+             <Route path="/stock" element={<StockArticlesPage />} />
++            <Route path="/commissions" element={<CommissionsPage />} />
+             <Route
+               path="/users"
+               element={
+diff --git a/packages/client/src/components/customs/CommissionDynamicFields.tsx b/packages/client/src/components/customs/CommissionDynamicFields.tsx
+new file mode 100644
+index 0000000..30ce1bd
+--- /dev/null
++++ b/packages/client/src/components/customs/CommissionDynamicFields.tsx
+@@ -0,0 +1,94 @@
++import { Input } from "@/components/ui/input";
++import { Label } from "@/components/ui/label";
++import type { CommissionDetails } from "@/lib/commission.api";
++
++interface CommissionDynamicFieldsProps {
++  // The active type's fieldSchema, e.g. { operateur: "string" } or
++  // { visaType: "enum:e-visa,visa-tampon", fournisseur: "string" }. Built
++  // once here, works for every type in the catalog — including any new type
++  // a super_admin creates later through the catalog UI — without this
++  // component ever needing a code change. That's the whole point of the
++  // catalog being data-driven (M2) rather than a fixed TS union of types.
++  fieldSchema: Record<string, string>;
++  values: CommissionDetails;
++  onChange: (values: CommissionDetails) => void;
++}
++
++function fieldLabel(key: string): string {
++  // Cheap camelCase -> "Camel Case" — good enough for the known field names
++  // (operateur, fournisseur, visaType, periode, reference); a super_admin
++  // adding a custom field gets a readable-enough default label for free.
++  return key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
++}
++
++export function CommissionDynamicFields({ fieldSchema, values, onChange }: CommissionDynamicFieldsProps) {
++  const entries = Object.entries(fieldSchema);
++  if (entries.length === 0) return null; // e.g. transfert_change — agent/date/amount only, nothing extra
++
++  function updateField(key: string, value: string) {
++    onChange({ ...values, [key]: value });
++  }
++
++  function updatePeriod(key: string, patch: Partial<{ start: string; end: string }>) {
++    const current = (values[key] as { start: string; end: string } | undefined) ?? { start: "", end: "" };
++    onChange({ ...values, [key]: { ...current, ...patch } });
++  }
++
++  return (
++    <div className="grid gap-3 md:grid-cols-2">
++      {entries.map(([key, fieldType]) => {
++        // "enum:a,b,c" -> dropdown
++        if (fieldType.startsWith("enum:")) {
++          const options = fieldType.slice(5).split(",");
++          return (
++            <div key={key}>
++              <Label>{fieldLabel(key)}</Label>
++              <select
++                value={(values[key] as string) ?? ""}
++                onChange={(e) => updateField(key, e.target.value)}
++                className="flex h-10 w-full rounded border border-neutral-200 bg-white px-3 text-sm"
++              >
++                <option value="">— Sélectionner —</option>
++                {options.map((opt) => (
++                  <option key={opt} value={opt}>
++                    {opt}
++                  </option>
++                ))}
++              </select>
++            </div>
++          );
++        }
++
++        // "period" -> {start, end} date range
++        if (fieldType === "period") {
++          const period = (values[key] as { start: string; end: string } | undefined) ?? { start: "", end: "" };
++          return (
++            <div key={key} className="md:col-span-2 grid grid-cols-2 gap-3">
++              <div>
++                <Label>{fieldLabel(key)} — début</Label>
++                <Input type="date" value={period.start} onChange={(e) => updatePeriod(key, { start: e.target.value })} />
++              </div>
++              <div>
++                <Label>{fieldLabel(key)} — fin</Label>
++                <Input type="date" value={period.end} onChange={(e) => updatePeriod(key, { end: e.target.value })} />
++              </div>
++            </div>
++          );
++        }
++
++        // "string" or "string?" -> plain text, "?" suffix just means optional
++        // (no required-marker in the UI; server never enforces it either —
++        // spec keeps all detail fields free-entry).
++        const isOptional = fieldType.endsWith("?");
++        return (
++          <div key={key}>
++            <Label>
++              {fieldLabel(key)} {isOptional && <span className="text-neutral-400">(optionnel)</span>}
++            </Label>
++            <Input value={(values[key] as string) ?? ""} onChange={(e) => updateField(key, e.target.value)} />
++          </div>
++        );
++      })}
++    </div>
++  );
++}
+diff --git a/packages/client/src/components/layouts/Layout.tsx b/packages/client/src/components/layouts/Layout.tsx
+index 49dbe7b..45a7029 100644
+--- a/packages/client/src/components/layouts/Layout.tsx
++++ b/packages/client/src/components/layouts/Layout.tsx
+@@ -17,6 +17,7 @@ import {
+   AlertTriangle,
+   ArrowLeft,
+   Package,
++  Percent,
+ } from "lucide-react";
+ 
+ import { cn } from "@/lib/utils";
+@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
+   { to: "/invoices", label: "Factures", icon: Receipt, moduleCode: "documents" },
+   { to: "/creances", label: "Créances", icon: AlertTriangle, moduleCode: "penalties" },
+   { to: "/stock", label: "Stock", icon: Package, moduleCode: "shop" },
++  { to: "/commissions", label: "Commissions", icon: Percent, moduleCode: "commission" },
+   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
+   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
+ ];
+diff --git a/packages/client/src/lib/commission-catalog.api.ts b/packages/client/src/lib/commission-catalog.api.ts
+index 65a80b5..4c370af 100644
+--- a/packages/client/src/lib/commission-catalog.api.ts
++++ b/packages/client/src/lib/commission-catalog.api.ts
+@@ -7,6 +7,7 @@ export interface CommissionType {
+   label: string;
+   icon?: string;
+   active: boolean;
++  fieldSchema?: Record<string, string>; // e.g. { operateur: "string" }, values follow the "string"/"string?"/"period"/"enum:a,b" convention
+ }
+ 
+ export const commissionCatalogApi = {
+diff --git a/packages/client/src/lib/commission.api.ts b/packages/client/src/lib/commission.api.ts
+new file mode 100644
+index 0000000..304db20
+--- /dev/null
++++ b/packages/client/src/lib/commission.api.ts
+@@ -0,0 +1,44 @@
++import api from "./axios";
++
++export interface CommissionPeriod {
++  start: string;
++  end: string;
++}
++
++export type CommissionDetails = Record<string, string | number | CommissionPeriod | undefined>;
++
++export interface CommissionTransaction {
++  id: number;
++  type: string;
++  agentId: number;
++  clientPartyId?: number;
++  referrerPartyId?: number;
++  date: string;
++  commissionAmount: string;
++  details?: CommissionDetails;
++  active: boolean;
++  createdAt: string;
++}
++
++export interface CreateCommissionInput {
++  type: string;
++  clientPartyId?: number;
++  referrerPartyId?: number;
++  date: string;
++  commissionAmount: number;
++  details?: CommissionDetails;
++}
++
++export interface CommissionFilter {
++  type?: string;
++  agentId?: number;
++  dateFrom?: string;
++  dateTo?: string;
++  includeInactive?: boolean;
++}
++
++export const commissionApi = {
++  list: (filter: CommissionFilter = {}) => api.get<CommissionTransaction[]>("/commissions", { params: filter }),
++  create: (data: CreateCommissionInput) => api.post<CommissionTransaction>("/commissions", data),
++  softDelete: (id: number) => api.delete<CommissionTransaction>(`/commissions/${id}`),
++};
+diff --git a/packages/client/src/pages/CommissionsPage.tsx b/packages/client/src/pages/CommissionsPage.tsx
+new file mode 100644
+index 0000000..8991740
+--- /dev/null
++++ b/packages/client/src/pages/CommissionsPage.tsx
+@@ -0,0 +1,129 @@
++import { useEffect, useState } from "react";
++import { Loader2, Trash2 } from "lucide-react";
++import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
++import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
++import { Button } from "@/components/ui/button";
++import { useAuth } from "@/App";
++import { usePageHeader } from "@/components/layouts/lib/page-header";
++import { CreateCommissionDialog } from "./commission/CreateCommissionDialog";
++
++export default function CommissionsPage() {
++  const { user } = useAuth();
++  const [commissions, setCommissions] = useState<CommissionTransaction[]>([]);
++  const [types, setTypes] = useState<CommissionType[]>([]);
++  const [typeFilter, setTypeFilter] = useState<string>("");
++  const [loading, setLoading] = useState(true);
++
++  usePageHeader({ title: "Commissions" });
++
++  const canDelete = user && ["admin", "super_admin"].includes(user.role);
++
++  // All types (active + inactive) so the filter can still find historical
++  // rows recorded under a since-disabled type — soft-disable never hides
++  // the transactions themselves (spec: "transactions retain type").
++  useEffect(() => {
++    commissionCatalogApi.list().then((res) => setTypes(res.data));
++  }, []);
++
++  function load() {
++    setLoading(true);
++    commissionApi.list(typeFilter ? { type: typeFilter } : {}).then((res) => {
++      setCommissions(res.data);
++      setLoading(false);
++    });
++  }
++
++  useEffect(load, [typeFilter]);
++
++  async function handleDelete(id: number) {
++    await commissionApi.softDelete(id);
++    load();
++  }
++
++  const total = commissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
++  const typeLabel = (code: string) => types.find((t) => t.code === code)?.label ?? code;
++
++  return (
++    <div>
++      <div className="flex items-center justify-between mb-6">
++        <div>
++          <p className="text-neutral-500 text-sm mt-0.5">
++            {commissions.length} commission{commissions.length !== 1 ? "s" : ""} · {total.toLocaleString("fr-FR")} XAF
++          </p>
++        </div>
++        <CreateCommissionDialog onCreated={load} />
++      </div>
++
++      <div className="mb-4">
++        <select
++          value={typeFilter}
++          onChange={(e) => setTypeFilter(e.target.value)}
++          className="h-9 rounded border border-neutral-200 bg-white px-3 text-[12px]"
++        >
++          <option value="">Tous les types</option>
++          {types.map((t) => (
++            <option key={t.code} value={t.code}>
++              {t.label}
++            </option>
++          ))}
++        </select>
++      </div>
++
++      {loading ? (
++        <Loader2 className="animate-spin text-neutral-400" size={18} />
++      ) : (
++        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
++          <table className="w-full text-left">
++            <thead className="bg-neutral-50 border-b border-neutral-200">
++              <tr>
++                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
++                  Type
++                </th>
++                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
++                  Date
++                </th>
++                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
++                  Montant
++                </th>
++                {canDelete && <th className="px-4 py-2.5 w-10"></th>}
++              </tr>
++            </thead>
++            <tbody>
++              {commissions.map((c) => (
++                <tr key={c.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
++                  <td className="px-4 py-2.5 text-[12px] text-neutral-800">{typeLabel(c.type)}</td>
++                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
++                    {new Date(c.date).toLocaleDateString("fr-FR")}
++                  </td>
++                  <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
++                    {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
++                  </td>
++                  {canDelete && (
++                    <td className="px-4 py-2.5 text-right">
++                      <Button
++                        variant="ghost"
++                        size="icon"
++                        onClick={() => handleDelete(c.id)}
++                        className="text-red-500 hover:bg-red-50"
++                        title="Supprimer"
++                      >
++                        <Trash2 size={13} />
++                      </Button>
++                    </td>
++                  )}
++                </tr>
++              ))}
++              {commissions.length === 0 && (
++                <tr>
++                  <td colSpan={canDelete ? 4 : 3} className="px-4 py-8 text-center text-[12px] text-neutral-500">
++                    Aucune commission.
++                  </td>
++                </tr>
++              )}
++            </tbody>
++          </table>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/packages/client/src/pages/commission/CreateCommissionDialog.tsx b/packages/client/src/pages/commission/CreateCommissionDialog.tsx
+new file mode 100644
+index 0000000..0e5a541
+--- /dev/null
++++ b/packages/client/src/pages/commission/CreateCommissionDialog.tsx
+@@ -0,0 +1,201 @@
++import { useEffect, useState } from "react";
++import { Loader2, Plus } from "lucide-react";
++import {
++  Dialog,
++  DialogTrigger,
++  DialogContent,
++  DialogHeader,
++  DialogTitle,
++  DialogFooter,
++} from "@/components/ui/dialog";
++import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
++import { Label } from "@/components/ui/label";
++import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
++import { commissionApi, type CommissionDetails } from "@/lib/commission.api";
++import { PartySelect } from "@/pages/documents/PartySelect";
++import { QuickAddPartyDialog } from "@/pages/party/components/QuickAddPartyDialog";
++import { CommissionDynamicFields } from "@/components/customs/CommissionDynamicFields";
++import type { Party } from "@/lib/party.api";
++
++interface CreateCommissionDialogProps {
++  onCreated: () => void;
++}
++
++function todayISO(): string {
++  return new Date().toISOString().split("T")[0];
++}
++
++export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProps) {
++  const [open, setOpen] = useState(false);
++  const [types, setTypes] = useState<CommissionType[]>([]);
++  const [selectedTypeCode, setSelectedTypeCode] = useState<string>("");
++  const [client, setClient] = useState<Party | null>(null);
++  const [referrer, setReferrer] = useState<Party | null>(null);
++  const [date, setDate] = useState(todayISO());
++  const [amount, setAmount] = useState(0);
++  const [details, setDetails] = useState<CommissionDetails>({});
++  const [submitting, setSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  // Only ACTIVE types are offered — matches the catalog's whole point
++  // (super_admin can seed a type and flip it live/inactive without a code
++  // change anywhere, including here).
++  useEffect(() => {
++    if (open) {
++      commissionCatalogApi.list().then((res) => setTypes(res.data.filter((t) => t.active)));
++    }
++  }, [open]);
++
++  const selectedType = types.find((t) => t.code === selectedTypeCode);
++
++  function reset() {
++    setSelectedTypeCode("");
++    setClient(null);
++    setReferrer(null);
++    setDate(todayISO());
++    setAmount(0);
++    setDetails({});
++    setError(null);
++  }
++
++  async function handleSubmit() {
++    setSubmitting(true);
++    setError(null);
++    try {
++      await commissionApi.create({
++        type: selectedTypeCode,
++        clientPartyId: client?.id,
++        referrerPartyId: referrer?.id,
++        date,
++        commissionAmount: amount,
++        details,
++      });
++      setOpen(false);
++      reset();
++      onCreated();
++    } catch (err: unknown) {
++      setError(
++        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
++          "Erreur lors de l'enregistrement.",
++      );
++    } finally {
++      setSubmitting(false);
++    }
++  }
++
++  const canSubmit = selectedTypeCode && date && amount > 0;
++
++  return (
++    <Dialog
++      open={open}
++      onOpenChange={(v) => {
++        setOpen(v);
++        if (!v) reset();
++      }}
++    >
++      <DialogTrigger>
++        <Button size="sm">
++          <Plus size={14} /> Nouvelle commission
++        </Button>
++      </DialogTrigger>
++      <DialogContent className="max-w-lg">
++        <DialogHeader>
++          <DialogTitle>Nouvelle commission</DialogTitle>
++        </DialogHeader>
++
++        <div className="space-y-4">
++          <div>
++            <Label>Type</Label>
++            <select
++              value={selectedTypeCode}
++              onChange={(e) => {
++                setSelectedTypeCode(e.target.value);
++                setDetails({}); // switching type resets the dynamic fields — different schema entirely
++              }}
++              className="flex h-10 w-full rounded border border-neutral-200 bg-white px-3 text-sm"
++            >
++              <option value="">— Sélectionner —</option>
++              {types.map((t) => (
++                <option key={t.code} value={t.code}>
++                  {t.label}
++                </option>
++              ))}
++            </select>
++          </div>
++
++          <div className="grid grid-cols-2 gap-3">
++            <div>
++              <Label>Date</Label>
++              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
++            </div>
++            <div>
++              <Label>Montant de la commission</Label>
++              <Input
++                type="number"
++                value={amount || ""}
++                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
++              />
++            </div>
++          </div>
++
++          {/* Client/référent are optional everywhere — spec: "absent where N/A,
++              e.g. Mobile Money". No hardcoded per-type logic here; every type
++              gets the same two optional pickers, whether or not it makes
++              sense to fill them in for that particular transaction. */}
++          <div className="grid grid-cols-2 gap-3">
++            <div>
++              <Label>Client (optionnel)</Label>
++              <PartySelect value={client} onChange={setClient} placeholder="Rechercher un client..." />
++              {!client && (
++                <div className="mt-1">
++                  <QuickAddPartyDialog
++                    role="client"
++                    onCreated={setClient}
++                    trigger={
++                      <button type="button" className="text-[10.5px] text-brand-gold-dark hover:underline">
++                        + Ajouter rapidement
++                      </button>
++                    }
++                  />
++                </div>
++              )}
++            </div>
++            <div>
++              <Label>Référent (optionnel)</Label>
++              <PartySelect value={referrer} onChange={setReferrer} filterReferrer placeholder="Rechercher un référent..." />
++              {!referrer && (
++                <div className="mt-1">
++                  <QuickAddPartyDialog
++                    role="referrer"
++                    onCreated={setReferrer}
++                    trigger={
++                      <button type="button" className="text-[10.5px] text-brand-gold-dark hover:underline">
++                        + Ajouter rapidement
++                      </button>
++                    }
++                  />
++                </div>
++              )}
++            </div>
++          </div>
++
++          {selectedType?.fieldSchema && (
++            <CommissionDynamicFields fieldSchema={selectedType.fieldSchema} values={details} onChange={setDetails} />
++          )}
++
++          {error && <p className="text-[11px] text-red-600">{error}</p>}
++        </div>
++
++        <DialogFooter>
++          <Button variant="secondary" onClick={() => setOpen(false)}>
++            Annuler
++          </Button>
++          <Button onClick={handleSubmit} disabled={submitting || !canSubmit}>
++            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
++          </Button>
++        </DialogFooter>
++      </DialogContent>
++    </Dialog>
++  );
++}
+diff --git a/packages/server/src/index.ts b/packages/server/src/index.ts
+index 665182f..6b160bd 100644
+--- a/packages/server/src/index.ts
++++ b/packages/server/src/index.ts
+@@ -69,6 +69,7 @@ import deliveryNoteRoutes from "./modules/documents/routes/delivery-note.routes.
+ import paymentRoutes from "./modules/documents/routes/payment.routes.js";
+ import creanceRoutes from "./modules/penalties/routes/creance.routes.js";
+ import stockRoutes from "./modules/stock/routes/stock.routes.js";
++import commissionRoutes from "./modules/commission/routes/commission.routes.js";
+ import { registerJobs } from "./jobs/index.js";
+ 
+ // ── Routes API ─────────────────────────────────────────────────────────────
+@@ -87,6 +88,7 @@ app.use("/api/delivery-notes", deliveryNoteRoutes);
+ app.use("/api/payments", paymentRoutes);
+ app.use("/api/creances", creanceRoutes);
+ app.use("/api/stock", stockRoutes);
++app.use("/api/commissions", commissionRoutes);
+ 
+ // ── Health check ───────────────────────────────────────────────────────────
+ app.get("/api/health", (_req, res) => {
+diff --git a/packages/server/src/modules/commission/controllers/commission.controller.ts b/packages/server/src/modules/commission/controllers/commission.controller.ts
+new file mode 100644
+index 0000000..f795ec3
+--- /dev/null
++++ b/packages/server/src/modules/commission/controllers/commission.controller.ts
+@@ -0,0 +1,70 @@
++import { Request, Response } from "express";
++import * as commissionService from "../services/commission.service.js";
++
++function handleError(res: Response, error: unknown): void {
++  const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
++  const status: Record<string, number> = {
++    COMMISSION_TYPE_NOT_ACTIVE: 400,
++    COMMISSION_AMOUNT_MUST_BE_POSITIVE: 400,
++    CLIENT_PARTY_NOT_FOUND: 404,
++    REFERRER_PARTY_NOT_FOUND: 404,
++    COMMISSION_TRANSACTION_NOT_FOUND: 404,
++  };
++  const code = status[message] ?? 500;
++  if (code === 500) console.error("[commission]", error);
++  res.status(code).json({ message, code: message });
++}
++
++// Records a new commission — any agent can log one directly, no approval
++// workflow (matches the "autonomous" design: this is a same-day accounting
++// entry for a service the agency already completed, not a quote awaiting
++// anyone's sign-off).
++export async function create(req: Request, res: Response): Promise<void> {
++  try {
++    const { type, clientPartyId, referrerPartyId, date, commissionAmount, details } = req.body;
++    if (!type || !date || typeof commissionAmount !== "number") {
++      res.status(400).json({ message: "type, date et commissionAmount sont requis." });
++      return;
++    }
++    const commission = await commissionService.createCommissionTransaction({
++      type,
++      agentId: req.user!.userId,
++      clientPartyId,
++      referrerPartyId,
++      date,
++      commissionAmount,
++      details,
++    });
++    res.status(201).json(commission);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
++
++export async function list(req: Request, res: Response): Promise<void> {
++  try {
++    const { type, agentId, dateFrom, dateTo, includeInactive } = req.query;
++    const commissions = await commissionService.listCommissionTransactions({
++      type: type as string | undefined,
++      agentId: agentId ? parseInt(agentId as string) : undefined,
++      dateFrom: dateFrom as string | undefined,
++      dateTo: dateTo as string | undefined,
++      includeInactive: includeInactive === "true",
++    });
++    res.json(commissions);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
++
++// admin+ — same privilege level as invoice cancellation, since both quietly
++// remove a row from CA/gain reporting and deserve the same scrutiny.
++export async function softDelete(req: Request, res: Response): Promise<void> {
++  try {
++    const id = parseInt(req.params.id);
++    const commission = await commissionService.softDeleteCommissionTransaction(id, req.user!.userId);
++    res.json(commission);
++  } catch (error) {
++    handleError(res, error);
++  }
++}
+diff --git a/packages/server/src/modules/commission/routes/commission.routes.ts b/packages/server/src/modules/commission/routes/commission.routes.ts
+new file mode 100644
+index 0000000..4201ae2
+--- /dev/null
++++ b/packages/server/src/modules/commission/routes/commission.routes.ts
+@@ -0,0 +1,17 @@
++import { Router } from "express";
++import { authenticate } from "../../../middleware/authenticate.js";
++import { requireAgent, requireAdmin } from "../../../middleware/authorize.js";
++import * as commissionController from "../controllers/commission.controller.js";
++
++const router = Router();
++
++router.use(authenticate);
++
++// agent+ — any staff member can log a commission the moment they close one.
++router.get("/", requireAgent, commissionController.list);
++router.post("/", requireAgent, commissionController.create);
++
++// admin+ — soft-delete only, see controller comment for why the higher bar.
++router.delete("/:id", requireAdmin, commissionController.softDelete);
++
++export default router;
+diff --git a/packages/server/src/modules/commission/services/commission.service.ts b/packages/server/src/modules/commission/services/commission.service.ts
+new file mode 100644
+index 0000000..84d749a
+--- /dev/null
++++ b/packages/server/src/modules/commission/services/commission.service.ts
+@@ -0,0 +1,129 @@
++import { db } from "../../../db/index.js";
++import { commissionTransactions, parties } from "../../../db/schema.js";
++import { eq, and, gte, lte } from "drizzle-orm";
++import { logAudit } from "../../auth/services/auth.service.js";
++import { listCommissionTypes } from "../../commission-catalog/services/commission-catalog.service.js";
++import type {
++  CommissionTransactionView,
++  CreateCommissionTransactionParams,
++  ListCommissionTransactionsFilter,
++} from "./commission.types.js";
++
++function toView(row: typeof commissionTransactions.$inferSelect): CommissionTransactionView {
++  return {
++    id: row.id,
++    type: row.type,
++    agentId: row.agentId,
++    clientPartyId: row.clientPartyId ?? undefined,
++    referrerPartyId: row.referrerPartyId ?? undefined,
++    date: row.date,
++    commissionAmount: row.commissionAmount,
++    details: (row.details as CommissionTransactionView["details"]) ?? undefined,
++    active: row.active,
++    createdAt: row.createdAt,
++  };
++}
++
++// The one real validation this module does: the type code must exist AND be
++// active in the catalog right now. Everything else about a commission is
++// manual/free-entry by design (spec: "amount manual always, no auto-calc, no
++// formula engine") — this function is deliberately the ONLY gate, not the
++// first of many.
++async function assertTypeIsActive(typeCode: string): Promise<void> {
++  const types = await listCommissionTypes(false); // false = active only
++  const match = types.find((t) => t.code === typeCode);
++  if (!match) throw new Error("COMMISSION_TYPE_NOT_ACTIVE");
++}
++
++// Records one commission transaction. Deliberately NOT wrapped in a
++// transaction with anything else — this is a single-table insert, standalone
++// by design (M10: "autonomous, never enters Proforma→Facture→BL").
++export async function createCommissionTransaction(
++  params: CreateCommissionTransactionParams,
++): Promise<CommissionTransactionView> {
++  if (params.commissionAmount <= 0) throw new Error("COMMISSION_AMOUNT_MUST_BE_POSITIVE");
++  await assertTypeIsActive(params.type);
++
++  // Client/référent are optional Party FKs (spec: "absent where N/A, e.g.
++  // Mobile Money") — only validate they exist if actually supplied, never
++  // require them.
++  if (params.clientPartyId) {
++    const [client] = await db.select().from(parties).where(eq(parties.id, params.clientPartyId));
++    if (!client) throw new Error("CLIENT_PARTY_NOT_FOUND");
++  }
++  if (params.referrerPartyId) {
++    const [referrer] = await db.select().from(parties).where(eq(parties.id, params.referrerPartyId));
++    if (!referrer) throw new Error("REFERRER_PARTY_NOT_FOUND");
++  }
++
++  const [inserted] = await db
++    .insert(commissionTransactions)
++    .values({
++      type: params.type as typeof commissionTransactions.$inferInsert.type,
++      agentId: params.agentId,
++      clientPartyId: params.clientPartyId,
++      referrerPartyId: params.referrerPartyId,
++      date: params.date,
++      commissionAmount: params.commissionAmount.toFixed(2),
++      details: params.details,
++    })
++    .returning();
++
++  await logAudit({
++    userId: params.agentId,
++    action: "COMMISSION_TRANSACTION_CREATED",
++    entityType: "commission_transactions",
++    entityId: String(inserted.id),
++    metadata: { type: params.type, amount: params.commissionAmount },
++  });
++
++  return toView(inserted);
++}
++
++// Simple filtered list — no pagination yet (fine at current volumes; revisit
++// if this module gets real load, same caveat as the créances aggregation
++// from Sprint 5).
++export async function listCommissionTransactions(
++  filter: ListCommissionTransactionsFilter = {},
++): Promise<CommissionTransactionView[]> {
++  const conditions = [];
++  if (!filter.includeInactive) conditions.push(eq(commissionTransactions.active, true));
++  if (filter.type) conditions.push(eq(commissionTransactions.type, filter.type as typeof commissionTransactions.$inferInsert.type));
++  if (filter.agentId) conditions.push(eq(commissionTransactions.agentId, filter.agentId));
++  if (filter.dateFrom) conditions.push(gte(commissionTransactions.date, filter.dateFrom));
++  if (filter.dateTo) conditions.push(lte(commissionTransactions.date, filter.dateTo));
++
++  const rows =
++    conditions.length > 0
++      ? await db.select().from(commissionTransactions).where(and(...conditions))
++      : await db.select().from(commissionTransactions);
++
++  return rows.map(toView);
++}
++
++// Soft-delete only — per spec ("Deletion: soft-delete; disabling a type in
++// use = soft-disable too, M2"). Never a hard delete: commission history feeds
++// CA/gain and Employee KPI reporting (M12), so the row must survive even once
++// "removed" from the agent's day-to-day view.
++export async function softDeleteCommissionTransaction(
++  id: number,
++  userId: number,
++): Promise<CommissionTransactionView> {
++  const [existing] = await db.select().from(commissionTransactions).where(eq(commissionTransactions.id, id));
++  if (!existing) throw new Error("COMMISSION_TRANSACTION_NOT_FOUND");
++
++  const [updated] = await db
++    .update(commissionTransactions)
++    .set({ active: false })
++    .where(eq(commissionTransactions.id, id))
++    .returning();
++
++  await logAudit({
++    userId,
++    action: "COMMISSION_TRANSACTION_DEACTIVATED",
++    entityType: "commission_transactions",
++    entityId: String(id),
++  });
++
++  return toView(updated);
++}
+diff --git a/packages/server/src/modules/commission/services/commission.types.ts b/packages/server/src/modules/commission/services/commission.types.ts
+new file mode 100644
+index 0000000..e070b9c
+--- /dev/null
++++ b/packages/server/src/modules/commission/services/commission.types.ts
+@@ -0,0 +1,50 @@
++// M10 — Commission Divers. Unlike every other module built so far this
++// session, commission transactions are deliberately AUTONOMOUS: they never
++// touch a proforma, invoice, or BL. Recording one is a single, standalone
++// action — an agent closes a Mobile Money transfer, a visa application, a car
++// rental referral, etc., and logs it directly here. No document engine
++// involvement at all.
++
++export interface CommissionPeriod {
++  start: string; // ISO date
++  end: string;
++}
++
++// `details` is intentionally untyped/JSONB at the DB level — each commission
++// type's shape is defined by its own catalog fieldSchema (commission-catalog
++// module, Sprint 1), not by a fixed TS interface here. This keeps the type
++// system honest: Claude/TS can't guarantee the shape of a super_admin-created
++// custom type at compile time, only the catalog's fieldSchema can describe it
++// at runtime.
++export type CommissionDetails = Record<string, string | number | CommissionPeriod | undefined>;
++
++export interface CreateCommissionTransactionParams {
++  type: string; // must match an ACTIVE commission_type_catalog.code
++  agentId: number; // whoever is recording it — feeds Employee KPI (M12)
++  clientPartyId?: number;
++  referrerPartyId?: number;
++  date: string; // ISO date, required
++  commissionAmount: number; // manual, always > 0 — no auto-calc anywhere (spec: "no formula engine")
++  details?: CommissionDetails;
++}
++
++export interface CommissionTransactionView {
++  id: number;
++  type: string;
++  agentId: number;
++  clientPartyId?: number;
++  referrerPartyId?: number;
++  date: string;
++  commissionAmount: string;
++  details?: CommissionDetails;
++  active: boolean;
++  createdAt: Date;
++}
++
++export interface ListCommissionTransactionsFilter {
++  type?: string;
++  agentId?: number;
++  dateFrom?: string;
++  dateTo?: string;
++  includeInactive?: boolean;
++}

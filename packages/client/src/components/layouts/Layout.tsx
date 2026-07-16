@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Package,
+  Percent,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/invoices", label: "Factures", icon: Receipt, moduleCode: "documents" },
   { to: "/creances", label: "Créances", icon: AlertTriangle, moduleCode: "penalties" },
   { to: "/stock", label: "Stock", icon: Package, moduleCode: "shop" },
+  { to: "/commissions", label: "Commissions", icon: Percent, moduleCode: "commission" },
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
 ];
