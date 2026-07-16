@@ -1,20 +1,17 @@
-1. Sprint 8 (M10 — Commission Divers): read feasibility spec, plan
-   commission_transactions schema-to-service work. Genuinely different shape
-   from every module so far — autonomous, never touches the document engine.
-2. General lesson from Sprint 7, worth remembering for all future zodResolver
-   forms: every field the UI writes to react-hook-form state must be
-   explicitly declared in the Zod schema, or it silently vanishes on submit
-   with zero error. Audit existing forms (proforma/invoice composers) for any
-   other fields that might have the same gap.
-3. Deferred feature (person's own idea, Sprint 7): reusable per-page guide/
-   help panel. Needs real content authored per page + a UX design pass
-   (panel vs. toggleable handle). Filed in Notion backlog.
-4. Below-threshold stock KPI display — data/query ready (listLowStockArticles),
-   display is explicit M12 (Sprint 10) scope, same treatment as ticket margin.
+1. Sprint 9 (M11 — Épargne Voyage): read feasibility spec, plan savings
+   accounts/ledger schema-to-service work. EPARGNE_INSCRIPTION_FEE = 5000 XAF
+   already confirmed at project kickoff (see decisions.md).
+2. M12 dashboard (Sprint 10) will need to read: ticket margin (Sprint 6),
+   stock low-threshold (Sprint 7), and commission agentId/type/amount
+   (Sprint 8) — all three are capture-only right now, no display anywhere.
+3. Deferred from Sprint 8: filter capability in the commission Settings tab.
+4. Correction-request dialog only covers date/amount/note — client/référent
+   and type-specific dynamic fields deliberately out of scope for the first
+   pass. Revisit if real usage shows it's needed.
 5. Sprint 12 hardening item filed in Notion: recordPayment→createCreditLot
    cross-transaction risk on overpayment (see Notion backlog, Sprint 12)
 6. Deferred hardening item (from Sprint 1): retrofit remaining hardcoded
-   neutral-_/brand-_ Tailwind pages to semantic tokens for full dark-mode
+   neutral-*/brand-* Tailwind pages to semantic tokens for full dark-mode
    coverage
 7. Open migration-backfill decisions still pending Lucrèce (see
    mongo-pg-migration-mapping.md): company-type party fields, credit-lot

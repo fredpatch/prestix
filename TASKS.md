@@ -159,13 +159,29 @@
 - Reusable per-page "guide/help" panel — the person's own idea, correctly scoped as needing real content-authoring work (not just a mechanism) and a genuine UX design pass (panel vs. toggleable handle). Filed in Notion backlog.
 - Papeterie/POS receipt mode — already V2/deferred per spec, owner decision pending. Confirmed during this sprint's planning that the stock schema is already reusable groundwork for it whenever that conversation happens (Papeterie would just be more `stockArticles` rows, not a separate system).
 
-## Sprint 8 – Commission Divers (M10) | 2 weeks
+## Sprint 8 – Commission Divers (M10) ✅ CLOSED (2026-07-16) | 2 weeks (ran long — see note)
 
-- [ ] **commission_transactions: type enum + JSONB details** — CRITICAL
-- [ ] 6 seed types + fields; manual amount; autonomous (no workflow) — CRITICAL
-- [ ] Client/référent Party FK + inline quick-add — HIGH
-- [ ] Counts in CA + gain; agentId → Employee KPI — HIGH
-- [ ] Data-driven type add (super_admin) — MEDIUM
+> Foundational pieces (schema, commission-catalog module, QuickAddPartyDialog) were already built in Sprint 0/1/2 and matched spec exactly — genuinely no gaps found there this time. But the sprint still grew well past its checklist once real feedback started: a universal `note` column, a full field-schema editor for existing catalog types (create-new-type existed since Sprint 1, edit-existing-type never did), and — the big one — a complete correction-request approval workflow that isn't in the M10 spec at all. "Autonomous, no workflow" (spec) describes commission recording itself, not correcting a mistake after the fact; those are different concerns.
+
+- [x] **commission_transactions: type enum + JSONB details** — CRITICAL — schema already correct from Sprint 0, confirmed not built-around-a-gap
+- [x] 6 seed types + fields; manual amount; autonomous (no workflow) — CRITICAL — confirmed via runtime test across all 6 types (simple/no-fields, single-field, full-complexity with period range, enum dropdown); Mobile Money's opérateur field confirmed already free-text (Moov Money needs no schema change)
+- [x] Client/référent Party FK + inline quick-add — HIGH — confirmed working from inside the commission entry dialog, reusing Sprint 2's QuickAddPartyDialog unchanged
+- [x] Counts in CA + gain; agentId → Employee KPI — HIGH — data capture confirmed correct (agentId, type, commissionAmount all present); *display* is explicit M12 (Sprint 10) scope, same treatment as ticket margin (Sprint 6) and stock KPIs (Sprint 7)
+- [x] Data-driven type add (super_admin) — MEDIUM — confirmed live: created a brand-new type ("Course du mois") through the UI with zero code changes, exactly proving the catalog design
+
+### Beyond-scope work completed this sprint
+- **`note` as a common optional column** — universal free-text field available on every type (present and future), not bolted onto each type's fieldSchema individually. Closed a real gap: Transfert et Change, Visa, and Canal+ all had no way to record "what this transaction actually was."
+- **Commission type field-schema editor** (Settings) — the catalog's `updateCommissionType` already supported editing fields server-side since Sprint 1, but neither the client API method nor any UI ever called it. Built a real editor: add/remove/rename fields, pick kind (text/optional text/period/enum-with-options).
+- **Full correction-request approval workflow** — new `commission_edit_requests` table, agent-submits/admin-reviews flow with mandatory reason, before/after diff in the review queue, approve applies the exact proposed patch atomically, reject leaves the transaction untouched. Chosen over two simpler alternatives (direct edit, or lock-amount-only) after laying out the tradeoffs explicitly.
+
+### Real gaps found and fixed
+- Client-side `CommissionType` never exposed `fieldSchema` even though the server already sent it — would have made the (not-yet-built) dynamic-field renderer silently show nothing for every type. Caught before it shipped.
+- Attempted `<DialogTrigger asChild>` out of habit (Radix convention) — this project uses Base UI, which doesn't support that prop. Caught by typecheck, confirmed via grep that every other dialog in the codebase uses the plain pattern instead.
+
+### Explicitly deferred, not forgotten
+- Hard-delete for unused commission types — confirmed with Fred: soft-disable only is fine for now.
+- Filter capability in the commission Settings tab — noted for later, not this sprint.
+- Correction-request dialog is scoped to date/amount/note only, not client/référent/type-specific fields — stated explicitly, not silently limited.
 
 ## Sprint 9 – Épargne Voyage (M11) | 2 weeks
 

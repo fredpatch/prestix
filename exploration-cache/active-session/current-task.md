@@ -1,40 +1,37 @@
 ## Task
 
-None active — Sprint 7 fully closed (2026-07-15). Awaiting direction on Sprint 8
-(Commission Divers, M10).
+None active — Sprint 8 fully closed (2026-07-16). Awaiting direction on Sprint 9
+(Épargne Voyage, M11).
 
-## Sprint 7 close-out summary
+## Sprint 8 close-out summary
 
-Full PrestiShop & Stock module built and runtime-tested: stock articles/items/
-movements, shop-line capture (article auto-fill, passenger dropdown-or-free-text,
-proactive low-stock warning at quoting time), stock OUT on issue with real
-idempotency, and the two distinct negative-stock rules confirmed separately —
-manual ops always blocked (no override exists), issue-time OUT can be overridden
-by manager+ only (confirmed via real negative onHand after override).
+Foundational pieces (schema, commission-catalog module from Sprint 1,
+QuickAddPartyDialog from Sprint 2) were already correct going in — genuinely
+no gaps found there, a change from most prior sprints. Confirmed via runtime
+test across all 6 active types (simple, single-field, full-complexity with
+period range, enum dropdown) plus a live-created 7th custom type ("Course du
+mois") through the super_admin UI with zero code changes, proving the
+data-driven catalog design actually works end to end.
 
-Corrected an initial scope misreading during planning: shop items ARE quotable
-on proformas, not invoice-only as the spec's literal wording first suggested —
-a real business scenario from Lucrèce (tickets + shop items priced together)
-overrode that reading. Added proformaShopDetails mirroring the ticket pattern.
+Grew well past its checklist once real usage feedback started, same pattern
+as Sprints 6/7:
+- `note` as a universal common column (not per-type) — closed a real gap for
+  Transfert et Change, Visa, and Canal+, which had no way to record what the
+  transaction actually was.
+- A real field-schema editor in Settings — `updateCommissionType` already
+  supported this server-side since Sprint 1, but nothing ever called it.
+- A full correction-request approval workflow — new table, agent-submits/
+  admin-reviews with mandatory reason, before/after diff, atomic approve/
+  reject. This is genuinely new business logic, not in the M10 spec at all —
+  chosen explicitly over two simpler alternatives (direct edit, lock-amount-
+  only) after laying out the tradeoffs, not decided unilaterally.
 
-Four real bugs found and fixed, one of them serious enough to note for every
-future zodResolver form: Zod's z.object() silently strips any key not declared
-in the schema. The ShopFields UI wrote correctly to form state the whole time,
-but shopDetails vanished on every submit with zero error, because lineSchema
-never declared it. Invisible in the UI, invisible in typecheck — only caught
-because the person checked the actual database directly instead of trusting
-the screen. Also caught: proformaShopDetails table spec'd but never pushed,
-invoice.service.ts only ever reading (never writing) shopDetails, and all
-three PDF services never reading shopDetails.passengerName for the printed
-client name.
-
-One feature explicitly deferred at the person's own suggestion: a reusable
-per-page guide/help panel. Correctly scoped as needing real content-authoring
-work plus its own UX design pass, not a quick bolt-on. Logged in Notion.
+Two real bugs caught before shipping: the client's CommissionType type never
+exposed fieldSchema despite the server already sending it (would have broken
+the dynamic-field renderer silently), and an incorrect Radix `asChild` habit
+that this Base-UI-based project doesn't support (caught by typecheck, fixed
+to match the pattern already used everywhere else).
 
 ## Next up
 
-Sprint 8 — Commission Divers (M10). Not yet started. This is the first module
-that's genuinely "autonomous" per spec — commission transactions never enter
-the Proforma→Facture→BL flow at all, a real architectural departure from every
-module built so far this session.
+Sprint 9 — Épargne Voyage (M11). Not yet started.
