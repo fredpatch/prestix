@@ -17,6 +17,8 @@ import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { useAuth } from "@/App";
+import { savingsApi } from "@/lib/savings.api";
 
 const MODULE_LABELS: Record<string, string> = {
   auth: "Authentification",
@@ -141,6 +143,58 @@ function FinancialSettingsTab() {
           </div>
         </div>
       ))}
+
+      <CreditConversionTool />
+    </div>
+  );
+}
+
+// Manual trigger for the M11 auto-conversion cron — same pattern as Sprint 5's
+// penalty accrual manual trigger: a legitimate standing admin feature (force
+// a check after fixing a settings mistake), not just a test hook.
+function CreditConversionTool() {
+  const { user } = useAuth();
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  if (!user || user.role !== "super_admin") return null;
+
+  async function handleTrigger() {
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await savingsApi.triggerConversion();
+      setResult(`${res.data.converted} converti(s), ${res.data.heldForReview} en attente de révision.`);
+    } catch (err: unknown) {
+      setResult(
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Erreur lors du déclenchement.",
+      );
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+        Outils
+      </h3>
+      <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between">
+        <div>
+          <p className="text-[12px] font-medium text-neutral-800">
+            Conversion crédit expiré → épargne
+          </p>
+          <p className="text-[10.5px] text-neutral-500">
+            Déclenche manuellement la conversion des lots de crédit dont la fenêtre de décision
+            est expirée (normalement automatique, une fois par jour).
+          </p>
+        </div>
+        <Button size="sm" variant="outline" onClick={handleTrigger} disabled={running}>
+          {running ? <Loader2 size={13} className="animate-spin" /> : "Déclencher"}
+        </Button>
+      </div>
+      {result && <p className="text-[10.5px] text-neutral-500 mt-1.5">{result}</p>}
     </div>
   );
 }

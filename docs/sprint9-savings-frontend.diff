@@ -1,0 +1,575 @@
+diff --git a/packages/client/src/lib/savings.api.ts b/packages/client/src/lib/savings.api.ts
+new file mode 100644
+index 0000000..fba1d9f
+--- /dev/null
++++ b/packages/client/src/lib/savings.api.ts
+@@ -0,0 +1,41 @@
++import api from "./axios";
++
++export interface SavingsAccount {
++  id: number;
++  partyId: number;
++  currency: string;
++  inscriptionFeeAmount: string;
++  subscriptionSource: "direct" | "credit_conversion";
++  sourceCreditLotId?: number;
++  balance: string;
++  createdAt: string;
++}
++
++export interface SavingsTransaction {
++  id: number;
++  accountId: number;
++  nature: "deposit" | "withdraw";
++  amount: string;
++  quantity: number;
++  totalAmount: string;
++  status: "draft" | "recorded";
++  appliedToInvoiceId?: number;
++  receiptNumber?: string;
++  reversalOfTransactionId?: number;
++  agentId?: number;
++  recordedAt?: string;
++  createdAt: string;
++}
++
++export const savingsApi = {
++  subscribe: (partyId: number) => api.post<SavingsAccount>("/savings/subscribe", { partyId }),
++  getAccountByParty: (partyId: number) => api.get<SavingsAccount>(`/savings/party/${partyId}`),
++  listTransactions: (accountId: number) => api.get<SavingsTransaction[]>(`/savings/${accountId}/transactions`),
++  deposit: (accountId: number, amount: number, quantity?: number) =>
++    api.post<SavingsTransaction>(`/savings/${accountId}/deposits`, { amount, quantity }),
++  withdraw: (accountId: number, amount: number, quantity?: number) =>
++    api.post<SavingsTransaction>(`/savings/${accountId}/withdrawals`, { amount, quantity }),
++  reverse: (transactionId: number, reason: string) =>
++    api.post<SavingsTransaction>(`/savings/transactions/${transactionId}/reverse`, { reason }),
++  triggerConversion: () => api.post<{ converted: number; heldForReview: number }>("/savings/convert-expired-credit"),
++};
+diff --git a/packages/client/src/pages/SettingsPage.tsx b/packages/client/src/pages/SettingsPage.tsx
+index 73d0fae..5f1b6f6 100644
+--- a/packages/client/src/pages/SettingsPage.tsx
++++ b/packages/client/src/pages/SettingsPage.tsx
+@@ -17,6 +17,8 @@ import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
+ import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+ import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
+ import { usePageHeader } from "@/components/layouts/lib/page-header";
++import { useAuth } from "@/App";
++import { savingsApi } from "@/lib/savings.api";
+ 
+ const MODULE_LABELS: Record<string, string> = {
+   auth: "Authentification",
+@@ -141,6 +143,58 @@ function FinancialSettingsTab() {
+           </div>
+         </div>
+       ))}
++
++      <CreditConversionTool />
++    </div>
++  );
++}
++
++// Manual trigger for the M11 auto-conversion cron — same pattern as Sprint 5's
++// penalty accrual manual trigger: a legitimate standing admin feature (force
++// a check after fixing a settings mistake), not just a test hook.
++function CreditConversionTool() {
++  const { user } = useAuth();
++  const [running, setRunning] = useState(false);
++  const [result, setResult] = useState<string | null>(null);
++
++  if (!user || user.role !== "super_admin") return null;
++
++  async function handleTrigger() {
++    setRunning(true);
++    setResult(null);
++    try {
++      const res = await savingsApi.triggerConversion();
++      setResult(`${res.data.converted} converti(s), ${res.data.heldForReview} en attente de révision.`);
++    } catch (err: unknown) {
++      setResult(
++        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
++          "Erreur lors du déclenchement.",
++      );
++    } finally {
++      setRunning(false);
++    }
++  }
++
++  return (
++    <div>
++      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">
++        Outils
++      </h3>
++      <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between">
++        <div>
++          <p className="text-[12px] font-medium text-neutral-800">
++            Conversion crédit expiré → épargne
++          </p>
++          <p className="text-[10.5px] text-neutral-500">
++            Déclenche manuellement la conversion des lots de crédit dont la fenêtre de décision
++            est expirée (normalement automatique, une fois par jour).
++          </p>
++        </div>
++        <Button size="sm" variant="outline" onClick={handleTrigger} disabled={running}>
++          {running ? <Loader2 size={13} className="animate-spin" /> : "Déclencher"}
++        </Button>
++      </div>
++      {result && <p className="text-[10.5px] text-neutral-500 mt-1.5">{result}</p>}
+     </div>
+   );
+ }
+diff --git a/packages/client/src/pages/party/PartyDetailPage.tsx b/packages/client/src/pages/party/PartyDetailPage.tsx
+index b297b03..9c79309 100644
+--- a/packages/client/src/pages/party/PartyDetailPage.tsx
++++ b/packages/client/src/pages/party/PartyDetailPage.tsx
+@@ -1,13 +1,20 @@
+ import { useEffect, useState, useCallback } from "react";
+ import { useParams, Link } from "react-router-dom";
+-import { ArrowLeft, Loader2, Power, Pencil } from "lucide-react";
+-import { Button } from "@/components/ui/button";
++import { ArrowLeft, Loader2, Power, Pencil, Download } from "lucide-react";
++import { Button, buttonVariants } from "@/components/ui/button";
+ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+ import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
+ import { creditApi, type CreditLot } from "@/lib/credit.api";
++import { savingsApi, type SavingsAccount, type SavingsTransaction } from "@/lib/savings.api";
+ import { useAuth } from "@/App";
+ import { EditPartyDialog } from "./EditPartyDialog";
++import { SubscribeButton } from "./components/SubscribeButton";
++import { SavingsTransactionDialog } from "./components/SavingsTransactionDialog";
++import { ReverseSavingsTransactionDialog } from "./components/ReverseSavingsTransactionDialog";
+ import { usePageHeader } from "@/components/layouts/lib/page-header";
++import { cn } from "@/lib/utils";
++
++const NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
+ 
+ export default function PartyDetailPage() {
+   const { id } = useParams<{ id: string }>();
+@@ -19,6 +26,8 @@ export default function PartyDetailPage() {
+   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+   const [creditLots, setCreditLots] = useState<CreditLot[]>([]);
+   const [history, setHistory] = useState<PartyHistory | null>(null);
++  const [savingsAccount, setSavingsAccount] = useState<SavingsAccount | null>(null);
++  const [savingsTransactions, setSavingsTransactions] = useState<SavingsTransaction[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [actionLoading, setActionLoading] = useState(false);
+ 
+@@ -38,6 +47,19 @@ export default function PartyDetailPage() {
+       setHistory(historyRes.data);
+       setLoading(false);
+     });
++
++    // Separate from the Promise.all above — a party without a savings account
++    // is the normal case (404), not an error the page should block on.
++    savingsApi
++      .getAccountByParty(partyId)
++      .then((res) => {
++        setSavingsAccount(res.data);
++        savingsApi.listTransactions(res.data.id).then((txRes) => setSavingsTransactions(txRes.data));
++      })
++      .catch(() => {
++        setSavingsAccount(null);
++        setSavingsTransactions([]);
++      });
+   }, [partyId]);
+ 
+   useEffect(load, [load]);
+@@ -58,6 +80,7 @@ export default function PartyDetailPage() {
+   }
+ 
+   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
++  const canReverse = user && ["admin", "super_admin"].includes(user.role);
+   const openLots = creditLots.filter((l) => !l.convertedAt && parseFloat(l.remainingAmount) > 0);
+ 
+   return (
+@@ -141,13 +164,30 @@ export default function PartyDetailPage() {
+           <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+             Épargne voyage
+           </p>
+-          <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
+-          <p className="text-[10px] text-neutral-400">
+-            Disponible avec le module Épargne (Sprint 9)
+-          </p>
++          {savingsAccount ? (
++            <>
++              <p className="text-[18px] font-bold text-brand-gold-dark mt-1">
++                {parseFloat(savingsAccount.balance).toLocaleString("fr-FR")} XAF
++              </p>
++              <p className="text-[10px] text-neutral-500">
++                {savingsAccount.subscriptionSource === "direct" ? "Souscription directe" : "Conversion crédit"}
++              </p>
++            </>
++          ) : (
++            <>
++              <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
++              <p className="text-[10px] text-neutral-400">Aucun compte ouvert</p>
++            </>
++          )}
+         </div>
+       </div>
+ 
++      {savingsAccount && (
++        <div className="flex justify-end mb-4">
++          <SavingsTransactionDialog account={savingsAccount} onRecorded={load} />
++        </div>
++      )}
++
+       <Tabs defaultValue="credit">
+         <TabsList>
+           <TabsTrigger value="credit">Lots de crédit</TabsTrigger>
+@@ -196,11 +236,55 @@ export default function PartyDetailPage() {
+         </TabsContent>
+ 
+         <TabsContent value="epargne">
+-          <p className="text-[12px] text-neutral-500 py-4">
+-            {history?.epargne.total === 0
+-              ? "Aucun historique épargne — disponible une fois le module Épargne (Sprint 9) en place."
+-              : `${history?.epargne.total} mouvement(s)`}
+-          </p>
++          {!savingsAccount ? (
++            <div className="py-4 space-y-3">
++              <p className="text-[12px] text-neutral-500">
++                Aucun compte épargne pour cette partie.
++              </p>
++              {canManage && <SubscribeButton partyId={partyId} onSubscribed={load} />}
++            </div>
++          ) : savingsTransactions.length === 0 ? (
++            <p className="text-[12px] text-neutral-500 py-4">Aucun mouvement pour ce compte.</p>
++          ) : (
++            <div className="space-y-2 py-2">
++              {savingsTransactions.map((t) => (
++                <div
++                  key={t.id}
++                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between"
++                >
++                  <div>
++                    <p className="text-[12px] font-medium text-neutral-800">
++                      {NATURE_LABELS[t.nature]} — {parseFloat(t.totalAmount).toLocaleString("fr-FR")} XAF
++                      {t.reversalOfTransactionId && (
++                        <span className="text-[10.5px] text-amber-600 ml-2">(contre-passation)</span>
++                      )}
++                    </p>
++                    <p className="text-[10.5px] text-neutral-500">
++                      {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}
++                      {t.appliedToInvoiceId && ` · appliqué à la facture #${t.appliedToInvoiceId}`}
++                      {t.receiptNumber && ` · ${t.receiptNumber}`}
++                    </p>
++                  </div>
++                  <div className="flex items-center gap-1">
++                    {t.receiptNumber && (
++                      <a
++                        href={`/api/savings/transactions/${t.id}/receipt`}
++                        target="_blank"
++                        rel="noreferrer"
++                        className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
++                        title="Télécharger le reçu"
++                      >
++                        <Download size={13} />
++                      </a>
++                    )}
++                    {canReverse && !t.reversalOfTransactionId && (
++                      <ReverseSavingsTransactionDialog transactionId={t.id} onReversed={load} />
++                    )}
++                  </div>
++                </div>
++              ))}
++            </div>
++          )}
+         </TabsContent>
+       </Tabs>
+ 
+diff --git a/packages/client/src/pages/party/components/ReverseSavingsTransactionDialog.tsx b/packages/client/src/pages/party/components/ReverseSavingsTransactionDialog.tsx
+new file mode 100644
+index 0000000..30428a9
+--- /dev/null
++++ b/packages/client/src/pages/party/components/ReverseSavingsTransactionDialog.tsx
+@@ -0,0 +1,92 @@
++import { useState } from "react";
++import { Loader2, Undo2 } from "lucide-react";
++import {
++  Dialog,
++  DialogTrigger,
++  DialogContent,
++  DialogHeader,
++  DialogTitle,
++  DialogDescription,
++  DialogFooter,
++} from "@/components/ui/dialog";
++import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
++import { savingsApi } from "@/lib/savings.api";
++
++interface ReverseSavingsTransactionDialogProps {
++  transactionId: number;
++  onReversed: () => void;
++}
++
++// admin+ (route-gated server-side, same bar as invoice cancellation) — the
++// ONLY correction mechanism for a recorded transaction. Creates a
++// compensating entry, never touches the original row.
++export function ReverseSavingsTransactionDialog({
++  transactionId,
++  onReversed,
++}: ReverseSavingsTransactionDialogProps) {
++  const [open, setOpen] = useState(false);
++  const [reason, setReason] = useState("");
++  const [submitting, setSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  async function handleSubmit() {
++    setSubmitting(true);
++    setError(null);
++    try {
++      await savingsApi.reverse(transactionId, reason);
++      setOpen(false);
++      setReason("");
++      onReversed();
++    } catch (err: unknown) {
++      setError(
++        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
++          "Erreur lors de l'annulation.",
++      );
++    } finally {
++      setSubmitting(false);
++    }
++  }
++
++  return (
++    <Dialog
++      open={open}
++      onOpenChange={(v) => {
++        setOpen(v);
++        if (!v) {
++          setReason("");
++          setError(null);
++        }
++      }}
++    >
++      <DialogTrigger>
++        <Button variant="ghost" size="icon" title="Annuler (contre-passation)">
++          <Undo2 size={13} className="text-red-500" />
++        </Button>
++      </DialogTrigger>
++      <DialogContent>
++        <DialogHeader>
++          <DialogTitle>Annuler ce mouvement</DialogTitle>
++          <DialogDescription>
++            Crée une écriture inverse — le mouvement original reste visible et n'est jamais modifié.
++          </DialogDescription>
++        </DialogHeader>
++        <div className="space-y-3">
++          <div>
++            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Raison</label>
++            <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
++          </div>
++          {error && <p className="text-[11px] text-red-600">{error}</p>}
++        </div>
++        <DialogFooter>
++          <Button variant="secondary" onClick={() => setOpen(false)}>
++            Retour
++          </Button>
++          <Button variant="destructive" onClick={handleSubmit} disabled={submitting || !reason.trim()}>
++            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'annulation"}
++          </Button>
++        </DialogFooter>
++      </DialogContent>
++    </Dialog>
++  );
++}
+diff --git a/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx b/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx
+new file mode 100644
+index 0000000..79d48ca
+--- /dev/null
++++ b/packages/client/src/pages/party/components/SavingsTransactionDialog.tsx
+@@ -0,0 +1,142 @@
++import { useState } from "react";
++import { Loader2, Wallet } from "lucide-react";
++import {
++  Dialog,
++  DialogTrigger,
++  DialogContent,
++  DialogHeader,
++  DialogTitle,
++  DialogFooter,
++} from "@/components/ui/dialog";
++import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
++import { savingsApi, type SavingsAccount } from "@/lib/savings.api";
++import { useAuth } from "@/App";
++
++interface SavingsTransactionDialogProps {
++  account: SavingsAccount;
++  onRecorded: () => void;
++}
++
++const ERROR_MESSAGES: Record<string, string> = {
++  INSUFFICIENT_EPARGNE_BALANCE: "Solde insuffisant pour ce retrait.",
++  SAVINGS_AMOUNT_MUST_BE_POSITIVE: "Le montant doit être supérieur à zéro.",
++};
++
++export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransactionDialogProps) {
++  const { user } = useAuth();
++  const [open, setOpen] = useState(false);
++  const [nature, setNature] = useState<"deposit" | "withdraw">("deposit");
++  const [amount, setAmount] = useState(0);
++  const [quantity, setQuantity] = useState(1);
++  const [submitting, setSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  // Withdrawal is manager+ per spec — deposits are open to any agent.
++  const canWithdraw = user && ["manager", "admin", "super_admin"].includes(user.role);
++
++  function reset() {
++    setNature("deposit");
++    setAmount(0);
++    setQuantity(1);
++    setError(null);
++  }
++
++  async function handleSubmit() {
++    setSubmitting(true);
++    setError(null);
++    try {
++      if (nature === "deposit") {
++        await savingsApi.deposit(account.id, amount, quantity);
++      } else {
++        await savingsApi.withdraw(account.id, amount, quantity);
++      }
++      setOpen(false);
++      reset();
++      onRecorded();
++    } catch (err: unknown) {
++      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
++      setError((code && ERROR_MESSAGES[code]) ?? "Erreur lors de l'enregistrement.");
++    } finally {
++      setSubmitting(false);
++    }
++  }
++
++  const total = amount * quantity;
++
++  return (
++    <Dialog
++      open={open}
++      onOpenChange={(v) => {
++        setOpen(v);
++        if (!v) reset();
++      }}
++    >
++      <DialogTrigger>
++        <Button variant="outline" size="sm">
++          <Wallet size={13} /> Dépôt / Retrait
++        </Button>
++      </DialogTrigger>
++      <DialogContent>
++        <DialogHeader>
++          <DialogTitle>Mouvement épargne</DialogTitle>
++        </DialogHeader>
++
++        <div className="space-y-3">
++          <p className="text-[11.5px] text-neutral-500">
++            Solde actuel : <span className="font-medium text-neutral-800">{parseFloat(account.balance).toLocaleString("fr-FR")} XAF</span>
++          </p>
++
++          <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
++            <button
++              type="button"
++              onClick={() => setNature("deposit")}
++              className={`px-3 py-2 text-[12px] font-medium ${nature === "deposit" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
++            >
++              Dépôt
++            </button>
++            <button
++              type="button"
++              onClick={() => canWithdraw && setNature("withdraw")}
++              disabled={!canWithdraw}
++              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
++            >
++              Retrait
++            </button>
++          </div>
++          {nature === "withdraw" && !canWithdraw && (
++            <p className="text-[10.5px] text-amber-600">Le retrait nécessite un rôle manager ou supérieur.</p>
++          )}
++
++          <div className="grid grid-cols-2 gap-3">
++            <div>
++              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant unitaire</label>
++              <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
++            </div>
++            <div>
++              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Quantité</label>
++              <Input type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value) || 1)} min={1} />
++            </div>
++          </div>
++          {quantity > 1 && (
++            <p className="text-[10.5px] text-neutral-500">Total : {total.toLocaleString("fr-FR")} XAF</p>
++          )}
++
++          {error && <p className="text-[11px] text-red-600">{error}</p>}
++        </div>
++
++        <DialogFooter>
++          <Button variant="secondary" onClick={() => setOpen(false)}>
++            Annuler
++          </Button>
++          <Button
++            onClick={handleSubmit}
++            disabled={submitting || amount <= 0 || (nature === "withdraw" && !canWithdraw)}
++          >
++            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
++          </Button>
++        </DialogFooter>
++      </DialogContent>
++    </Dialog>
++  );
++}
+diff --git a/packages/client/src/pages/party/components/SubscribeButton.tsx b/packages/client/src/pages/party/components/SubscribeButton.tsx
+new file mode 100644
+index 0000000..ed53f07
+--- /dev/null
++++ b/packages/client/src/pages/party/components/SubscribeButton.tsx
+@@ -0,0 +1,44 @@
++import { useState } from "react";
++import { Loader2, PiggyBank } from "lucide-react";
++import { Button } from "@/components/ui/button";
++import { savingsApi } from "@/lib/savings.api";
++
++interface SubscribeButtonProps {
++  partyId: number;
++  onSubscribed: () => void;
++}
++
++// Direct subscription — the client pays the inscription fee out of pocket at
++// the counter, right now. No dialog needed: the fee amount comes from the
++// server setting, not something the agent types in, so there's nothing to
++// fill in beyond confirming the action itself.
++export function SubscribeButton({ partyId, onSubscribed }: SubscribeButtonProps) {
++  const [submitting, setSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  async function handleSubscribe() {
++    setSubmitting(true);
++    setError(null);
++    try {
++      await savingsApi.subscribe(partyId);
++      onSubscribed();
++    } catch (err: unknown) {
++      setError(
++        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
++          "Erreur lors de l'ouverture du compte.",
++      );
++    } finally {
++      setSubmitting(false);
++    }
++  }
++
++  return (
++    <div>
++      <Button size="sm" onClick={handleSubscribe} disabled={submitting}>
++        {submitting ? <Loader2 size={13} className="animate-spin" /> : <PiggyBank size={13} />}
++        Ouvrir un compte épargne
++      </Button>
++      {error && <p className="text-[10.5px] text-red-600 mt-1">{error}</p>}
++    </div>
++  );
++}

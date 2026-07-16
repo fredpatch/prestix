@@ -1,13 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Power, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2, Power, Pencil, Download } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
 import { creditApi, type CreditLot } from "@/lib/credit.api";
+import { savingsApi, type SavingsAccount, type SavingsTransaction } from "@/lib/savings.api";
 import { useAuth } from "@/App";
 import { EditPartyDialog } from "./EditPartyDialog";
+import { SubscribeButton } from "./components/SubscribeButton";
+import { SavingsTransactionDialog } from "./components/SavingsTransactionDialog";
+import { ReverseSavingsTransactionDialog } from "./components/ReverseSavingsTransactionDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { cn } from "@/lib/utils";
+
+const NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
 
 export default function PartyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +26,8 @@ export default function PartyDetailPage() {
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditLots, setCreditLots] = useState<CreditLot[]>([]);
   const [history, setHistory] = useState<PartyHistory | null>(null);
+  const [savingsAccount, setSavingsAccount] = useState<SavingsAccount | null>(null);
+  const [savingsTransactions, setSavingsTransactions] = useState<SavingsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -38,6 +47,19 @@ export default function PartyDetailPage() {
       setHistory(historyRes.data);
       setLoading(false);
     });
+
+    // Separate from the Promise.all above — a party without a savings account
+    // is the normal case (404), not an error the page should block on.
+    savingsApi
+      .getAccountByParty(partyId)
+      .then((res) => {
+        setSavingsAccount(res.data);
+        savingsApi.listTransactions(res.data.id).then((txRes) => setSavingsTransactions(txRes.data));
+      })
+      .catch(() => {
+        setSavingsAccount(null);
+        setSavingsTransactions([]);
+      });
   }, [partyId]);
 
   useEffect(load, [load]);
@@ -58,6 +80,7 @@ export default function PartyDetailPage() {
   }
 
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
+  const canReverse = user && ["admin", "super_admin"].includes(user.role);
   const openLots = creditLots.filter((l) => !l.convertedAt && parseFloat(l.remainingAmount) > 0);
 
   return (
@@ -141,12 +164,29 @@ export default function PartyDetailPage() {
           <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
             Épargne voyage
           </p>
-          <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
-          <p className="text-[10px] text-neutral-400">
-            Disponible avec le module Épargne (Sprint 9)
-          </p>
+          {savingsAccount ? (
+            <>
+              <p className="text-[18px] font-bold text-brand-gold-dark mt-1">
+                {parseFloat(savingsAccount.balance).toLocaleString("fr-FR")} XAF
+              </p>
+              <p className="text-[10px] text-neutral-500">
+                {savingsAccount.subscriptionSource === "direct" ? "Souscription directe" : "Conversion crédit"}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
+              <p className="text-[10px] text-neutral-400">Aucun compte ouvert</p>
+            </>
+          )}
         </div>
       </div>
+
+      {savingsAccount && (
+        <div className="flex justify-end mb-4">
+          <SavingsTransactionDialog account={savingsAccount} onRecorded={load} />
+        </div>
+      )}
 
       <Tabs defaultValue="credit">
         <TabsList>
@@ -196,11 +236,55 @@ export default function PartyDetailPage() {
         </TabsContent>
 
         <TabsContent value="epargne">
-          <p className="text-[12px] text-neutral-500 py-4">
-            {history?.epargne.total === 0
-              ? "Aucun historique épargne — disponible une fois le module Épargne (Sprint 9) en place."
-              : `${history?.epargne.total} mouvement(s)`}
-          </p>
+          {!savingsAccount ? (
+            <div className="py-4 space-y-3">
+              <p className="text-[12px] text-neutral-500">
+                Aucun compte épargne pour cette partie.
+              </p>
+              {canManage && <SubscribeButton partyId={partyId} onSubscribed={load} />}
+            </div>
+          ) : savingsTransactions.length === 0 ? (
+            <p className="text-[12px] text-neutral-500 py-4">Aucun mouvement pour ce compte.</p>
+          ) : (
+            <div className="space-y-2 py-2">
+              {savingsTransactions.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                >
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-800">
+                      {NATURE_LABELS[t.nature]} — {parseFloat(t.totalAmount).toLocaleString("fr-FR")} XAF
+                      {t.reversalOfTransactionId && (
+                        <span className="text-[10.5px] text-amber-600 ml-2">(contre-passation)</span>
+                      )}
+                    </p>
+                    <p className="text-[10.5px] text-neutral-500">
+                      {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}
+                      {t.appliedToInvoiceId && ` · appliqué à la facture #${t.appliedToInvoiceId}`}
+                      {t.receiptNumber && ` · ${t.receiptNumber}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {t.receiptNumber && (
+                      <a
+                        href={`/api/savings/transactions/${t.id}/receipt`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
+                        title="Télécharger le reçu"
+                      >
+                        <Download size={13} />
+                      </a>
+                    )}
+                    {canReverse && !t.reversalOfTransactionId && (
+                      <ReverseSavingsTransactionDialog transactionId={t.id} onReversed={load} />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
