@@ -70,6 +70,7 @@ import paymentRoutes from "./modules/documents/routes/payment.routes.js";
 import creanceRoutes from "./modules/penalties/routes/creance.routes.js";
 import stockRoutes from "./modules/stock/routes/stock.routes.js";
 import commissionRoutes from "./modules/commission/routes/commission.routes.js";
+import savingsRoutes from "./modules/savings/routes/savings.routes.js";
 import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
@@ -89,6 +90,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/creances", creanceRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/commissions", commissionRoutes);
+app.use("/api/savings", savingsRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

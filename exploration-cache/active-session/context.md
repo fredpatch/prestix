@@ -1,65 +1,43 @@
 ## Where We Left Off
 
-Sprint 6 is closed. Sprint 7 - PrestiShop & Stock (M9) is now underway.
+Sprint 8 is closed. Sprint 9 - Epargne Voyage (M11) is now underway.
 
 ## What's In Scope Today
 
-Cache/changelog sync after the Sprint 7 low-stock warning and manager override UI update, then commit and push.
+Cache/changelog sync after the Sprint 9 savings backend core, then commit and push.
 
 ## State Of The Codebase
 
-Backend has working Express routes for bootstrap, auth, users, settings, Party,
-Party History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments,
-Creances, and Stock. The server uses JWT cookie auth, RBAC middleware, default
-settings seed, job registration, generated document migrations, optional document
-referent linkage, and audit logging.
+Backend has mounted routes for bootstrap, auth, users, settings, Party, Party
+History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments,
+Creances, Stock, Commissions, and Savings. The server uses JWT cookie auth,
+RBAC middleware, default settings seed, job registration, generated migrations,
+and audit logging.
 
-Client includes bootstrap-status route gating, bootstrap initialization, upgraded
-login/set-password UX, settings/users management, Party screens, document
-list/detail/create/promote/issue/cancel/BL flows, dedicated `/proformas/new` and
-`/invoices/new` creation pages, invoice-detail payment issue/record/reschedule
-flows, penalty-aware payment allocation controls, the `/creances` page, and the
-draft `/stock` page.
-Routed pages set their top-bar title/back/badge through the shared page-header
-context. Stock client UI is drafted but not runtime-smoked yet.
+Sprint 9 savings backend is drafted: `/api/savings` supports direct
+subscriptions, account lookup by party, deposits, manager withdrawals,
+admin reversals, transaction listing, withdrawal receipt PDFs, and super_admin
+manual credit-conversion trigger. Savings balances are derived from recorded
+ledger rows. Standalone withdrawals and epargne-as-payment withdrawals use
+serializable transactions to protect against double-spend.
 
-Document PDFs exist for invoices, proformas, and delivery notes, with return
-dates and invoice payment schedules in the shared print template.
+Credit-window auto-conversion is registered as a daily job and handles existing
+account deposits, new-account subscription with fee deduction, and under-fee
+hold-for-review logging. Party History now fills the epargne section from
+savings transactions.
 
-Sprint 7 stock backend is drafted: `/api/stock` exposes article/movement reads,
-manager article setup/restock actions, append-only stock movements, row-locked
-stock balances, issue-time shop stock OUT hooks, negative override audit, and
-invoice cancellation compensation.
+Client savings UI is not built yet.
 
-Document-side shop details are drafted for Sprint 7: proforma shop lines persist
-article, supplier/selling price, and passenger metadata in `proforma_shop_details`;
-direct invoice drafts/add-line flows persist invoice `shop_details`; proforma
-promotion carries shop details into invoice lines.
+## Validation Snapshot (2026-07-16)
 
-Stock client draft is in place: `/stock` route/nav, stock API wrapper, article
-list/inactive toggle, manager create/restock/activate controls, and stock
-article/passenger fields in Proforma and Invoice line composers. Document PDFs
-now print shop lines as PrestiShop rows and use assigned shop passengers when set.
-The Proforma/Invoice create-page Zod schemas accept `shopDetails`, so composer
-shop metadata is not dropped during form validation/submission.
-Proforma/Invoice shop line composers warn when selected stock is insufficient
-for the requested quantity. Invoice issue can now surface translated stock errors
-and, for manager+ users, retry with the negative-stock override flag.
-
-## Validation Snapshot (2026-07-15)
-
-- `npm run typecheck -w packages/server`: PASS after stock backend draft.
-- `npm run build -w packages/server`: PASS after stock backend draft.
-- `npm run db:generate -w packages/server`: PASS, generated `20260715180806_lazy_ultimo`.
-- `npm run typecheck -w packages/server`: PASS after shop-detail persistence update.
-- `npm run build -w packages/server`: PASS after shop-detail persistence update.
-- `npm run build -w packages/client`: PASS after elevated rerun for the known Vite/esbuild `spawn EPERM`; existing chunk-size warning remains.
-- `npm run build -w packages/client`: PASS after create-page `shopDetails` validation update; elevated rerun required for the known Vite/esbuild `spawn EPERM`, existing chunk-size warning remains.
-- `npm run build -w packages/client`: PASS after low-stock warning/manager override UI update; elevated rerun required for the known Vite/esbuild `spawn EPERM`, existing chunk-size warning remains.
-- Runtime stock API smoke is pending.
-- Shop-detail create/read/promote smoke is pending.
-- Invoice issue/cancel stock movement smoke is pending.
-- PDF visual smoke, penalty/creance runtime smoke, and legacy Beta cross-compare are still pending.
+- `npm run typecheck -w packages/server`: PASS after savings backend core.
+- `npm run db:generate -w packages/server`: PASS, generated `20260716082550_daffy_blacklash`.
+- `npm run build -w packages/server`: PASS after savings backend core.
+- Runtime savings API smoke is pending.
+- Epargne-as-payment smoke is pending.
+- Credit auto-conversion smoke is pending.
+- Withdrawal receipt PDF smoke is pending.
+- Legacy Beta cross-compare is still blocked on data access.
 
 ## Key Constraints Active Right Now
 

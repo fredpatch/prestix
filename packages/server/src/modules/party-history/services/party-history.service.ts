@@ -1,6 +1,6 @@
 import { db } from "../../../db/index.js";
-import { parties } from "../../../db/schema.js";
-import { eq } from "drizzle-orm";
+import { parties, savingsAccounts, savingsTransactions } from "../../../db/schema.js";
+import { eq, and, sql, desc } from "drizzle-orm";
 import type { PartyHistoryFilters, PartyHistoryResult } from "./party-history.types.js";
 
 // Scaffold only (Sprint 2 / M3). Commercial section wires up in Sprint 3 once `invoices`
@@ -9,6 +9,10 @@ import type { PartyHistoryFilters, PartyHistoryResult } from "./party-history.ty
 // independently paginated (?page= vs ?epargnePage=) per the M3 spec. Only the query
 // bodies are pending; callers written against this contract today won't need to change
 // when the real data lands.
+//
+// NOTE (Sprint 9): the commercial section's query is STILL a TODO below — that's a
+// pre-existing Sprint 3 gap, not something this sprint touches. Only épargne is filled
+// in here, matching M11's actual scope.
 export async function getPartyHistory(
   partyId: number,
   filters: PartyHistoryFilters,
@@ -21,13 +25,41 @@ export async function getPartyHistory(
   const epargnePage = filters.epargnePage ?? 1;
   const epargnePageSize = filters.epargnePageSize ?? 20;
 
+  // savings_transactions has no partyId column of its own — it only knows its
+  // accountId, and an account belongs to a party. Join through
+  // savings_accounts rather than duplicate partyId onto every ledger row.
+  const [account] = await db.select().from(savingsAccounts).where(eq(savingsAccounts.partyId, partyId));
+
+  let epargneData: PartyHistoryResult["epargne"]["data"] = [];
+  let epargneTotal = 0;
+
+  if (account) {
+    const allRows = await db
+      .select()
+      .from(savingsTransactions)
+      .where(eq(savingsTransactions.accountId, account.id))
+      .orderBy(desc(savingsTransactions.createdAt));
+
+    epargneTotal = allRows.length;
+    const start = (epargnePage - 1) * epargnePageSize;
+    epargneData = allRows.slice(start, start + epargnePageSize).map((r) => ({
+      id: r.id,
+      nature: r.nature,
+      totalAmount: r.totalAmount,
+      status: r.status,
+      receiptNumber: r.receiptNumber ?? undefined,
+      reversalOfTransactionId: r.reversalOfTransactionId ?? undefined,
+      appliedToInvoiceId: r.appliedToInvoiceId ?? undefined,
+      recordedAt: r.recordedAt ?? undefined,
+    }));
+  }
+
   return {
-    // TODO (Sprint 3 / M4): query `invoices` where buyerPartyId = partyId, ordered desc,
-    // paginated by page/pageSize.
+    // TODO (Sprint 3 / M4, still pending — pre-existing gap, not part of Sprint 9):
+    // query `invoices` where buyerPartyId = partyId, ordered desc, paginated by
+    // page/pageSize.
     commercial: { data: [], total: 0, page, pageSize },
 
-    // TODO (Sprint 9 / M11): query `savings_transactions` joined to `savings_accounts`
-    // where partyId = partyId, ordered desc, paginated by epargnePage/epargnePageSize.
-    epargne: { data: [], total: 0, page: epargnePage, pageSize: epargnePageSize },
+    epargne: { data: epargneData, total: epargneTotal, page: epargnePage, pageSize: epargnePageSize },
   };
 }

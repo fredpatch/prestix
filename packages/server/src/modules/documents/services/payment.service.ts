@@ -1,8 +1,9 @@
 import { db } from "../../../db/index.js";
-import { payments, installments, invoices } from "../../../db/schema.js";
+import { payments, installments, invoices, savingsAccounts } from "../../../db/schema.js";
 import { eq, and, asc, ne, isNull, or } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { createCreditLot } from "../../credit/services/credit.service.js";
+import { recordWithdrawalInTx } from "../../savings/services/savings.service.js";
 import type {
   InstallmentView,
   PaymentView,
@@ -76,16 +77,45 @@ async function deriveInstallmentStatus(
 export async function recordPayment(params: RecordPaymentParams): Promise<PaymentView[]> {
   if (params.amountTendered <= 0) throw new Error("INVALID_AMOUNT");
 
-  const createdRows = await db.transaction(async (tx: any) => {
-    const [invoice] = await tx
-      .select()
-      .from(invoices)
-      .where(eq(invoices.id, params.invoiceId))
-      .for("update");
-    if (!invoice) throw new Error("INVOICE_NOT_FOUND");
-    if (invoice.status !== "issued") throw new Error("INVOICE_NOT_ISSUED"); // M5: "payment only when issued"
+  const isEpargnePayment = params.method === "epargne";
 
-    const allInstallments = await tx
+  // M11: épargne balance is purely derived (no materialized counter to row-
+  // lock), so protecting against a concurrent double-withdrawal here needs
+  // SERIALIZABLE — same reasoning as savings.service.ts's standalone
+  // recordWithdrawal. Every other payment method keeps the existing default
+  // isolation level unchanged; this is scoped exclusively to the épargne case.
+  const createdRows = await db.transaction(
+    async (tx: any) => {
+      const [invoice] = await tx
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, params.invoiceId))
+        .for("update");
+      if (!invoice) throw new Error("INVOICE_NOT_FOUND");
+      if (invoice.status !== "issued") throw new Error("INVOICE_NOT_ISSUED"); // M5: "payment only when issued"
+
+      // M11 épargne-as-payment: the withdrawal IS the money for this payment
+      // event, applied atomically alongside it — not a separate call after
+      // the fact (same lesson as Sprint 7's stock-OUT-inside-issueInvoice()).
+      // Checked and executed BEFORE any installment application below, since
+      // if there isn't enough épargne balance, nothing about this payment
+      // should proceed at all.
+      if (isEpargnePayment) {
+        const [account] = await tx
+          .select()
+          .from(savingsAccounts)
+          .where(eq(savingsAccounts.partyId, invoice.partyId));
+        if (!account) throw new Error("NO_EPARGNE_ACCOUNT_FOR_PARTY");
+
+        await recordWithdrawalInTx(tx, {
+          accountId: account.id,
+          amount: params.amountTendered,
+          agentId: params.agentId,
+          appliedToInvoiceId: params.invoiceId,
+        });
+      }
+
+      const allInstallments = await tx
       .select()
       .from(installments)
       .where(eq(installments.invoiceId, params.invoiceId))
@@ -204,7 +234,9 @@ export async function recordPayment(params: RecordPaymentParams): Promise<Paymen
       inserted,
       overpaidToCredit: remaining > 0.01 && params.overpaymentChoice === "credit" ? remaining : 0,
     };
-  });
+    },
+    isEpargnePayment ? { isolationLevel: "serializable" } : undefined,
+  );
 
   // Credit lot creation is its own transaction (Sprint 2's ledger) — called
   // after the payment transaction commits, not nested inside it.

@@ -110,13 +110,13 @@ export async function seedCommissionTypes() {
 }
 
 export async function seedCounters() {
-  for (const counterKey of ["INV", "PRO"]) {
+  for (const counterKey of ["INV", "PRO", "REC"]) {
     const existing = await db.select().from(counters).where(eq(counters.counterKey, counterKey));
     if (existing.length > 0) continue;
 
     await db.insert(counters).values({ counterKey, currentValue: 0 });
   }
-  console.log("[seed] counters (INV, PRO) initialized");
+  console.log("[seed] counters (INV, PRO, REC) initialized");
 }
 
 async function main() {

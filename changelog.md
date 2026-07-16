@@ -102,6 +102,17 @@
 - Added stock audit logging for article mutations and negative-stock overrides.
 - Validation: server typecheck/build pass; client build passes after elevated reruns for the known Vite/esbuild `spawn EPERM`, with the existing chunk-size warning; runtime stock API, shop-detail, low-stock override, and invoice stock movement smoke still pending.
 
+## Sprint 9 Savings Core (2026-07-16)
+
+- Added Savings backend module mounted at `/api/savings` for direct subscriptions, deposits, manager+ withdrawals, admin+ reversals, transactions, withdrawal receipt PDFs, and super_admin credit-conversion trigger.
+- Added savings transaction schema migration (`20260716082550_daffy_blacklash`) for withdrawal receipt numbers, reversal links, and nullable system-originated agents.
+- Added `REC` counter seeding and receipt-number generation for standalone savings withdrawals.
+- Added credit-window auto-conversion job for expired credit lots, including under-fee hold-for-review policy and savings account/deposit creation.
+- Wired `method: "epargne"` invoice payments to atomically withdraw from the party savings account inside a serializable payment transaction.
+- Filled Party History épargne pagination from savings transactions.
+- Extended the shared print template and added withdrawal receipt PDF generation with print audit logging.
+- Validation: server typecheck/build pass; migration generated; savings API/runtime smoke still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)

@@ -551,9 +551,9 @@ export const savingsTransactions = pgTable("savings_transactions", {
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(), // server-computed amount*quantity
   status: savingsTxnStatusEnum("status").notNull().default("draft"),
   appliedToInvoiceId: integer("applied_to_invoice_id").references(() => invoices.id), // épargne-as-payment
-  agentId: integer("agent_id")
-    .notNull()
-    .references(() => users.id),
+  receiptNumber: varchar("receipt_number", { length: 30 }), // set on withdrawal only — stable across re-prints
+  reversalOfTransactionId: integer("reversal_of_transaction_id"), // set when this row is a compensating entry
+  agentId: integer("agent_id").references(() => users.id), // nullable — auto-conversion (M11 cron) is system-originated, no human agent
   recordedAt: timestamp("recorded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

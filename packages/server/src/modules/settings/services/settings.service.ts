@@ -35,6 +35,11 @@ export async function getBoolValue(key: string, fallback: boolean): Promise<bool
   return row.value === "true";
 }
 
+export async function getStringValue(key: string, fallback: string): Promise<string> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, key));
+  return row?.value ?? fallback;
+}
+
 export async function updateSetting(
   key: string,
   value: string,

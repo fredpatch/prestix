@@ -5,9 +5,20 @@ export interface PartyHistoryPage<T> {
   pageSize: number;
 }
 
+export interface PartyHistoryEpargneEntry {
+  id: number;
+  nature: "deposit" | "withdraw";
+  totalAmount: string;
+  status: "draft" | "recorded";
+  receiptNumber?: string;
+  reversalOfTransactionId?: number;
+  appliedToInvoiceId?: number;
+  recordedAt?: Date;
+}
+
 export interface PartyHistoryResult {
   commercial: PartyHistoryPage<unknown>; // filled in Sprint 3 once invoices (M4) exist
-  epargne: PartyHistoryPage<unknown>; // filled in Sprint 9 once savings_transactions (M11) exist
+  epargne: PartyHistoryPage<PartyHistoryEpargneEntry>;
 }
 
 export interface PartyHistoryFilters {

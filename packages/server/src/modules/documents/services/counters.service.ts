@@ -5,7 +5,7 @@ import type { DB } from "../../../db/index.js";
 // Row-locked continuous serial, never resets — M4 spec. Must be called inside an
 // existing transaction (tx) so the counter increment is atomic with whatever else
 // that transaction does (creating the proforma/invoice row itself).
-export async function getNextNumber(tx: DB, counterKey: "INV" | "PRO"): Promise<string> {
+export async function getNextNumber(tx: DB, counterKey: "INV" | "PRO" | "REC"): Promise<string> {
   const [row] = await tx
     .select()
     .from(counters)

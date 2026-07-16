@@ -1,37 +1,36 @@
 ## Task
 
-None active — Sprint 8 fully closed (2026-07-16). Awaiting direction on Sprint 9
-(Épargne Voyage, M11).
+Sync cache/changelog after Sprint 9 savings backend core, then commit and push all current changes.
 
-## Sprint 8 close-out summary
+## Current Sprint 9 State
 
-Foundational pieces (schema, commission-catalog module from Sprint 1,
-QuickAddPartyDialog from Sprint 2) were already correct going in — genuinely
-no gaps found there, a change from most prior sprints. Confirmed via runtime
-test across all 6 active types (simple, single-field, full-complexity with
-period range, enum dropdown) plus a live-created 7th custom type ("Course du
-mois") through the super_admin UI with zero code changes, proving the
-data-driven catalog design actually works end to end.
+Sprint 9 - Epargne Voyage (M11) is underway. The backend savings module is drafted
+and mounted at `/api/savings`, covering direct subscriptions, deposits,
+manager-gated withdrawals, admin-gated reversals, transaction listing, withdrawal
+receipt PDFs, and super_admin credit-conversion trigger.
 
-Grew well past its checklist once real usage feedback started, same pattern
-as Sprints 6/7:
-- `note` as a universal common column (not per-type) — closed a real gap for
-  Transfert et Change, Visa, and Canal+, which had no way to record what the
-  transaction actually was.
-- A real field-schema editor in Settings — `updateCommissionType` already
-  supported this server-side since Sprint 1, but nothing ever called it.
-- A full correction-request approval workflow — new table, agent-submits/
-  admin-reviews with mandatory reason, before/after diff, atomic approve/
-  reject. This is genuinely new business logic, not in the M10 spec at all —
-  chosen explicitly over two simpler alternatives (direct edit, lock-amount-
-  only) after laying out the tradeoffs, not decided unilaterally.
+Savings balances are derived from recorded ledger rows. Standalone withdrawals
+run in serializable transactions and generate stable `REC` receipt numbers.
+`method: "epargne"` invoice payments now withdraw from the party savings account
+inside the same serializable payment transaction. Credit-window auto-conversion is
+registered as a daily job and can be manually triggered by super_admin.
 
-Two real bugs caught before shipping: the client's CommissionType type never
-exposed fieldSchema despite the server already sending it (would have broken
-the dynamic-field renderer silently), and an incorrect Radix `asChild` habit
-that this Base-UI-based project doesn't support (caught by typecheck, fixed
-to match the pattern already used everywhere else).
+## Last Validation Run (2026-07-16)
 
-## Next up
+- Server typecheck: PASS (`npm run typecheck -w packages/server`)
+- Migration generation: PASS (`npm run db:generate -w packages/server`, generated `20260716082550_daffy_blacklash`)
+- Server build: PASS (`npm run build -w packages/server`)
 
-Sprint 9 — Épargne Voyage (M11). Not yet started.
+## Immediate Next Technical Check
+
+- Smoke `/api/savings` direct subscription, account lookup, deposit, withdrawal, transaction list, reversal, receipt PDF, and manual conversion trigger.
+- Apply/smoke migration `20260716082550_daffy_blacklash`.
+- Smoke invoice payment with `method: "epargne"` for sufficient and insufficient savings balances.
+- Smoke credit auto-conversion for existing-account, new-account, and under-fee hold-for-review branches.
+- Smoke Party History epargne pagination from real savings transactions.
+
+## Note
+
+Runtime savings API smoke and client savings UI are still pending. The committed
+backend slice also includes `docs/sprint9-savings-core.diff` as a review artifact
+for this Sprint 9 batch.

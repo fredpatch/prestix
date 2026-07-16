@@ -14,6 +14,8 @@ function handleError(res: Response, error: unknown): void {
     RESCHEDULE_REASON_REQUIRED: 400,
     CANNOT_RESCHEDULE_PAID_INSTALLMENT: 400,
     RESCHEDULE_MUST_BE_FORWARD_ONLY: 400,
+    NO_EPARGNE_ACCOUNT_FOR_PARTY: 400,
+    INSUFFICIENT_EPARGNE_BALANCE: 400,
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[payment]", error);

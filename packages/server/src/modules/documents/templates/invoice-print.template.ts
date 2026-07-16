@@ -15,7 +15,7 @@ export interface PrintLineItem {
 }
 
 export interface PrintInvoiceData {
-  docType: "proforma" | "invoice" | "delivery_note";
+  docType: "proforma" | "invoice" | "delivery_note" | "receipt";
   docNumber: string;
   issueDate: string;
   dueDate?: string;
@@ -45,12 +45,14 @@ const DOCTYPE_LABELS: Record<string, string> = {
   proforma: "PROFORMA",
   invoice: "FACTURE",
   delivery_note: "BON DE LIVRAISON",
+  receipt: "REÇU DE RETRAIT — ÉPARGNE VOYAGE",
 };
 
 const AMOUNT_WORDS_LABEL: Record<string, string> = {
   proforma: "Proforma arrêtée à la somme de",
   invoice: "Facture arrêtée à la somme de",
   delivery_note: "Bon de livraison arrêté à la somme de",
+  receipt: "Reçu émis pour un retrait de",
 };
 
 const INSTALLMENT_STATUS_LABELS: Record<string, string> = {
@@ -265,7 +267,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
       </div>
       <div class="p-meta">
         <table>
-          <tr><td class="mk">${title === "FACTURE" ? "Facture #" : title === "PROFORMA" ? "Proforma #" : "BL #"} :</td><td>${esc(doc.docNumber)}</td></tr>
+          <tr><td class="mk">${doc.docType === "invoice" ? "Facture #" : doc.docType === "proforma" ? "Proforma #" : doc.docType === "receipt" ? "Reçu #" : "BL #"} :</td><td>${esc(doc.docNumber)}</td></tr>
           <tr><td class="mk">Date :</td><td>${esc(doc.issueDate)}</td></tr>
           <tr><td class="mk">Échéance :</td><td>${esc(doc.dueDate) || "-"}</td></tr>
           <tr><td class="mk">Mode paiement :</td><td>${esc(doc.paymentMode)}</td></tr>

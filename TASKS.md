@@ -185,11 +185,11 @@
 
 ## Sprint 9 – Épargne Voyage (M11) | 2 weeks
 
-- [ ] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL
-- [ ] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL
-- [ ] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL
-- [ ] Withdrawal (manager+, receipt); épargne-as-payment (wire into M5) — HIGH
-- [ ] Reversal (compensating entry); party history épargne section — HIGH
+- [~] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — backend service/routes drafted; deposits/withdrawals derive balance from recorded rows; withdrawals/reversal-withdrawals use serializable transactions; runtime smoke pending
+- [~] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription and credit-conversion account creation drafted; inscription fee snapshotted; CA/reporting display remains M12
+- [~] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — daily job and super_admin manual trigger drafted; HOLD_AND_NOTIFY under-fee path logged; runtime smoke pending
+- [~] Withdrawal (manager+, receipt); épargne-as-payment (wire into M5) — HIGH — manager withdrawals create REC-numbered PDF receipts; invoice payments with method `epargne` withdraw atomically inside payment transaction; runtime smoke pending
+- [~] Reversal (compensating entry); party history épargne section — HIGH — admin reversal entries and party-history épargne pagination drafted; runtime smoke pending
 
 ## Sprint 10 – Dashboard & Reporting (M12) | 2 weeks
 

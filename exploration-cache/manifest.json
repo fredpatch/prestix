@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
-  "lastUpdated": "2026-07-15",
-  "currentSprint": "Sprint 7 PrestiShop & Stock (M9)",
+  "lastUpdated": "2026-07-16",
+  "currentSprint": "Sprint 9 Épargne Voyage (M11)",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -18,6 +18,7 @@
     "sessions/2026-07-13.md",
     "sessions/2026-07-14.md",
     "sessions/2026-07-15.md",
+    "sessions/2026-07-16.md",
     "tasks/backlog.md",
     "tasks/sprint-0.md",
     "technical/brand-reference.md",
