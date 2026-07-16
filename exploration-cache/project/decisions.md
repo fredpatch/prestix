@@ -1,5 +1,16 @@
 # Decisions Log (append-only, newest first)
 
+## 2026-07-16 — Épargne withdrawal raised to admin+, reframed as exception (Sprint 9)
+
+- Original spec reading treated standalone withdrawal as a routine manager+ action, same tier as deposit. Confirmed with Fred during smoke testing this is wrong: money only ever leaves an épargne account by being spent (a ticket or shop purchase via épargne-as-payment), never withdrawn as cash on demand.
+- Kept the mechanism (Fred's explicit call — useful for admin-level exceptional cases, with real receipt/audit traceability), but raised the gate to admin+ and reframed the UI: red styling, explicit warning copy, "Retrait exceptionnel" label instead of a neutral peer of "Dépôt."
+
+## 2026-07-16 — Épargne inscription fee recorded as a real ledger pair, not a snapshot (Sprint 9)
+
+- Original design: fee amount snapshotted as a number on the savings_accounts row only, reasoning it was pure agency revenue that never touches the client's own balance. Confirmed with Fred this was invisible and insufficient for accounting traceability.
+- Two options laid out explicitly: (a) on-screen confirmation only, fee never in the ledger; (b) real deposit+withdrawal pair, nets to zero, fully visible. Fred chose (b) — the more rigorous option.
+- Applied to BOTH entry paths (direct subscription and credit-conversion's new-account branch) for consistency. Credit-conversion path flagged for deeper independent testing, not assumed correct just because the code mirrors the direct-subscription fix.
+
 ## 2026-07-16 — Commission correction model: full approval queue (Sprint 8)
 
 - Three options laid out explicitly: (A) direct edit fully audited, (B) lock commissionAmount only, (C) full approval queue with mandatory reason. Chose C — Fred's explicit call, not decided unilaterally.

@@ -1,0 +1,238 @@
+diff --git a/TASKS.md b/TASKS.md
+index a0fedce..c14db09 100644
+--- a/TASKS.md
++++ b/TASKS.md
+@@ -183,13 +183,26 @@
+ - Filter capability in the commission Settings tab — noted for later, not this sprint.
+ - Correction-request dialog is scoped to date/amount/note only, not client/référent/type-specific fields — stated explicitly, not silently limited.
+ 
+-## Sprint 9 – Épargne Voyage (M11) | 2 weeks
+-
+-- [~] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — backend service/routes drafted; deposits/withdrawals derive balance from recorded rows; withdrawals/reversal-withdrawals use serializable transactions; runtime smoke pending
+-- [~] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription and credit-conversion account creation drafted; inscription fee snapshotted; CA/reporting display remains M12
+-- [~] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — daily job and super_admin manual trigger drafted; HOLD_AND_NOTIFY under-fee path logged; runtime smoke pending
+-- [~] Withdrawal (manager+, receipt); épargne-as-payment (wire into M5) — HIGH — manager withdrawals create REC-numbered PDF receipts; invoice payments with method `epargne` withdraw atomically inside payment transaction; runtime smoke pending
+-- [~] Reversal (compensating entry); party history épargne section — HIGH — admin reversal entries and party-history épargne pagination drafted; runtime smoke pending
++## Sprint 9 – Épargne Voyage (M11) ✅ CLOSED (2026-07-16) | 2 weeks
++
++> Two real corrections to the original spec reading, both confirmed with Fred during smoke testing: (1) standalone withdrawal is NOT a routine manager+ action — money only ever leaves an épargne account by being spent (ticket/shop purchase via épargne-as-payment), so withdrawal was raised to admin+ and reframed in the UI as an exceptional override, not a peer of deposit. (2) The inscription fee wasn't visible anywhere in the ledger — fixed to record as a real deposit+withdrawal pair (nets to zero) on both entry paths, not just a snapshotted number. One item explicitly flagged, not closed: deeper verification of the fee-ledger-pair specifically on the credit-conversion path (vs. direct subscription, which was more thoroughly exercised) — carried forward, not silently assumed correct.
++
++- [x] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — runtime-tested: deposit/balance derivation confirmed correct, withdrawal balance guard confirmed (blocked over-balance attempt with a clean translated error, not a raw code)
++- [x] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription runtime-tested including the corrected fee-visibility fix (real deposit+withdrawal pair, confirmed in the ledger). ⚠️ Credit-conversion path's fee-pair specifically flagged for deeper testing later — code mirrors the direct-subscription fix but wasn't independently re-verified with the same rigor after the correction.
++- [x] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — runtime-tested via manual trigger: new-account branch (fee deducted, account created) and existing-account branch (no second fee, straight deposit) both confirmed working. Found via testing: auto-converted deposits show as generic "Dépôt," indistinguishable from a cash deposit — logged as a hardening item, not blocking.
++- [x] Withdrawal (**admin+, corrected from manager+**, receipt); épargne-as-payment (wire into M5) — HIGH — épargne-as-payment runtime-tested end-to-end on a real invoice (success case and over-balance-blocked case both confirmed). Standalone withdrawal confirmed working, role gate corrected to admin+ mid-sprint per real business clarification — this is a deliberate deviation from the spec's literal wording, not an oversight.
++- [x] Reversal (compensating entry); party history épargne section — HIGH — reversal mechanics built (compensating entry, never mutates original, admin+ gated); party-history épargne section fills in the Sprint-2-scaffolded placeholder correctly. Noted in passing, not this sprint's job: the "commercial" half of party-history is *also* still an unfilled Sprint-3 TODO — pre-existing gap, flagged not fixed.
++
++### Real gaps found and fixed during Sprint 9
++- A schema edit accidentally dropped the `recordedAt` column entirely while making `agentId` nullable — caught before it shipped.
++- `getStringValue` didn't exist in the settings service at all (only `getIntValue`/`getBoolValue`) — added properly rather than working around it inline.
++- The inscription fee was snapshotted as a number but never actually recorded as money moving — invisible in the ledger. Fixed per Fred's explicit choice (real deposit+withdrawal pair over a lighter on-screen-only confirmation).
++- Original spec reading treated standalone withdrawal as a routine manager+ action; real business rule is money only leaves via spend, never direct withdrawal — corrected to admin+, reframed as an exception in the UI.
++- Quantity field on deposit/withdraw was over-engineered by mirroring invoice-line shape; cash deposits don't have a meaningful "quantity" — removed.
++
++### Explicitly flagged, not closed
++- Credit-conversion path's fee-visibility fix needs deeper independent verification (see note above).
++- Auto-converted deposits need a visible "Converti" distinction from ordinary cash deposits (UI/status hardening, deferred).
+ 
+ ## Sprint 10 – Dashboard & Reporting (M12) | 2 weeks
+ 
+diff --git a/exploration-cache/active-session/current-task.md b/exploration-cache/active-session/current-task.md
+index b17506e..37ad12c 100644
+--- a/exploration-cache/active-session/current-task.md
++++ b/exploration-cache/active-session/current-task.md
+@@ -1,36 +1,51 @@
+ ## Task
+ 
+-Sync cache/changelog after Sprint 9 savings backend core, then commit and push all current changes.
+-
+-## Current Sprint 9 State
+-
+-Sprint 9 - Epargne Voyage (M11) is underway. The backend savings module is drafted
+-and mounted at `/api/savings`, covering direct subscriptions, deposits,
+-manager-gated withdrawals, admin-gated reversals, transaction listing, withdrawal
+-receipt PDFs, and super_admin credit-conversion trigger.
+-
+-Savings balances are derived from recorded ledger rows. Standalone withdrawals
+-run in serializable transactions and generate stable `REC` receipt numbers.
+-`method: "epargne"` invoice payments now withdraw from the party savings account
+-inside the same serializable payment transaction. Credit-window auto-conversion is
+-registered as a daily job and can be manually triggered by super_admin.
+-
+-## Last Validation Run (2026-07-16)
+-
+-- Server typecheck: PASS (`npm run typecheck -w packages/server`)
+-- Migration generation: PASS (`npm run db:generate -w packages/server`, generated `20260716082550_daffy_blacklash`)
+-- Server build: PASS (`npm run build -w packages/server`)
+-
+-## Immediate Next Technical Check
+-
+-- Smoke `/api/savings` direct subscription, account lookup, deposit, withdrawal, transaction list, reversal, receipt PDF, and manual conversion trigger.
+-- Apply/smoke migration `20260716082550_daffy_blacklash`.
+-- Smoke invoice payment with `method: "epargne"` for sufficient and insufficient savings balances.
+-- Smoke credit auto-conversion for existing-account, new-account, and under-fee hold-for-review branches.
+-- Smoke Party History epargne pagination from real savings transactions.
+-
+-## Note
+-
+-Runtime savings API smoke and client savings UI are still pending. The committed
+-backend slice also includes `docs/sprint9-savings-core.diff` as a review artifact
+-for this Sprint 9 batch.
++None active — Sprint 9 fully closed (2026-07-16), with one item explicitly
++flagged rather than silently assumed correct. Awaiting direction on Sprint 10
++(Dashboard & Reporting, M12).
++
++## Sprint 9 close-out summary
++
++Full Épargne Voyage module built: accounts, append-only ledger, SERIALIZABLE-
++guarded withdrawal (balance is purely derived here, unlike stock's
++materialized onHand counter — no single row to lock, so isolation level is
++the actual protection), auto-conversion cron consuming Sprint 2's
++listExpiredUnconvertedLots() hook, reversal (compensating entry, never
++mutates the original), a real printable PDF receipt (4th document type on
++the existing template), and épargne-as-payment wired into Sprint 4's
++recordPayment().
++
++Two real corrections made during smoke testing, both confirmed with Fred
++directly rather than assumed:
++- Standalone withdrawal was originally manager+ per the spec's literal
++  wording. Real business rule: money only ever leaves an épargne account by
++  being spent (ticket/shop purchase), never withdrawn as cash on demand.
++  Raised to admin+, reframed in the UI as a deliberate exceptional override.
++- The inscription fee was snapshotted as a number on the account row but
++  never actually recorded as money moving anywhere — completely invisible in
++  the ledger. Fred chose the more rigorous fix: a real deposit+withdrawal
++  pair (nets to zero) on both entry paths, not just an on-screen
++  confirmation.
++
++Two items explicitly flagged, not closed, per Fred's direct instruction to
++keep tracking them rather than assume they're done:
++- The credit-conversion path's fee-visibility fix mirrors the direct-
++  subscription fix in code, but wasn't independently re-verified with the
++  same testing rigor after the correction was made. Needs deeper testing.
++- Auto-converted deposits show as generic "Dépôt" in the ledger,
++  indistinguishable from an ordinary cash deposit — needs a visible
++  "Converti" distinction. UI/status hardening, deferred.
++
++Three real bugs caught during the build itself (before any user-facing
++testing): a schema edit accidentally dropped the recordedAt column while
++making agentId nullable; getStringValue didn't exist in the settings service
++at all; and the quantity field on deposits was over-engineered by mirroring
++invoice-line shape onto something that doesn't have a real "quantity" concept.
++
++## Next up
++
++Sprint 10 — Dashboard & Reporting (M12). Not yet started. This is where every
++"capture now, display later" deferral from Sprints 6-9 finally gets consumed:
++ticket margin (Sprint 6), stock low-threshold (Sprint 7), commission
++agentId/type/amount (Sprint 8), and épargne inscription fee → CA (Sprint 9)
++all need real aggregation and display for the first time.
+diff --git a/exploration-cache/active-session/next-actions.md b/exploration-cache/active-session/next-actions.md
+index da64cce..3bf67c1 100644
+--- a/exploration-cache/active-session/next-actions.md
++++ b/exploration-cache/active-session/next-actions.md
+@@ -1,13 +1,27 @@
+-1. Apply/smoke migration `20260716082550_daffy_blacklash`.
+-2. Smoke `/api/savings/subscribe`, `/api/savings/party/:partyId`, deposits, withdrawals, transaction list, reversal, receipt PDF, and manual credit-conversion trigger.
+-3. Smoke invoice payment with `method: "epargne"`: sufficient balance succeeds atomically; insufficient balance blocks payment.
+-4. Smoke credit auto-conversion branches: existing savings account deposit, new account with fee deduction, and under-fee hold-for-review audit.
+-5. Smoke Party History epargne pagination from real savings transactions.
+-6. Build savings client UI for account overview, deposit/withdrawal, transaction history, receipt link, and reversal flow.
+-7. M12 dashboard will need to read ticket margin, stock low-threshold, commission agent/type/amount, savings subscription/deposit/withdrawal rows, and credit-conversion rows.
+-8. Deferred from Sprint 8: filter capability in the commission Settings tab.
+-9. Correction-request dialog only covers date/amount/note; revisit client/referent/type-specific fields if real usage requires it.
+-10. Sprint 12 hardening item: recordPayment -> createCreditLot cross-transaction risk on overpayment.
+-11. Deferred hardening item from Sprint 1: retrofit remaining hardcoded neutral/brand Tailwind pages to semantic tokens for full dark-mode coverage.
+-12. Open migration-backfill decisions still pending Lucrece: company-type party fields, credit-lot decision-window backfill, epargne fee/status backfill.
+-13. Still blocked: Beta prod data access is needed for the Sprint 11 migration dry-run and Sprint 5 M6 cross-compare gate.
++1. Sprint 10 (M12 — Dashboard & Reporting): read feasibility spec, plan
++   aggregation queries. Four separate "capture now, display later" deferrals
++   converge here: ticket margin (S6), stock low-threshold (S7), commission
++   agentId/type/amount (S8), épargne inscription fee (S9).
++2. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
++   fix needs deeper independent testing — code mirrors the direct-
++   subscription fix but wasn't re-verified with the same rigor.
++3. FLAGGED, not closed (Sprint 9): auto-converted épargne deposits need a
++   visible "Converti" distinction from ordinary cash deposits in the ledger
++   UI — currently indistinguishable.
++4. Notion write failed mid-Sprint-9 with a "No approval received" tool error
++   — retry logging the auto-converted-deposit item once Notion access is
++   confirmed working again.
++5. Sprint 12 hardening item filed in Notion: recordPayment→createCreditLot
++   cross-transaction risk on overpayment (see Notion backlog, Sprint 12)
++6. Deferred hardening item (from Sprint 1): retrofit remaining hardcoded
++   neutral-*/brand-* Tailwind pages to semantic tokens for full dark-mode
++   coverage
++7. Open migration-backfill decisions still pending Lucrèce (see
++   mongo-pg-migration-mapping.md): company-type party fields, credit-lot
++   decision-window backfill, épargne fee/status backfill
++8. STILL BLOCKED: Beta prod data access — needed for the Sprint 11 migration
++   dry-run AND Sprint 5's M6 cross-compare gate (not yet done)
++9. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number
++   appear on the printed document itself, or stay internal-only?
++10. Pre-existing gap noted during Sprint 9, not fixed (out of scope): party-
++    history's "commercial" section is still an unfilled Sprint 3 TODO.
+diff --git a/exploration-cache/project/decisions.md b/exploration-cache/project/decisions.md
+index ab9886c..f6cc210 100644
+--- a/exploration-cache/project/decisions.md
++++ b/exploration-cache/project/decisions.md
+@@ -1,5 +1,16 @@
+ # Decisions Log (append-only, newest first)
+ 
++## 2026-07-16 — Épargne withdrawal raised to admin+, reframed as exception (Sprint 9)
++
++- Original spec reading treated standalone withdrawal as a routine manager+ action, same tier as deposit. Confirmed with Fred during smoke testing this is wrong: money only ever leaves an épargne account by being spent (a ticket or shop purchase via épargne-as-payment), never withdrawn as cash on demand.
++- Kept the mechanism (Fred's explicit call — useful for admin-level exceptional cases, with real receipt/audit traceability), but raised the gate to admin+ and reframed the UI: red styling, explicit warning copy, "Retrait exceptionnel" label instead of a neutral peer of "Dépôt."
++
++## 2026-07-16 — Épargne inscription fee recorded as a real ledger pair, not a snapshot (Sprint 9)
++
++- Original design: fee amount snapshotted as a number on the savings_accounts row only, reasoning it was pure agency revenue that never touches the client's own balance. Confirmed with Fred this was invisible and insufficient for accounting traceability.
++- Two options laid out explicitly: (a) on-screen confirmation only, fee never in the ledger; (b) real deposit+withdrawal pair, nets to zero, fully visible. Fred chose (b) — the more rigorous option.
++- Applied to BOTH entry paths (direct subscription and credit-conversion's new-account branch) for consistency. Credit-conversion path flagged for deeper independent testing, not assumed correct just because the code mirrors the direct-subscription fix.
++
+ ## 2026-07-16 — Commission correction model: full approval queue (Sprint 8)
+ 
+ - Three options laid out explicitly: (A) direct edit fully audited, (B) lock commissionAmount only, (C) full approval queue with mandatory reason. Chose C — Fred's explicit call, not decided unilaterally.
+diff --git a/exploration-cache/sessions/2026-07-16.md b/exploration-cache/sessions/2026-07-16.md
+index 6c9f569..e4b5fd8 100644
+--- a/exploration-cache/sessions/2026-07-16.md
++++ b/exploration-cache/sessions/2026-07-16.md
+@@ -70,3 +70,39 @@
+ - Runtime smoke for credit auto-conversion branches and under-fee hold-for-review audit.
+ - Runtime smoke for Party History epargne pagination.
+ - Savings client UI.
++
++## Sprint 9 Savings — Frontend
++
++- Added `savings.api.ts` client, `SubscribeButton`, `SavingsTransactionDialog` (deposit/withdraw), `ReverseSavingsTransactionDialog`.
++- Wired épargne balance card + tab into `PartyDetailPage.tsx` (was a Sprint-9 placeholder) — real derived balance, transaction history, receipt download links.
++- Confirmed `épargne` was already a selectable payment method in `RecordPaymentDialog` since Sprint 4 — no frontend change needed there, works correctly automatically now that the backend enforces it.
++- Added manual credit-conversion trigger to Settings' financial tab (super_admin), same pattern as Sprint 5's penalty accrual trigger.
++
++## Sprint 9 Savings — Runtime Smoke Test (8 scenarios)
++
++1. Direct subscription: PASS.
++2. Deposit: PASS, but surfaced real feedback — quantity field questioned (no real "quantity" concept for cash), and inscription fee timing was unclear (fee snapshotted but never actually recorded as money moving).
++3. Standalone withdrawal: surfaced a real spec misreading — withdrawal is NOT a routine manager+ action; money only leaves via épargne-as-payment (ticket/shop spend), never direct cash withdrawal.
++4. Épargne-as-payment on a real invoice: PASS, including the over-balance-blocked case.
++5. Auto-conversion manual trigger: PASS mechanically, but surfaced a labeling gap (converted deposits show as generic "Dépôt").
++6-7. Fee-timing question and status/labeling exactness — Fred confirmed both are hardening for a later pass, not blocking.
++8. Withdrawal receipt PDF: confirmed good. Fred's guidance: keep the standalone withdrawal mechanism (don't remove it) but treat it as an admin-level exceptional override, not a normal peer action — traceability/proof value for special cases.
++
++## Sprint 9 Savings — Corrections After Smoke Test
++
++- Removed the `quantity` field from the deposit/withdraw dialog — cash deposits don't have a real "quantity," was over-engineered by mirroring invoice-line shape.
++- **Inscription fee visibility, Fred's explicit choice**: now recorded as a real deposit+withdrawal pair (nets to zero balance) on BOTH entry paths (direct subscription and credit-conversion's new-account branch) — not just a snapshotted number. Real, visible ledger trail.
++- **Withdrawal role gate corrected**: manager+ → admin+, both server route and client dialog, reframed in the UI as a deliberate exceptional override (red styling, explicit warning copy) rather than a routine peer of deposit.
++- Generated `docs/savings-fee-and-withdrawal-fix.diff` for this correction pass.
++
++## Sprint 9 Savings — Flagged, Not Closed
++
++Per Fred's explicit instruction to keep tracking rather than assume done:
++- Credit-conversion path's fee-visibility fix mirrors the direct-subscription fix in code, but wasn't independently re-verified with the same testing rigor after the correction.
++- Auto-converted deposits still show as generic "Dépôt" — needs a visible "Converti" distinction. Logged as a backlog item (Notion write failed with a tool-permission error mid-session — needs retry).
++
++## Sprint 9 Savings — Closed
++
++- Sprint marked closed in TASKS.md (2026-07-16), with the two flagged items explicitly carried forward rather than silently marked done.
++- Noted in passing, not this sprint's job: party-history's "commercial" section is still an unfilled Sprint 3 TODO — pre-existing gap, confirmed and flagged, not fixed.
++

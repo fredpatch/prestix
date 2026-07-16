@@ -183,13 +183,26 @@
 - Filter capability in the commission Settings tab — noted for later, not this sprint.
 - Correction-request dialog is scoped to date/amount/note only, not client/référent/type-specific fields — stated explicitly, not silently limited.
 
-## Sprint 9 – Épargne Voyage (M11) | 2 weeks
+## Sprint 9 – Épargne Voyage (M11) ✅ CLOSED (2026-07-16) | 2 weeks
 
-- [~] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — backend service/routes drafted; deposits/withdrawals derive balance from recorded rows; withdrawals/reversal-withdrawals use serializable transactions; runtime smoke pending
-- [~] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription and credit-conversion account creation drafted; inscription fee snapshotted; CA/reporting display remains M12
-- [~] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — daily job and super_admin manual trigger drafted; HOLD_AND_NOTIFY under-fee path logged; runtime smoke pending
-- [~] Withdrawal (manager+, receipt); épargne-as-payment (wire into M5) — HIGH — manager withdrawals create REC-numbered PDF receipts; invoice payments with method `epargne` withdraw atomically inside payment transaction; runtime smoke pending
-- [~] Reversal (compensating entry); party history épargne section — HIGH — admin reversal entries and party-history épargne pagination drafted; runtime smoke pending
+> Two real corrections to the original spec reading, both confirmed with Fred during smoke testing: (1) standalone withdrawal is NOT a routine manager+ action — money only ever leaves an épargne account by being spent (ticket/shop purchase via épargne-as-payment), so withdrawal was raised to admin+ and reframed in the UI as an exceptional override, not a peer of deposit. (2) The inscription fee wasn't visible anywhere in the ledger — fixed to record as a real deposit+withdrawal pair (nets to zero) on both entry paths, not just a snapshotted number. One item explicitly flagged, not closed: deeper verification of the fee-ledger-pair specifically on the credit-conversion path (vs. direct subscription, which was more thoroughly exercised) — carried forward, not silently assumed correct.
+
+- [x] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — runtime-tested: deposit/balance derivation confirmed correct, withdrawal balance guard confirmed (blocked over-balance attempt with a clean translated error, not a raw code)
+- [x] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription runtime-tested including the corrected fee-visibility fix (real deposit+withdrawal pair, confirmed in the ledger). ⚠️ Credit-conversion path's fee-pair specifically flagged for deeper testing later — code mirrors the direct-subscription fix but wasn't independently re-verified with the same rigor after the correction.
+- [x] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — runtime-tested via manual trigger: new-account branch (fee deducted, account created) and existing-account branch (no second fee, straight deposit) both confirmed working. Found via testing: auto-converted deposits show as generic "Dépôt," indistinguishable from a cash deposit — logged as a hardening item, not blocking.
+- [x] Withdrawal (**admin+, corrected from manager+**, receipt); épargne-as-payment (wire into M5) — HIGH — épargne-as-payment runtime-tested end-to-end on a real invoice (success case and over-balance-blocked case both confirmed). Standalone withdrawal confirmed working, role gate corrected to admin+ mid-sprint per real business clarification — this is a deliberate deviation from the spec's literal wording, not an oversight.
+- [x] Reversal (compensating entry); party history épargne section — HIGH — reversal mechanics built (compensating entry, never mutates original, admin+ gated); party-history épargne section fills in the Sprint-2-scaffolded placeholder correctly. Noted in passing, not this sprint's job: the "commercial" half of party-history is *also* still an unfilled Sprint-3 TODO — pre-existing gap, flagged not fixed.
+
+### Real gaps found and fixed during Sprint 9
+- A schema edit accidentally dropped the `recordedAt` column entirely while making `agentId` nullable — caught before it shipped.
+- `getStringValue` didn't exist in the settings service at all (only `getIntValue`/`getBoolValue`) — added properly rather than working around it inline.
+- The inscription fee was snapshotted as a number but never actually recorded as money moving — invisible in the ledger. Fixed per Fred's explicit choice (real deposit+withdrawal pair over a lighter on-screen-only confirmation).
+- Original spec reading treated standalone withdrawal as a routine manager+ action; real business rule is money only leaves via spend, never direct withdrawal — corrected to admin+, reframed as an exception in the UI.
+- Quantity field on deposit/withdraw was over-engineered by mirroring invoice-line shape; cash deposits don't have a meaningful "quantity" — removed.
+
+### Explicitly flagged, not closed
+- Credit-conversion path's fee-visibility fix needs deeper independent verification (see note above).
+- Auto-converted deposits need a visible "Converti" distinction from ordinary cash deposits (UI/status hardening, deferred).
 
 ## Sprint 10 – Dashboard & Reporting (M12) | 2 weeks
 

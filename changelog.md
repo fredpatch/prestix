@@ -112,6 +112,7 @@
 - Filled Party History épargne pagination from savings transactions.
 - Extended the shared print template and added withdrawal receipt PDF generation with print audit logging.
 - Validation: server typecheck/build pass; migration generated; savings API/runtime smoke still pending.
+- Closed Sprint 9 task/cache notes after runtime smoke, documenting the admin+ withdrawal correction, inscription-fee ledger-pair decision, and carried-forward credit-conversion/auto-converted-deposit hardening items.
 
 ## Validation Notes (2026-07-12)
 
