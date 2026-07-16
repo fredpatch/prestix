@@ -486,6 +486,7 @@ export const commissionTransactions = pgTable("commission_transactions", {
   date: date("date").notNull(),
   commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).notNull(), // manual, > 0
   details: jsonb("details"), // opérateur, fournisseur, visa type, période{start,end}, référence...
+  note: text("note"), // universal optional free-text — common to every type, not per-catalog-type like `details`
   active: boolean("active").notNull().default(true), // soft-delete
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

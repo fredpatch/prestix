@@ -1,0 +1,417 @@
+diff --git a/packages/client/src/lib/commission-catalog.api.ts b/packages/client/src/lib/commission-catalog.api.ts
+index 4c370af..bed3c24 100644
+--- a/packages/client/src/lib/commission-catalog.api.ts
++++ b/packages/client/src/lib/commission-catalog.api.ts
+@@ -12,8 +12,10 @@ export interface CommissionType {
+ 
+ export const commissionCatalogApi = {
+   list: () => api.get<CommissionType[]>("/commission-catalog"),
+-  create: (data: { code: string; label: string; icon?: string }) =>
++  create: (data: { code: string; label: string; icon?: string; fieldSchema?: Record<string, string> }) =>
+     api.post("/commission-catalog", data),
++  update: (code: string, data: { label?: string; icon?: string; fieldSchema?: Record<string, string> }) =>
++    api.patch<CommissionType>(`/commission-catalog/${code}`, data),
+   toggleActive: (code: string, active: boolean) =>
+     api.patch(`/commission-catalog/${code}/active`, { active }),
+ };
+diff --git a/packages/client/src/lib/commission.api.ts b/packages/client/src/lib/commission.api.ts
+index 304db20..76e53e0 100644
+--- a/packages/client/src/lib/commission.api.ts
++++ b/packages/client/src/lib/commission.api.ts
+@@ -16,6 +16,7 @@ export interface CommissionTransaction {
+   date: string;
+   commissionAmount: string;
+   details?: CommissionDetails;
++  note?: string;
+   active: boolean;
+   createdAt: string;
+ }
+@@ -27,6 +28,7 @@ export interface CreateCommissionInput {
+   date: string;
+   commissionAmount: number;
+   details?: CommissionDetails;
++  note?: string;
+ }
+ 
+ export interface CommissionFilter {
+diff --git a/packages/client/src/pages/CommissionsPage.tsx b/packages/client/src/pages/CommissionsPage.tsx
+index 8991740..e827ad9 100644
+--- a/packages/client/src/pages/CommissionsPage.tsx
++++ b/packages/client/src/pages/CommissionsPage.tsx
+@@ -82,6 +82,9 @@ export default function CommissionsPage() {
+                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                   Date
+                 </th>
++                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
++                  Note
++                </th>
+                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                   Montant
+                 </th>
+@@ -95,6 +98,9 @@ export default function CommissionsPage() {
+                   <td className="px-4 py-2.5 text-[12px] text-neutral-500">
+                     {new Date(c.date).toLocaleDateString("fr-FR")}
+                   </td>
++                  <td className="px-4 py-2.5 text-[12px] text-neutral-500 max-w-[220px] truncate" title={c.note}>
++                    {c.note || "—"}
++                  </td>
+                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
+                     {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
+                   </td>
+@@ -115,7 +121,7 @@ export default function CommissionsPage() {
+               ))}
+               {commissions.length === 0 && (
+                 <tr>
+-                  <td colSpan={canDelete ? 4 : 3} className="px-4 py-8 text-center text-[12px] text-neutral-500">
++                  <td colSpan={canDelete ? 5 : 4} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                     Aucune commission.
+                   </td>
+                 </tr>
+diff --git a/packages/client/src/pages/SettingsPage.tsx b/packages/client/src/pages/SettingsPage.tsx
+index bccac70..73d0fae 100644
+--- a/packages/client/src/pages/SettingsPage.tsx
++++ b/packages/client/src/pages/SettingsPage.tsx
+@@ -15,6 +15,7 @@ import {
+ import { settingsApi, type Setting } from "@/lib/settings.api";
+ import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
+ import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
++import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
+ import { usePageHeader } from "@/components/layouts/lib/page-header";
+ 
+ const MODULE_LABELS: Record<string, string> = {
+@@ -285,7 +286,10 @@ function CatalogTab() {
+               <p className="text-[12px] font-medium text-neutral-800">{t.label}</p>
+               <p className="text-[10.5px] text-neutral-500">{t.code}</p>
+             </div>
+-            <Switch checked={t.active} onCheckedChange={(v) => handleToggle(t.code, v)} />
++            <div className="flex items-center gap-2">
++              <EditCommissionTypeDialog type={t} onUpdated={reload} />
++              <Switch checked={t.active} onCheckedChange={(v) => handleToggle(t.code, v)} />
++            </div>
+           </div>
+         ))}
+       </div>
+diff --git a/packages/client/src/pages/commission/CreateCommissionDialog.tsx b/packages/client/src/pages/commission/CreateCommissionDialog.tsx
+index 0e5a541..80f66cc 100644
+--- a/packages/client/src/pages/commission/CreateCommissionDialog.tsx
++++ b/packages/client/src/pages/commission/CreateCommissionDialog.tsx
+@@ -35,6 +35,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
+   const [date, setDate] = useState(todayISO());
+   const [amount, setAmount] = useState(0);
+   const [details, setDetails] = useState<CommissionDetails>({});
++  const [note, setNote] = useState("");
+   const [submitting, setSubmitting] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+ 
+@@ -56,6 +57,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
+     setDate(todayISO());
+     setAmount(0);
+     setDetails({});
++    setNote("");
+     setError(null);
+   }
+ 
+@@ -70,6 +72,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
+         date,
+         commissionAmount: amount,
+         details,
++        note: note || undefined,
+       });
+       setOpen(false);
+       reset();
+@@ -184,6 +187,19 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
+             <CommissionDynamicFields fieldSchema={selectedType.fieldSchema} values={details} onChange={setDetails} />
+           )}
+ 
++          {/* Universal, not type-specific — this is the "note" common column,
++              always available regardless of which type is selected. */}
++          <div>
++            <Label>Note (optionnel)</Label>
++            <textarea
++              value={note}
++              onChange={(e) => setNote(e.target.value)}
++              rows={2}
++              placeholder="Précision libre — nature de la transaction, destination, contexte..."
++              className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
++            />
++          </div>
++
+           {error && <p className="text-[11px] text-red-600">{error}</p>}
+         </div>
+ 
+diff --git a/packages/client/src/pages/commission/EditCommissionTypeDialog.tsx b/packages/client/src/pages/commission/EditCommissionTypeDialog.tsx
+new file mode 100644
+index 0000000..6b7bc06
+--- /dev/null
++++ b/packages/client/src/pages/commission/EditCommissionTypeDialog.tsx
+@@ -0,0 +1,197 @@
++import { useEffect, useState } from "react";
++import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
++import {
++  Dialog,
++  DialogTrigger,
++  DialogContent,
++  DialogHeader,
++  DialogTitle,
++  DialogFooter,
++} from "@/components/ui/dialog";
++import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
++import { Label } from "@/components/ui/label";
++import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
++
++interface EditCommissionTypeDialogProps {
++  type: CommissionType;
++  onUpdated: () => void;
++}
++
++// One editable row = one entry in the type's fieldSchema. "kind" is the
++// friendly editor-side representation; serializeFieldSchema below converts it
++// back to the actual string convention the backend/CommissionDynamicFields
++// component expects ("string" / "string?" / "period" / "enum:a,b,c").
++type FieldKind = "string" | "string_optional" | "period" | "enum";
++
++interface FieldRow {
++  key: string;
++  kind: FieldKind;
++  enumOptions: string; // raw comma-separated input, only meaningful when kind === "enum"
++}
++
++// fieldSchema -> editable rows. Anything that doesn't match a known
++// convention falls back to "string" rather than silently dropping the field —
++// better to show it as plain text than to lose it on the next save.
++function parseFieldSchema(schema?: Record<string, string>): FieldRow[] {
++  if (!schema) return [];
++  return Object.entries(schema).map(([key, value]) => {
++    if (value === "period") return { key, kind: "period" as const, enumOptions: "" };
++    if (value === "string?") return { key, kind: "string_optional" as const, enumOptions: "" };
++    if (value.startsWith("enum:")) return { key, kind: "enum" as const, enumOptions: value.slice(5) };
++    return { key, kind: "string" as const, enumOptions: "" };
++  });
++}
++
++// Editable rows -> fieldSchema, the inverse of parseFieldSchema above.
++function serializeFieldSchema(rows: FieldRow[]): Record<string, string> {
++  const schema: Record<string, string> = {};
++  for (const row of rows) {
++    if (!row.key.trim()) continue; // silently skip incomplete rows rather than rejecting the whole save
++    if (row.kind === "period") schema[row.key] = "period";
++    else if (row.kind === "string_optional") schema[row.key] = "string?";
++    else if (row.kind === "enum") schema[row.key] = `enum:${row.enumOptions}`;
++    else schema[row.key] = "string";
++  }
++  return schema;
++}
++
++export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionTypeDialogProps) {
++  const [open, setOpen] = useState(false);
++  const [label, setLabel] = useState(type.label);
++  const [rows, setRows] = useState<FieldRow[]>([]);
++  const [submitting, setSubmitting] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++
++  // Re-parse from the current type every time the dialog opens, so stale
++  // edits from a previous open (never saved) don't linger.
++  useEffect(() => {
++    if (open) {
++      setLabel(type.label);
++      setRows(parseFieldSchema(type.fieldSchema));
++      setError(null);
++    }
++  }, [open, type]);
++
++  function addRow() {
++    setRows([...rows, { key: "", kind: "string", enumOptions: "" }]);
++  }
++
++  function updateRow(index: number, patch: Partial<FieldRow>) {
++    setRows(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
++  }
++
++  function removeRow(index: number) {
++    setRows(rows.filter((_, i) => i !== index));
++  }
++
++  async function handleSubmit() {
++    setSubmitting(true);
++    setError(null);
++    try {
++      await commissionCatalogApi.update(type.code, {
++        label,
++        fieldSchema: serializeFieldSchema(rows),
++      });
++      setOpen(false);
++      onUpdated();
++    } catch (err: unknown) {
++      setError(
++        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
++          "Erreur lors de la modification.",
++      );
++    } finally {
++      setSubmitting(false);
++    }
++  }
++
++  return (
++    <Dialog open={open} onOpenChange={setOpen}>
++      <DialogTrigger>
++        <Button variant="ghost" size="icon" title="Modifier">
++          <Pencil size={13} />
++        </Button>
++      </DialogTrigger>
++      <DialogContent className="max-w-lg">
++        <DialogHeader>
++          <DialogTitle>Modifier — {type.label}</DialogTitle>
++        </DialogHeader>
++
++        <div className="space-y-4">
++          <div>
++            <Label>Libellé</Label>
++            <Input value={label} onChange={(e) => setLabel(e.target.value)} />
++          </div>
++
++          <div>
++            <div className="flex items-center justify-between mb-2">
++              <Label>Champs spécifiques à ce type</Label>
++              <Button type="button" variant="outline" size="sm" onClick={addRow}>
++                <Plus size={12} /> Ajouter un champ
++              </Button>
++            </div>
++            <p className="text-[10.5px] text-neutral-500 mb-2">
++              Note, date, montant, client et référent existent déjà pour tous les types — inutile de les
++              rajouter ici.
++            </p>
++
++            <div className="space-y-2">
++              {rows.map((row, i) => (
++                <div key={i} className="bg-neutral-50 rounded-lg p-2.5 space-y-2">
++                  <div className="grid grid-cols-12 gap-2 items-center">
++                    <Input
++                      placeholder="nom_du_champ"
++                      value={row.key}
++                      onChange={(e) => updateRow(i, { key: e.target.value })}
++                      className="col-span-5 h-8 text-[12px]"
++                    />
++                    <select
++                      value={row.kind}
++                      onChange={(e) => updateRow(i, { kind: e.target.value as FieldKind })}
++                      className="col-span-5 h-8 rounded border border-neutral-200 bg-white px-2 text-[12px]"
++                    >
++                      <option value="string">Texte</option>
++                      <option value="string_optional">Texte optionnel</option>
++                      <option value="period">Période (début/fin)</option>
++                      <option value="enum">Liste déroulante</option>
++                    </select>
++                    <Button
++                      variant="ghost"
++                      size="icon"
++                      onClick={() => removeRow(i)}
++                      className="col-span-2 text-red-500 hover:bg-red-50"
++                    >
++                      <Trash2 size={13} />
++                    </Button>
++                  </div>
++                  {row.kind === "enum" && (
++                    <Input
++                      placeholder="Options séparées par des virgules — ex: e-visa,visa-tampon"
++                      value={row.enumOptions}
++                      onChange={(e) => updateRow(i, { enumOptions: e.target.value })}
++                      className="h-8 text-[12px]"
++                    />
++                  )}
++                </div>
++              ))}
++              {rows.length === 0 && (
++                <p className="text-[11px] text-neutral-400 italic">Aucun champ spécifique pour ce type.</p>
++              )}
++            </div>
++          </div>
++
++          {error && <p className="text-[11px] text-red-600">{error}</p>}
++        </div>
++
++        <DialogFooter>
++          <Button variant="secondary" onClick={() => setOpen(false)}>
++            Annuler
++          </Button>
++          <Button onClick={handleSubmit} disabled={submitting || !label}>
++            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
++          </Button>
++        </DialogFooter>
++      </DialogContent>
++    </Dialog>
++  );
++}
+diff --git a/packages/server/src/db/schema.ts b/packages/server/src/db/schema.ts
+index 95fd0a7..db8ddf4 100644
+--- a/packages/server/src/db/schema.ts
++++ b/packages/server/src/db/schema.ts
+@@ -486,6 +486,7 @@ export const commissionTransactions = pgTable("commission_transactions", {
+   date: date("date").notNull(),
+   commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).notNull(), // manual, > 0
+   details: jsonb("details"), // opérateur, fournisseur, visa type, période{start,end}, référence...
++  note: text("note"), // universal optional free-text — common to every type, not per-catalog-type like `details`
+   active: boolean("active").notNull().default(true), // soft-delete
+   createdAt: timestamp("created_at").defaultNow().notNull(),
+ });
+diff --git a/packages/server/src/modules/commission/controllers/commission.controller.ts b/packages/server/src/modules/commission/controllers/commission.controller.ts
+index f795ec3..4b7874a 100644
+--- a/packages/server/src/modules/commission/controllers/commission.controller.ts
++++ b/packages/server/src/modules/commission/controllers/commission.controller.ts
+@@ -21,7 +21,7 @@ function handleError(res: Response, error: unknown): void {
+ // anyone's sign-off).
+ export async function create(req: Request, res: Response): Promise<void> {
+   try {
+-    const { type, clientPartyId, referrerPartyId, date, commissionAmount, details } = req.body;
++    const { type, clientPartyId, referrerPartyId, date, commissionAmount, details, note } = req.body;
+     if (!type || !date || typeof commissionAmount !== "number") {
+       res.status(400).json({ message: "type, date et commissionAmount sont requis." });
+       return;
+@@ -34,6 +34,7 @@ export async function create(req: Request, res: Response): Promise<void> {
+       date,
+       commissionAmount,
+       details,
++      note,
+     });
+     res.status(201).json(commission);
+   } catch (error) {
+diff --git a/packages/server/src/modules/commission/services/commission.service.ts b/packages/server/src/modules/commission/services/commission.service.ts
+index 84d749a..7c3bd79 100644
+--- a/packages/server/src/modules/commission/services/commission.service.ts
++++ b/packages/server/src/modules/commission/services/commission.service.ts
+@@ -19,6 +19,7 @@ function toView(row: typeof commissionTransactions.$inferSelect): CommissionTran
+     date: row.date,
+     commissionAmount: row.commissionAmount,
+     details: (row.details as CommissionTransactionView["details"]) ?? undefined,
++    note: row.note ?? undefined,
+     active: row.active,
+     createdAt: row.createdAt,
+   };
+@@ -66,6 +67,7 @@ export async function createCommissionTransaction(
+       date: params.date,
+       commissionAmount: params.commissionAmount.toFixed(2),
+       details: params.details,
++      note: params.note,
+     })
+     .returning();
+ 
+diff --git a/packages/server/src/modules/commission/services/commission.types.ts b/packages/server/src/modules/commission/services/commission.types.ts
+index e070b9c..8c0cc47 100644
+--- a/packages/server/src/modules/commission/services/commission.types.ts
++++ b/packages/server/src/modules/commission/services/commission.types.ts
+@@ -26,6 +26,7 @@ export interface CreateCommissionTransactionParams {
+   date: string; // ISO date, required
+   commissionAmount: number; // manual, always > 0 — no auto-calc anywhere (spec: "no formula engine")
+   details?: CommissionDetails;
++  note?: string; // universal, common to every type — not part of any per-type fieldSchema
+ }
+ 
+ export interface CommissionTransactionView {
+@@ -37,6 +38,7 @@ export interface CommissionTransactionView {
+   date: string;
+   commissionAmount: string;
+   details?: CommissionDetails;
++  note?: string;
+   active: boolean;
+   createdAt: Date;
+ }

@@ -26,6 +26,7 @@ export interface CreateCommissionTransactionParams {
   date: string; // ISO date, required
   commissionAmount: number; // manual, always > 0 — no auto-calc anywhere (spec: "no formula engine")
   details?: CommissionDetails;
+  note?: string; // universal, common to every type — not part of any per-type fieldSchema
 }
 
 export interface CommissionTransactionView {
@@ -37,6 +38,7 @@ export interface CommissionTransactionView {
   date: string;
   commissionAmount: string;
   details?: CommissionDetails;
+  note?: string;
   active: boolean;
   createdAt: Date;
 }

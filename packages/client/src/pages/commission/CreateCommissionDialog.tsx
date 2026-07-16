@@ -35,6 +35,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
   const [date, setDate] = useState(todayISO());
   const [amount, setAmount] = useState(0);
   const [details, setDetails] = useState<CommissionDetails>({});
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,6 +57,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
     setDate(todayISO());
     setAmount(0);
     setDetails({});
+    setNote("");
     setError(null);
   }
 
@@ -70,6 +72,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
         date,
         commissionAmount: amount,
         details,
+        note: note || undefined,
       });
       setOpen(false);
       reset();
@@ -183,6 +186,19 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
           {selectedType?.fieldSchema && (
             <CommissionDynamicFields fieldSchema={selectedType.fieldSchema} values={details} onChange={setDetails} />
           )}
+
+          {/* Universal, not type-specific — this is the "note" common column,
+              always available regardless of which type is selected. */}
+          <div>
+            <Label>Note (optionnel)</Label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              placeholder="Précision libre — nature de la transaction, destination, contexte..."
+              className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
+            />
+          </div>
 
           {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>

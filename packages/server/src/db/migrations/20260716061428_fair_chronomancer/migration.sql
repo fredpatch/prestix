@@ -1,0 +1,1 @@
+ALTER TABLE "commission_transactions" ADD COLUMN "note" text;

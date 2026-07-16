@@ -16,6 +16,7 @@ export interface CommissionTransaction {
   date: string;
   commissionAmount: string;
   details?: CommissionDetails;
+  note?: string;
   active: boolean;
   createdAt: string;
 }
@@ -27,6 +28,7 @@ export interface CreateCommissionInput {
   date: string;
   commissionAmount: number;
   details?: CommissionDetails;
+  note?: string;
 }
 
 export interface CommissionFilter {

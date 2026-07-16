@@ -15,6 +15,7 @@ import {
 import { settingsApi, type Setting } from "@/lib/settings.api";
 import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 const MODULE_LABELS: Record<string, string> = {
@@ -285,7 +286,10 @@ function CatalogTab() {
               <p className="text-[12px] font-medium text-neutral-800">{t.label}</p>
               <p className="text-[10.5px] text-neutral-500">{t.code}</p>
             </div>
-            <Switch checked={t.active} onCheckedChange={(v) => handleToggle(t.code, v)} />
+            <div className="flex items-center gap-2">
+              <EditCommissionTypeDialog type={t} onUpdated={reload} />
+              <Switch checked={t.active} onCheckedChange={(v) => handleToggle(t.code, v)} />
+            </div>
           </div>
         ))}
       </div>

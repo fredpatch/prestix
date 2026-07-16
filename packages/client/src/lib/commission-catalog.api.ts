@@ -12,8 +12,10 @@ export interface CommissionType {
 
 export const commissionCatalogApi = {
   list: () => api.get<CommissionType[]>("/commission-catalog"),
-  create: (data: { code: string; label: string; icon?: string }) =>
+  create: (data: { code: string; label: string; icon?: string; fieldSchema?: Record<string, string> }) =>
     api.post("/commission-catalog", data),
+  update: (code: string, data: { label?: string; icon?: string; fieldSchema?: Record<string, string> }) =>
+    api.patch<CommissionType>(`/commission-catalog/${code}`, data),
   toggleActive: (code: string, active: boolean) =>
     api.patch(`/commission-catalog/${code}/active`, { active }),
 };

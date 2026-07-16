@@ -21,7 +21,7 @@ function handleError(res: Response, error: unknown): void {
 // anyone's sign-off).
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const { type, clientPartyId, referrerPartyId, date, commissionAmount, details } = req.body;
+    const { type, clientPartyId, referrerPartyId, date, commissionAmount, details, note } = req.body;
     if (!type || !date || typeof commissionAmount !== "number") {
       res.status(400).json({ message: "type, date et commissionAmount sont requis." });
       return;
@@ -34,6 +34,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       date,
       commissionAmount,
       details,
+      note,
     });
     res.status(201).json(commission);
   } catch (error) {

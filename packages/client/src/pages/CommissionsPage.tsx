@@ -82,6 +82,9 @@ export default function CommissionsPage() {
                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
                   Date
                 </th>
+                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                  Note
+                </th>
                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
                   Montant
                 </th>
@@ -94,6 +97,9 @@ export default function CommissionsPage() {
                   <td className="px-4 py-2.5 text-[12px] text-neutral-800">{typeLabel(c.type)}</td>
                   <td className="px-4 py-2.5 text-[12px] text-neutral-500">
                     {new Date(c.date).toLocaleDateString("fr-FR")}
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px] text-neutral-500 max-w-[220px] truncate" title={c.note}>
+                    {c.note || "—"}
                   </td>
                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
                     {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
@@ -115,7 +121,7 @@ export default function CommissionsPage() {
               ))}
               {commissions.length === 0 && (
                 <tr>
-                  <td colSpan={canDelete ? 4 : 3} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                  <td colSpan={canDelete ? 5 : 4} className="px-4 py-8 text-center text-[12px] text-neutral-500">
                     Aucune commission.
                   </td>
                 </tr>

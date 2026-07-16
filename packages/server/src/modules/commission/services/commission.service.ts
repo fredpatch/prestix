@@ -19,6 +19,7 @@ function toView(row: typeof commissionTransactions.$inferSelect): CommissionTran
     date: row.date,
     commissionAmount: row.commissionAmount,
     details: (row.details as CommissionTransactionView["details"]) ?? undefined,
+    note: row.note ?? undefined,
     active: row.active,
     createdAt: row.createdAt,
   };
@@ -66,6 +67,7 @@ export async function createCommissionTransaction(
       date: params.date,
       commissionAmount: params.commissionAmount.toFixed(2),
       details: params.details,
+      note: params.note,
     })
     .returning();
 
