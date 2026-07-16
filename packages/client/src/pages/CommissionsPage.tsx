@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/App";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { CreateCommissionDialog } from "./commission/CreateCommissionDialog";
+import { RequestCommissionEditDialog } from "./commission/RequestCommissionEditDialog";
 
 export default function CommissionsPage() {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ export default function CommissionsPage() {
                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
                   Montant
                 </th>
+                <th className="px-4 py-2.5 w-24"></th>
                 {canDelete && <th className="px-4 py-2.5 w-10"></th>}
               </tr>
             </thead>
@@ -103,6 +105,15 @@ export default function CommissionsPage() {
                   </td>
                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
                     {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    {c.pendingEditRequestId ? (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
+                        Modif. en attente
+                      </span>
+                    ) : (
+                      <RequestCommissionEditDialog commission={c} onRequested={load} />
+                    )}
                   </td>
                   {canDelete && (
                     <td className="px-4 py-2.5 text-right">
@@ -121,7 +132,7 @@ export default function CommissionsPage() {
               ))}
               {commissions.length === 0 && (
                 <tr>
-                  <td colSpan={canDelete ? 5 : 4} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                  <td colSpan={canDelete ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-neutral-500">
                     Aucune commission.
                   </td>
                 </tr>

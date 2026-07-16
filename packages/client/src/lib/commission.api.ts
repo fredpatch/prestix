@@ -19,6 +19,29 @@ export interface CommissionTransaction {
   note?: string;
   active: boolean;
   createdAt: string;
+  pendingEditRequestId?: number;
+}
+
+export interface CommissionEditProposedChanges {
+  date?: string;
+  commissionAmount?: number;
+  clientPartyId?: number | null;
+  referrerPartyId?: number | null;
+  details?: CommissionDetails;
+  note?: string | null;
+}
+
+export interface CommissionEditRequest {
+  id: number;
+  commissionTransactionId: number;
+  requestedBy: number;
+  reason: string;
+  proposedChanges: CommissionEditProposedChanges;
+  status: "pending" | "approved" | "rejected";
+  reviewedBy?: number;
+  reviewedAt?: string;
+  reviewNote?: string;
+  createdAt: string;
 }
 
 export interface CreateCommissionInput {
@@ -43,4 +66,15 @@ export const commissionApi = {
   list: (filter: CommissionFilter = {}) => api.get<CommissionTransaction[]>("/commissions", { params: filter }),
   create: (data: CreateCommissionInput) => api.post<CommissionTransaction>("/commissions", data),
   softDelete: (id: number) => api.delete<CommissionTransaction>(`/commissions/${id}`),
+
+  // Correction workflow — see commission-edit.service.ts server-side for why
+  // this exists instead of a plain PATCH.
+  requestEdit: (commissionId: number, reason: string, proposedChanges: CommissionEditProposedChanges) =>
+    api.post<CommissionEditRequest>(`/commissions/${commissionId}/edit-requests`, { reason, proposedChanges }),
+  listEditRequests: (status: "pending" | "approved" | "rejected" = "pending") =>
+    api.get<CommissionEditRequest[]>("/commissions/edit-requests", { params: { status } }),
+  approveEditRequest: (requestId: number) =>
+    api.post<CommissionEditRequest>(`/commissions/edit-requests/${requestId}/approve`),
+  rejectEditRequest: (requestId: number, reviewNote?: string) =>
+    api.post<CommissionEditRequest>(`/commissions/edit-requests/${requestId}/reject`, { reviewNote }),
 };

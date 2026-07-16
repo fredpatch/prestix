@@ -1,6 +1,6 @@
 import { db } from "../../../db/index.js";
-import { commissionTransactions, parties } from "../../../db/schema.js";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { commissionTransactions, commissionEditRequests, parties } from "../../../db/schema.js";
+import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { listCommissionTypes } from "../../commission-catalog/services/commission-catalog.service.js";
 import type {
@@ -100,7 +100,27 @@ export async function listCommissionTransactions(
       ? await db.select().from(commissionTransactions).where(and(...conditions))
       : await db.select().from(commissionTransactions);
 
-  return rows.map(toView);
+  const views = rows.map(toView);
+  if (views.length === 0) return views;
+
+  // One extra query for the whole page rather than N+1 per row — flag which
+  // of these transactions currently have an unreviewed correction request,
+  // so the list UI can badge them without a separate round trip per row.
+  const pendingRequests = await db
+    .select()
+    .from(commissionEditRequests)
+    .where(
+      and(
+        eq(commissionEditRequests.status, "pending"),
+        inArray(
+          commissionEditRequests.commissionTransactionId,
+          views.map((v) => v.id),
+        ),
+      ),
+    );
+  const pendingByTransactionId = new Map(pendingRequests.map((r) => [r.commissionTransactionId, r.id]));
+
+  return views.map((v) => ({ ...v, pendingEditRequestId: pendingByTransactionId.get(v.id) }));
 }
 
 // Soft-delete only — per spec ("Deletion: soft-delete; disabling a type in

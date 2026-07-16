@@ -491,6 +491,32 @@ export const commissionTransactions = pgTable("commission_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Correction workflow (not in the original M10 spec — added per real business
+// need): an agent can never directly edit a recorded commission. Instead they
+// submit a REQUEST — proposed field changes + a mandatory reason — and the
+// transaction itself stays untouched until an admin/super_admin approves or
+// rejects it. This protects the one field that actually matters for trust
+// (commissionAmount is money) without needing a field-by-field lock, since
+// EVERY field change goes through the same reviewed path.
+export const commissionEditStatusEnum = pgEnum("commission_edit_status", ["pending", "approved", "rejected"]);
+
+export const commissionEditRequests = pgTable("commission_edit_requests", {
+  id: serial("id").primaryKey(),
+  commissionTransactionId: integer("commission_transaction_id")
+    .notNull()
+    .references(() => commissionTransactions.id),
+  requestedBy: integer("requested_by")
+    .notNull()
+    .references(() => users.id),
+  reason: text("reason").notNull(), // mandatory — this is the whole point, no silent edits
+  proposedChanges: jsonb("proposed_changes").notNull(), // partial: {date?, commissionAmount?, clientPartyId?, referrerPartyId?, details?, note?}
+  status: commissionEditStatusEnum("status").notNull().default("pending"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNote: text("review_note"), // optional — admin's own note, mainly useful on rejection
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // ─────────────────────────────────────────────────────────────────
 // M11 — Épargne Voyage
 // ─────────────────────────────────────────────────────────────────

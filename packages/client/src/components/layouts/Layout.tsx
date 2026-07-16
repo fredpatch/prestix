@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Package,
   Percent,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,6 +44,12 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/creances", label: "Créances", icon: AlertTriangle, moduleCode: "penalties" },
   { to: "/stock", label: "Stock", icon: Package, moduleCode: "shop" },
   { to: "/commissions", label: "Commissions", icon: Percent, moduleCode: "commission" },
+  {
+    to: "/commissions/edit-requests",
+    label: "Demandes de modification",
+    icon: ClipboardCheck,
+    roles: ["admin", "super_admin"],
+  },
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
 ];

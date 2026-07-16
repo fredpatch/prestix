@@ -41,6 +41,7 @@ export interface CommissionTransactionView {
   note?: string;
   active: boolean;
   createdAt: Date;
+  pendingEditRequestId?: number; // set when there's an unreviewed correction request on this row
 }
 
 export interface ListCommissionTransactionsFilter {
