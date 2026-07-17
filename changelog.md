@@ -135,6 +135,10 @@
 - Linked the dashboard's "Impayées (toutes)" tile to `/creances?overdue=false`, and made the Créances page read its overdue-only default from that query param.
 - Added client/référent name lookups to the Commissions table so commission rows show the actual party names instead of just IDs.
 
+## Fixes (2026-07-17)
+
+- Fixed proforma-to-invoice promotion dropping `referrerPartyId`: the référent selected on a proforma was never carried forward to the resulting invoice.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)

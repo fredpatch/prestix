@@ -303,6 +303,7 @@ export async function promoteProformaToInvoice(
       .values({
         proformaId: proforma.id,
         partyId: proforma.partyId,
+        referrerPartyId: proforma.referrerPartyId, // real bug fixed here — was never carried forward at promotion
         partySnapshot: proforma.partySnapshot, // carry the ORIGINAL snapshot forward, not a re-read
         createdBy: createdByUserId,
       })
