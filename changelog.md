@@ -121,6 +121,9 @@
 - Added CA composition, client KPI, apporteur KPI, and employé KPI endpoints, all date-range and accrual/cash aware.
 - Added Excel export endpoint (`/api/reporting/export/excel`) generating a workbook of the same reporting data.
 - Validation: server typecheck/build pass; reporting API/runtime smoke still pending.
+- Added client `reportingApi` wrapper for the summary, CA composition, KPI, and Excel-export endpoints.
+- Replaced the dashboard placeholder with a real Dashboard page: date-range presets (this month/30 days/this year) with accrual/cash toggle, CA composition, overdue/unpaid/low-stock/épargne summary tiles, client/apporteur/employé KPI tables, and an Excel export action.
+- Widened the sidebar (180px → 225px expanded) to fit the new dashboard nav label.
 
 ## Validation Notes (2026-07-12)
 

@@ -21,6 +21,7 @@ import { PageHeaderProvider, usePageHeader } from "./components/layouts/lib/page
 import StockArticlesPage from "./pages/StockArticlesPage";
 import CommissionsPage from "./pages/CommissionsPage";
 import CommissionEditQueuePage from "./pages/CommissionEditQueuePage";
+import DashboardPage from "./pages/DashboardPage";
 
 interface AuthUser {
   id: number;
@@ -76,18 +77,6 @@ function BootstrapRoute({ bootstrapNeeded }: { bootstrapNeeded: boolean }) {
 }
 
 // Placeholder until the real dashboard (M12) lands.
-function DashboardPlaceholder() {
-  const { user } = useAuth();
-  usePageHeader({ title: "Tableau de bord" });
-  return (
-    <div>
-      <p className="text-neutral-500 text-sm mt-1">
-        Connecté : {user?.fullName} ({user?.role})
-      </p>
-    </div>
-  );
-}
-
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,7 +135,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<DashboardPlaceholder />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/parties" element={<PartiesPage />} />
             <Route path="/parties/:id" element={<PartyDetailPage />} />
             <Route path="/proformas" element={<ProformasPage />} />

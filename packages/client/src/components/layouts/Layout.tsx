@@ -106,7 +106,7 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <motion.aside
-        animate={{ width: sidebarOpen ? 180 : 52 }}
+        animate={{ width: sidebarOpen ? 225 : 52 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className="flex flex-col bg-brand-gold-dark overflow-hidden flex-shrink-0"
       >
