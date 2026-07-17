@@ -1,0 +1,754 @@
+diff --git a/packages/server/src/index.ts b/packages/server/src/index.ts
+index 76abdb8..883e669 100644
+--- a/packages/server/src/index.ts
++++ b/packages/server/src/index.ts
+@@ -71,6 +71,7 @@ import creanceRoutes from "./modules/penalties/routes/creance.routes.js";
+ import stockRoutes from "./modules/stock/routes/stock.routes.js";
+ import commissionRoutes from "./modules/commission/routes/commission.routes.js";
+ import savingsRoutes from "./modules/savings/routes/savings.routes.js";
++import reportingRoutes from "./modules/reporting/routes/reporting.routes.js";
+ import { registerJobs } from "./jobs/index.js";
+ 
+ // ── Routes API ─────────────────────────────────────────────────────────────
+@@ -91,6 +92,7 @@ app.use("/api/creances", creanceRoutes);
+ app.use("/api/stock", stockRoutes);
+ app.use("/api/commissions", commissionRoutes);
+ app.use("/api/savings", savingsRoutes);
++app.use("/api/reporting", reportingRoutes);
+ 
+ // ── Health check ───────────────────────────────────────────────────────────
+ app.get("/api/health", (_req, res) => {
+diff --git a/packages/server/src/modules/reporting/controllers/reporting.controller.ts b/packages/server/src/modules/reporting/controllers/reporting.controller.ts
+new file mode 100644
+index 0000000..3caec2f
+--- /dev/null
++++ b/packages/server/src/modules/reporting/controllers/reporting.controller.ts
+@@ -0,0 +1,81 @@
++import { Request, Response } from "express";
++import * as reportingService from "../services/reporting.service.js";
++import { generateReportingExcel } from "../services/reporting-export.service.js";
++import type { DateRangeParams } from "../services/reporting.types.js";
++
++function parseDateRange(req: Request): DateRangeParams {
++  const from = (req.query.from as string) ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
++  const to = (req.query.to as string) ?? new Date().toISOString().split("T")[0];
++  const basis = (req.query.basis as string) === "cash" ? "cash" : "accrual";
++  return { from, to, basis };
++}
++
++// agent+ read everywhere in this module — dashboard/reporting is informational,
++// no privileged mutation happens here at all.
++export async function getSummary(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    const summary = await reportingService.getDashboardSummary(params);
++    res.json(summary);
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getCaComposition(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    const result = await reportingService.getCaComposition(params);
++    res.json(result);
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getClientKpis(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    res.json(await reportingService.getClientKpis(params));
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getApporteurKpis(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    res.json(await reportingService.getApporteurKpis(params));
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getEmployeKpis(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    res.json(await reportingService.getEmployeKpis(params));
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function exportExcel(req: Request, res: Response): Promise<void> {
++  try {
++    const params = parseDateRange(req);
++    const buffer = await generateReportingExcel(params);
++    res.setHeader(
++      "Content-Type",
++      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
++    );
++    res.setHeader("Content-Disposition", `attachment; filename="rapport-${params.from}-${params.to}.xlsx"`);
++    res.send(buffer);
++  } catch (error) {
++    console.error("[reporting-export]", error);
++    res.status(500).json({ message: "Erreur lors de l'export." });
++  }
++}
+diff --git a/packages/server/src/modules/reporting/routes/reporting.routes.ts b/packages/server/src/modules/reporting/routes/reporting.routes.ts
+new file mode 100644
+index 0000000..1867a17
+--- /dev/null
++++ b/packages/server/src/modules/reporting/routes/reporting.routes.ts
+@@ -0,0 +1,19 @@
++import { Router } from "express";
++import { authenticate } from "../../../middleware/authenticate.js";
++import { requireAgent } from "../../../middleware/authorize.js";
++import * as reportingController from "../controllers/reporting.controller.js";
++
++const router = Router();
++
++router.use(authenticate);
++
++// Read-only, informational module — agent+ everywhere, no privileged
++// mutation exists here at all (unlike every other module in this app).
++router.get("/summary", requireAgent, reportingController.getSummary);
++router.get("/ca-composition", requireAgent, reportingController.getCaComposition);
++router.get("/kpis/clients", requireAgent, reportingController.getClientKpis);
++router.get("/kpis/apporteurs", requireAgent, reportingController.getApporteurKpis);
++router.get("/kpis/employes", requireAgent, reportingController.getEmployeKpis);
++router.get("/export/excel", requireAgent, reportingController.exportExcel);
++
++export default router;
+diff --git a/packages/server/src/modules/reporting/services/reporting-export.service.ts b/packages/server/src/modules/reporting/services/reporting-export.service.ts
+new file mode 100644
+index 0000000..2a867c4
+--- /dev/null
++++ b/packages/server/src/modules/reporting/services/reporting-export.service.ts
+@@ -0,0 +1,99 @@
++import ExcelJS from "exceljs";
++import {
++  getCaComposition,
++  getClientKpis,
++  getApporteurKpis,
++  getEmployeKpis,
++  getOverdueAndUnpaidSummary,
++  getEpargneSoldeNetPeriode,
++} from "./reporting.service.js";
++import type { DateRangeParams } from "./reporting.types.js";
++
++const HEADER_FILL: ExcelJS.Fill = {
++  type: "pattern",
++  pattern: "solid",
++  fgColor: { argb: "FFDDC99A" }, // matches the brand-gold used across every printed document
++};
++
++function styleHeaderRow(row: ExcelJS.Row): void {
++  row.eachCell((cell) => {
++    cell.fill = HEADER_FILL;
++    cell.font = { bold: true };
++  });
++}
++
++// One workbook, one sheet per section — mirrors the dashboard's own structure
++// (CA composition, then each KPI table, then the two single-source-of-truth
++// summaries) rather than dumping everything into one flat sheet.
++export async function generateReportingExcel(params: DateRangeParams): Promise<Buffer> {
++  const [caComposition, clientKpis, apporteurKpis, employeKpis, overdueSummary, epargneSolde] =
++    await Promise.all([
++      getCaComposition(params),
++      getClientKpis(params),
++      getApporteurKpis(params),
++      getEmployeKpis(params),
++      getOverdueAndUnpaidSummary(),
++      getEpargneSoldeNetPeriode(params),
++    ]);
++
++  const workbook = new ExcelJS.Workbook();
++  workbook.creator = "PrestiX";
++  workbook.created = new Date();
++
++  // ── CA Composition ──
++  const caSheet = workbook.addWorksheet("Composition CA");
++  caSheet.columns = [
++    { header: "Bucket", key: "label", width: 32 },
++    { header: "CA Brut (XAF)", key: "gross", width: 18 },
++    { header: "Gain (XAF)", key: "gain", width: 18 },
++  ];
++  styleHeaderRow(caSheet.getRow(1));
++  for (const b of caComposition.buckets) {
++    caSheet.addRow({ label: b.label, gross: b.gross, gain: b.gain });
++  }
++  caSheet.addRow({});
++  const totalRow = caSheet.addRow({
++    label: "TOTAL",
++    gross: caComposition.totalGross,
++    gain: caComposition.totalGain,
++  });
++  totalRow.font = { bold: true };
++
++  // ── KPI sheets — same 3-column shape for all three roles ──
++  function addKpiSheet(name: string, rows: { name: string; volume: number; value: number }[]): void {
++    const sheet = workbook.addWorksheet(name);
++    sheet.columns = [
++      { header: "Nom", key: "name", width: 28 },
++      { header: "Volume", key: "volume", width: 12 },
++      { header: "Valeur (XAF)", key: "value", width: 18 },
++    ];
++    styleHeaderRow(sheet.getRow(1));
++    for (const r of rows) sheet.addRow(r);
++    if (rows.length === 0) {
++      sheet.addRow({ name: "Aucune donnée pour cette période", volume: "", value: "" });
++    }
++  }
++
++  addKpiSheet("KPI Client", clientKpis);
++  addKpiSheet("KPI Apporteur", apporteurKpis);
++  addKpiSheet("KPI Employé", employeKpis);
++
++  // ── Summary — overdue/unpaid (single source) + épargne solde net ──
++  const summarySheet = workbook.addWorksheet("Résumé");
++  summarySheet.columns = [
++    { header: "Indicateur", key: "label", width: 36 },
++    { header: "Valeur", key: "value", width: 20 },
++  ];
++  styleHeaderRow(summarySheet.getRow(1));
++  summarySheet.addRow({ label: "Créances en retard (nombre)", value: overdueSummary.overdueCount });
++  summarySheet.addRow({ label: "Créances en retard (montant XAF)", value: overdueSummary.overdueAmount });
++  summarySheet.addRow({ label: "Impayées, toutes (nombre)", value: overdueSummary.unpaidCount });
++  summarySheet.addRow({ label: "Impayées, toutes (montant XAF)", value: overdueSummary.unpaidAmount });
++  summarySheet.addRow({});
++  summarySheet.addRow({ label: "Épargne — Dépôts période (XAF)", value: epargneSolde.totalDeposits });
++  summarySheet.addRow({ label: "Épargne — Retraits période (XAF)", value: epargneSolde.totalWithdrawals });
++  summarySheet.addRow({ label: "Épargne — Solde net période (XAF)", value: epargneSolde.netChange });
++
++  const buffer = await workbook.xlsx.writeBuffer();
++  return Buffer.from(buffer);
++}
+diff --git a/packages/server/src/modules/reporting/services/reporting.service.ts b/packages/server/src/modules/reporting/services/reporting.service.ts
+new file mode 100644
+index 0000000..1f9566e
+--- /dev/null
++++ b/packages/server/src/modules/reporting/services/reporting.service.ts
+@@ -0,0 +1,457 @@
++import { db } from "../../../db/index.js";
++import {
++  invoices,
++  invoiceLines,
++  ticketDetails,
++  shopDetails,
++  commissionTransactions,
++  commissionTypeCatalog,
++  savingsAccounts,
++  savingsTransactions,
++  penalties,
++  payments,
++  parties,
++  users,
++} from "../../../db/schema.js";
++import { eq, and, gte, lte, inArray, isNull } from "drizzle-orm";
++import { getCreances } from "../../penalties/services/creance.service.js";
++import { listLowStockArticles } from "../../stock/services/stock.service.js";
++import type {
++  CaCompositionBucket,
++  CaCompositionResult,
++  DashboardSummary,
++  DateRangeParams,
++  EpargneSoldeNetPeriode,
++  KpiRow,
++} from "./reporting.types.js";
++
++// Accrual/cash means something different per bucket — stated explicitly here
++// since the spec doesn't spell out the mechanics per bucket, and this is the
++// one place that decision actually gets encoded:
++//   - Billetterie/PrestiShop: accrual = invoice issuedAt; cash = invoice has
++//     ANY payment within range (not prorated across partial payments — the
++//     full line value counts the moment the invoice qualifies).
++//   - Commission/Épargne-inscription: no real cash-vs-accrual distinction —
++//     both settle at the moment they're recorded, so the same date field is
++//     used regardless of the toggle.
++//   - Penalty: accrual = when EARNED (penalties.accruedAt); cash = actual
++//     penalty PAYMENTS received (payments.allocationTarget='penalty'), not
++//     the accrual rows — this is the one bucket where the toggle genuinely
++//     changes which underlying rows get summed, not just which date column.
++
++async function invoiceIdsWithPaymentInRange(from: Date, to: Date): Promise<number[]> {
++  const rows = await db
++    .select({ invoiceId: payments.invoiceId })
++    .from(payments)
++    .where(and(gte(payments.createdAt, from), lte(payments.createdAt, to)));
++  return [...new Set(rows.map((r) => r.invoiceId))];
++}
++
++async function getTicketAndShopBuckets(
++  params: DateRangeParams,
++): Promise<{ billetterie: CaCompositionBucket; prestishop: CaCompositionBucket }> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  let qualifyingInvoiceIds: number[] | null = null;
++  if (params.basis === "cash") {
++    qualifyingInvoiceIds = await invoiceIdsWithPaymentInRange(from, to);
++  }
++
++  const invoiceConditions = [eq(invoices.status, "issued")];
++  if (params.basis === "accrual") {
++    invoiceConditions.push(gte(invoices.issuedAt, from), lte(invoices.issuedAt, to));
++  } else if (qualifyingInvoiceIds && qualifyingInvoiceIds.length > 0) {
++    invoiceConditions.push(inArray(invoices.id, qualifyingInvoiceIds));
++  } else if (params.basis === "cash") {
++    // No invoices had a qualifying payment at all — buckets are legitimately
++    // zero, not "query returned everything" (inArray with an empty array
++    // behaves oddly across drivers, so this is handled explicitly).
++    return {
++      billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: 0, gain: 0 },
++      prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: 0, gain: 0 },
++    };
++  }
++
++  const qualifyingInvoices = await db
++    .select({ id: invoices.id })
++    .from(invoices)
++    .where(and(...invoiceConditions));
++  const invoiceIds = qualifyingInvoices.map((i) => i.id);
++
++  let ticketGross = 0;
++  let ticketGain = 0;
++  let shopGross = 0;
++  let shopGain = 0;
++
++  if (invoiceIds.length > 0) {
++    const lines = await db
++      .select()
++      .from(invoiceLines)
++      .where(inArray(invoiceLines.invoiceId, invoiceIds));
++
++    const ticketLineIds = lines.filter((l) => l.lineType === "ticket").map((l) => l.id);
++    const shopLineIds = lines.filter((l) => l.lineType === "shop").map((l) => l.id);
++
++    const ticketDetailRows =
++      ticketLineIds.length > 0
++        ? await db.select().from(ticketDetails).where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
++        : [];
++    const shopDetailRows =
++      shopLineIds.length > 0
++        ? await db.select().from(shopDetails).where(inArray(shopDetails.invoiceLineId, shopLineIds))
++        : [];
++
++    const ticketDetailByLineId = new Map(ticketDetailRows.map((t) => [t.invoiceLineId, t]));
++    const shopDetailByLineId = new Map(shopDetailRows.map((s) => [s.invoiceLineId, s]));
++
++    for (const line of lines) {
++      const lineTotal = parseFloat(line.lineTotal); // gross = sellingPrice net of discount, per spec
++
++      if (line.lineType === "ticket") {
++        ticketGross += lineTotal;
++        const td = ticketDetailByLineId.get(line.id);
++        // Ticket quantity is always 1 (M8 spec: one passenger per line), so
++        // supplierPrice needs no quantity multiplier here.
++        const supplierCost = td ? parseFloat(td.supplierPrice) : 0;
++        ticketGain += lineTotal - supplierCost;
++      } else if (line.lineType === "shop") {
++        shopGross += lineTotal;
++        const sd = shopDetailByLineId.get(line.id);
++        // Shop supplierPrice IS per-unit, unlike ticket — quantity matters here.
++        const supplierCost = sd ? parseFloat(sd.supplierPrice) * line.quantity : 0;
++        shopGain += lineTotal - supplierCost;
++      }
++    }
++  }
++
++  return {
++    billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: ticketGross, gain: ticketGain },
++    prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: shopGross, gain: shopGain },
++  };
++}
++
++async function getCommissionBuckets(params: DateRangeParams): Promise<CaCompositionBucket[]> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  // Commissions settle the moment they're recorded — no separate cash event,
++  // so `date` is used regardless of the accrual/cash toggle.
++  const rows = await db
++    .select()
++    .from(commissionTransactions)
++    .where(
++      and(
++        eq(commissionTransactions.active, true),
++        gte(commissionTransactions.date, params.from),
++        lte(commissionTransactions.date, params.to),
++      ),
++    );
++
++  const types = await db.select().from(commissionTypeCatalog);
++  const labelByCode = new Map(types.map((t) => [t.code, t.label]));
++
++  // Grouped dynamically by whatever types actually appear in the data — not
++  // hardcoded to the 6 seeded types, since the catalog is explicitly
++  // super_admin-extensible (confirmed working in Sprint 8 with "Course du
++  // mois"). A new custom type shows up here automatically, no code change.
++  const totalsByType = new Map<string, number>();
++  for (const row of rows) {
++    const current = totalsByType.get(row.type) ?? 0;
++    totalsByType.set(row.type, current + parseFloat(row.commissionAmount));
++  }
++
++  return Array.from(totalsByType.entries()).map(([type, total]) => ({
++    bucketKey: `commission:${type}`,
++    label: `Commission — ${labelByCode.get(type) ?? type}`,
++    gross: total,
++    gain: total, // full, no cost, per spec
++  }));
++}
++
++async function getEpargneInscriptionBucket(params: DateRangeParams): Promise<CaCompositionBucket> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  // Fee is collected at subscription moment — same date regardless of basis.
++  const rows = await db
++    .select()
++    .from(savingsAccounts)
++    .where(and(gte(savingsAccounts.createdAt, from), lte(savingsAccounts.createdAt, to)));
++
++  const total = rows.reduce((sum, r) => sum + parseFloat(r.inscriptionFeeAmount), 0);
++  return { bucketKey: "epargne_inscription", label: "Épargne — Frais d'inscription", gross: total, gain: total };
++}
++
++async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionBucket> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  let total = 0;
++  if (params.basis === "accrual") {
++    // Revenue recognized when EARNED — the accrual rows themselves.
++    const rows = await db
++      .select()
++      .from(penalties)
++      .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
++    total = rows.reduce((sum, r) => sum + parseFloat(r.amountXaf), 0);
++  } else {
++    // Actual money received — penalty PAYMENTS, not accrual rows. This is the
++    // one bucket where cash-basis sums fundamentally different underlying
++    // rows, not just a different date column on the same rows.
++    const rows = await db
++      .select()
++      .from(payments)
++      .where(
++        and(
++          eq(payments.allocationTarget, "penalty"),
++          gte(payments.createdAt, from),
++          lte(payments.createdAt, to),
++        ),
++      );
++    total = rows.reduce((sum, r) => sum + parseFloat(r.amountApplied), 0);
++  }
++
++  return { bucketKey: "penalty", label: "Pénalités", gross: total, gain: total };
++}
++
++export async function getCaComposition(params: DateRangeParams): Promise<CaCompositionResult> {
++  const { billetterie, prestishop } = await getTicketAndShopBuckets(params);
++  const commissionBuckets = await getCommissionBuckets(params);
++  const epargneBucket = await getEpargneInscriptionBucket(params);
++  const penaltyBucket = await getPenaltyBucket(params);
++
++  const buckets = [billetterie, prestishop, ...commissionBuckets, epargneBucket, penaltyBucket];
++  const totalGross = buckets.reduce((sum, b) => sum + b.gross, 0);
++  const totalGain = buckets.reduce((sum, b) => sum + b.gain, 0);
++
++  return { buckets, totalGross, totalGain };
++}
++
++// "Solde net période" — a GLOBAL liquidity metric across every épargne
++// account, explicitly NOT a client balance and NOT counted as CA (spec: both
++// deposits and withdrawals are excluded from CA entirely). This deliberately
++// includes the fee deposit+withdrawal pairs from Sprint 9 — they net to zero
++// automatically within the same period, exactly as intended.
++export async function getEpargneSoldeNetPeriode(params: DateRangeParams): Promise<EpargneSoldeNetPeriode> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  const rows = await db
++    .select()
++    .from(savingsTransactions)
++    .where(
++      and(
++        eq(savingsTransactions.status, "recorded"),
++        gte(savingsTransactions.recordedAt, from),
++        lte(savingsTransactions.recordedAt, to),
++      ),
++    );
++
++  let totalDeposits = 0;
++  let totalWithdrawals = 0;
++  for (const r of rows) {
++    const amount = parseFloat(r.totalAmount);
++    if (r.nature === "deposit") totalDeposits += amount;
++    else totalWithdrawals += amount;
++  }
++
++  return { totalDeposits, totalWithdrawals, netChange: totalDeposits - totalWithdrawals };
++}
++
++export async function getLowStockCount(): Promise<number> {
++  const rows = await listLowStockArticles();
++  return rows.length;
++}
++
++// Reuses Sprint 5's créances aggregation directly — this IS the single source
++// of truth for "overdue" the spec explicitly calls out as the legacy bug fix.
++// Not re-derived here with a second ad-hoc filter.
++export async function getOverdueAndUnpaidSummary(): Promise<{
++  overdueCount: number;
++  overdueAmount: number;
++  unpaidCount: number;
++  unpaidAmount: number;
++}> {
++  const overdueRows = await getCreances(true);
++  const allUnpaidRows = await getCreances(false);
++
++  const sum = (rows: Awaited<ReturnType<typeof getCreances>>) =>
++    rows.reduce((s, r) => s + parseFloat(r.principalDue) + parseFloat(r.penaltyDue), 0);
++
++  return {
++    overdueCount: overdueRows.length,
++    overdueAmount: sum(overdueRows),
++    unpaidCount: allUnpaidRows.length,
++    unpaidAmount: sum(allUnpaidRows),
++  };
++}
++
++export async function getDashboardSummary(params: DateRangeParams): Promise<DashboardSummary> {
++  const [caComposition, overdueAndUnpaid, lowStockCount, epargneSoldeNetPeriode] = await Promise.all([
++    getCaComposition(params),
++    getOverdueAndUnpaidSummary(),
++    getLowStockCount(),
++    getEpargneSoldeNetPeriode(params),
++  ]);
++
++  return {
++    caComposition,
++    overdueCount: overdueAndUnpaid.overdueCount,
++    overdueAmount: overdueAndUnpaid.overdueAmount,
++    unpaidCount: overdueAndUnpaid.unpaidCount,
++    unpaidAmount: overdueAndUnpaid.unpaidAmount,
++    lowStockCount,
++    epargneSoldeNetPeriode,
++  };
++}
++
++// ── KPIs ─────────────────────────────────────────────────────────────────
++// Client/Apporteur KPIs combine two sources per party (invoices for the
++// buyer role, invoices.referrerPartyId + commission_transactions.referrerPartyId
++// for the apporteur role) — merged in application code, same pattern already
++// used for créances/commission-catalog aggregation rather than a single
++// unwieldy SQL join.
++
++export async function getClientKpis(params: DateRangeParams): Promise<KpiRow[]> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  const conditions = [eq(invoices.status, "issued")];
++  if (params.basis === "accrual") {
++    conditions.push(gte(invoices.issuedAt, from), lte(invoices.issuedAt, to));
++  } else {
++    const qualifyingIds = await invoiceIdsWithPaymentInRange(from, to);
++    if (qualifyingIds.length === 0) return [];
++    conditions.push(inArray(invoices.id, qualifyingIds));
++  }
++
++  const rows = await db.select().from(invoices).where(and(...conditions));
++
++  const byParty = new Map<number, { volume: number; value: number }>();
++  for (const inv of rows) {
++    const current = byParty.get(inv.partyId) ?? { volume: 0, value: 0 };
++    current.volume += 1;
++    current.value += parseFloat(inv.totalAmount);
++    byParty.set(inv.partyId, current);
++  }
++
++  return resolvePartyNames(byParty);
++}
++
++export async function getApporteurKpis(params: DateRangeParams): Promise<KpiRow[]> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  const invoiceConditions = [eq(invoices.status, "issued")];
++  if (params.basis === "accrual") {
++    invoiceConditions.push(gte(invoices.issuedAt, from), lte(invoices.issuedAt, to));
++  } else {
++    const qualifyingIds = await invoiceIdsWithPaymentInRange(from, to);
++    if (qualifyingIds.length > 0) invoiceConditions.push(inArray(invoices.id, qualifyingIds));
++  }
++
++  const referredInvoices = await db
++    .select()
++    .from(invoices)
++    .where(and(...invoiceConditions));
++
++  const referredCommissions = await db
++    .select()
++    .from(commissionTransactions)
++    .where(
++      and(
++        eq(commissionTransactions.active, true),
++        gte(commissionTransactions.date, params.from),
++        lte(commissionTransactions.date, params.to),
++      ),
++    );
++
++  const byParty = new Map<number, { volume: number; value: number }>();
++
++  for (const inv of referredInvoices) {
++    if (!inv.referrerPartyId) continue;
++    const current = byParty.get(inv.referrerPartyId) ?? { volume: 0, value: 0 };
++    current.volume += 1;
++    current.value += parseFloat(inv.totalAmount);
++    byParty.set(inv.referrerPartyId, current);
++  }
++
++  for (const c of referredCommissions) {
++    if (!c.referrerPartyId) continue;
++    const current = byParty.get(c.referrerPartyId) ?? { volume: 0, value: 0 };
++    current.volume += 1;
++    current.value += parseFloat(c.commissionAmount);
++    byParty.set(c.referrerPartyId, current);
++  }
++
++  return resolvePartyNames(byParty);
++}
++
++async function resolvePartyNames(byParty: Map<number, { volume: number; value: number }>): Promise<KpiRow[]> {
++  if (byParty.size === 0) return [];
++  const partyRows = await db.select().from(parties).where(inArray(parties.id, [...byParty.keys()]));
++  const nameById = new Map(partyRows.map((p) => [p.id, p.fullName]));
++
++  return Array.from(byParty.entries())
++    .map(([id, agg]) => ({ id, name: nameById.get(id) ?? `Partie #${id}`, ...agg }))
++    .sort((a, b) => b.value - a.value);
++}
++
++// Employé KPI: agentId means "who created/issued the invoice" for ticket/shop
++// CA, and "who recorded the commission" for commission CA — combined per
++// agent, matching "volume + value per agent" as a real performance metric,
++// not a single ambiguous agentId field.
++export async function getEmployeKpis(params: DateRangeParams): Promise<KpiRow[]> {
++  const from = new Date(params.from);
++  const to = new Date(params.to);
++
++  const invoiceConditions = [eq(invoices.status, "issued")];
++  if (params.basis === "accrual") {
++    invoiceConditions.push(gte(invoices.issuedAt, from), lte(invoices.issuedAt, to));
++  } else {
++    const qualifyingIds = await invoiceIdsWithPaymentInRange(from, to);
++    if (qualifyingIds.length > 0) invoiceConditions.push(inArray(invoices.id, qualifyingIds));
++  }
++
++  const agentInvoices = await db
++    .select()
++    .from(invoices)
++    .where(and(...invoiceConditions));
++
++  const agentCommissions = await db
++    .select()
++    .from(commissionTransactions)
++    .where(
++      and(
++        eq(commissionTransactions.active, true),
++        gte(commissionTransactions.date, params.from),
++        lte(commissionTransactions.date, params.to),
++      ),
++    );
++
++  const byAgent = new Map<number, { volume: number; value: number }>();
++
++  for (const inv of agentInvoices) {
++    const current = byAgent.get(inv.createdBy) ?? { volume: 0, value: 0 };
++    current.volume += 1;
++    current.value += parseFloat(inv.totalAmount);
++    byAgent.set(inv.createdBy, current);
++  }
++
++  for (const c of agentCommissions) {
++    if (!c.agentId) continue; // system-originated rows (none for commissions today, but stay defensive)
++    const current = byAgent.get(c.agentId) ?? { volume: 0, value: 0 };
++    current.volume += 1;
++    current.value += parseFloat(c.commissionAmount);
++    byAgent.set(c.agentId, current);
++  }
++
++  if (byAgent.size === 0) return [];
++  const agentRows = await db.select().from(users).where(inArray(users.id, [...byAgent.keys()]));
++  const nameById = new Map(agentRows.map((u) => [u.id, u.fullName]));
++
++  return Array.from(byAgent.entries())
++    .map(([id, agg]) => ({ id, name: nameById.get(id) ?? `Agent #${id}`, ...agg }))
++    .sort((a, b) => b.value - a.value);
++}
+diff --git a/packages/server/src/modules/reporting/services/reporting.types.ts b/packages/server/src/modules/reporting/services/reporting.types.ts
+new file mode 100644
+index 0000000..47db1fb
+--- /dev/null
++++ b/packages/server/src/modules/reporting/services/reporting.types.ts
+@@ -0,0 +1,48 @@
++// M12 — Dashboard & Reporting. Deliberately NO new tables (per the
++// architecture decision logged back at project kickoff) — this whole module
++// is aggregation over data every prior sprint already captured correctly:
++// ticket/shop margin (M8/M9), commission agentId/type/amount (M10), épargne
++// inscription fee (M11), penalty accrual (M6). "Capture now, display later"
++// finally pays off here.
++
++export interface DateRangeParams {
++  from: string; // ISO date, inclusive
++  to: string; // ISO date, inclusive
++  basis: "accrual" | "cash";
++}
++
++export interface CaCompositionBucket {
++  bucketKey: string; // stable key, e.g. "billetterie", "commission:visa"
++  label: string;
++  gross: number;
++  gain: number;
++}
++
++export interface CaCompositionResult {
++  buckets: CaCompositionBucket[];
++  totalGross: number;
++  totalGain: number;
++}
++
++export interface KpiRow {
++  id: number; // partyId or agentId depending on context
++  name: string;
++  volume: number;
++  value: number;
++}
++
++export interface EpargneSoldeNetPeriode {
++  totalDeposits: number;
++  totalWithdrawals: number;
++  netChange: number;
++}
++
++export interface DashboardSummary {
++  caComposition: CaCompositionResult;
++  overdueCount: number;
++  overdueAmount: number;
++  unpaidCount: number; // "Impayées ≠ En retard" — deliberately distinct from overdue
++  unpaidAmount: number;
++  lowStockCount: number;
++  epargneSoldeNetPeriode: EpargneSoldeNetPeriode;
++}

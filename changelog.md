@@ -114,6 +114,14 @@
 - Validation: server typecheck/build pass; migration generated; savings API/runtime smoke still pending.
 - Closed Sprint 9 task/cache notes after runtime smoke, documenting the admin+ withdrawal correction, inscription-fee ledger-pair decision, and carried-forward credit-conversion/auto-converted-deposit hardening items.
 
+## Sprint 10 Reporting Core (2026-07-17)
+
+- Added Reporting backend module mounted at `/api/reporting` with agent+ read access everywhere (informational only, no privileged mutation in this module).
+- Added dashboard summary endpoint combining CA composition, épargne net-balance-over-period, low-stock count, and overdue/unpaid totals for a given date range and accrual/cash basis.
+- Added CA composition, client KPI, apporteur KPI, and employé KPI endpoints, all date-range and accrual/cash aware.
+- Added Excel export endpoint (`/api/reporting/export/excel`) generating a workbook of the same reporting data.
+- Validation: server typecheck/build pass; reporting API/runtime smoke still pending.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)
