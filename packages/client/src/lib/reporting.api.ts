@@ -42,6 +42,16 @@ export interface DashboardSummary {
   epargneSoldeNetPeriode: EpargneSoldeNetPeriode;
 }
 
+export interface ActivityRow {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  actorName?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
 export const reportingApi = {
   getSummary: (params: DateRangeParams) => api.get<DashboardSummary>("/reporting/summary", { params }),
   getCaComposition: (params: DateRangeParams) =>
@@ -49,6 +59,9 @@ export const reportingApi = {
   getClientKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
   getApporteurKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/apporteurs", { params }),
   getEmployeKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/employes", { params }),
+  getRecentActivity: (limit = 10) => api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
   exportExcelUrl: (params: DateRangeParams) =>
     `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}`,
+  exportPdfUrl: (params: DateRangeParams) =>
+    `/api/reporting/export/pdf?from=${params.from}&to=${params.to}&basis=${params.basis}`,
 };

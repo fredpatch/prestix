@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as reportingService from "../services/reporting.service.js";
 import { generateReportingExcel } from "../services/reporting-export.service.js";
+import { generateDashboardReportPdf } from "../services/reporting-pdf.service.js";
 import type { DateRangeParams } from "../services/reporting.types.js";
 
 function parseDateRange(req: Request): DateRangeParams {
@@ -77,5 +78,29 @@ export async function exportExcel(req: Request, res: Response): Promise<void> {
   } catch (error) {
     console.error("[reporting-export]", error);
     res.status(500).json({ message: "Erreur lors de l'export." });
+  }
+}
+
+export async function getRecentActivity(req: Request, res: Response): Promise<void> {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+    const rows = await reportingService.getRecentActivity(limit);
+    res.json(rows);
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function exportPdf(req: Request, res: Response): Promise<void> {
+  try {
+    const params = parseDateRange(req);
+    const pdf = await generateDashboardReportPdf(params);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="rapport-${params.from}-${params.to}.pdf"`);
+    res.send(pdf);
+  } catch (error) {
+    console.error("[reporting-pdf]", error);
+    res.status(500).json({ message: "Erreur lors de la génération du PDF." });
   }
 }

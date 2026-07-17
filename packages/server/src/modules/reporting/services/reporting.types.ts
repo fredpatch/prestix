@@ -46,3 +46,13 @@ export interface DashboardSummary {
   lowStockCount: number;
   epargneSoldeNetPeriode: EpargneSoldeNetPeriode;
 }
+
+export interface ActivityRow {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  actorName?: string; // undefined for system-originated rows (e.g. auto-conversion cron)
+  metadata?: Record<string, unknown>;
+  createdAt: Date;
+}

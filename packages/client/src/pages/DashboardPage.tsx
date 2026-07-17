@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2, Download, AlertTriangle, Clock, Package, PiggyBank } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Loader2, Download, AlertTriangle, Clock, Package, PiggyBank, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   reportingApi,
+  type ActivityRow,
   type CaCompositionResult,
   type DashboardSummary,
   type KpiRow,
@@ -34,6 +36,34 @@ const PRESETS = [
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
+}
+
+// Fallback-friendly — covers the actions an owner would actually care to see
+// at a glance; anything not listed here still renders (humanized fallback),
+// so a future action type never shows up blank.
+const ACTION_LABELS: Record<string, string> = {
+  INVOICE_ISSUED: "Facture émise",
+  INVOICE_CANCELLED: "Facture annulée",
+  PAYMENT_RECORDED: "Paiement enregistré",
+  PROFORMA_CREATED: "Proforma créé",
+  INSTALLMENT_RESCHEDULED: "Échéance reprogrammée",
+  DOCUMENT_PRINTED: "Document imprimé",
+  STOCK_ARTICLE_CREATED: "Article stock créé",
+  STOCK_NEGATIVE_OVERRIDE: "Stock négatif forcé",
+  COMMISSION_TRANSACTION_CREATED: "Commission enregistrée",
+  COMMISSION_EDIT_REQUESTED: "Modification commission demandée",
+  COMMISSION_EDIT_APPROVED: "Modification commission approuvée",
+  COMMISSION_EDIT_REJECTED: "Modification commission refusée",
+  SAVINGS_ACCOUNT_OPENED: "Compte épargne ouvert",
+  SAVINGS_DEPOSIT_RECORDED: "Dépôt épargne",
+  SAVINGS_WITHDRAWAL_RECORDED: "Retrait épargne",
+  SAVINGS_TRANSACTION_REVERSED: "Mouvement épargne annulé",
+  CREDIT_AUTO_CONVERTED_TO_EPARGNE_SUBSCRIPTION: "Crédit converti en épargne",
+  CREDIT_AUTO_CONVERTED_TO_EPARGNE_DEPOSIT: "Crédit converti en dépôt épargne",
+};
+
+function humanizeAction(action: string): string {
+  return ACTION_LABELS[action] ?? action.replace(/_/g, " ").toLowerCase();
 }
 
 function KpiTable({ title, rows }: { title: string; rows: KpiRow[] }) {
@@ -90,6 +120,7 @@ export default function DashboardPage() {
   const [clientKpis, setClientKpis] = useState<KpiRow[]>([]);
   const [apporteurKpis, setApporteurKpis] = useState<KpiRow[]>([]);
   const [employeKpis, setEmployeKpis] = useState<KpiRow[]>([]);
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   usePageHeader({ title: "Tableau de bord" });
@@ -103,12 +134,14 @@ export default function DashboardPage() {
       reportingApi.getClientKpis(params),
       reportingApi.getApporteurKpis(params),
       reportingApi.getEmployeKpis(params),
-    ]).then(([summaryRes, compRes, clientRes, apporteurRes, employeRes]) => {
+      reportingApi.getRecentActivity(8),
+    ]).then(([summaryRes, compRes, clientRes, apporteurRes, employeRes, activityRes]) => {
       setSummary(summaryRes.data);
       setComposition(compRes.data);
       setClientKpis(clientRes.data);
       setApporteurKpis(apporteurRes.data);
       setEmployeKpis(employeRes.data);
+      setActivity(activityRes.data);
       setLoading(false);
     });
   }, [from, to, basis]);
@@ -154,6 +187,7 @@ export default function DashboardPage() {
             type="button"
             onClick={() => setBasis("accrual")}
             className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "accrual" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+            title="Compte les ventes au moment où elles sont conclues (facture émise, commission enregistrée)"
           >
             Engagement
           </button>
@@ -161,26 +195,41 @@ export default function DashboardPage() {
             type="button"
             onClick={() => setBasis("cash")}
             className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "cash" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+            title="Compte l'argent au moment où il est réellement reçu"
           >
             Encaissement
           </button>
         </div>
 
-        <a
-          href={reportingApi.exportExcelUrl({ from, to, basis })}
-          className="ml-auto inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <Download size={13} /> Export Excel
-        </a>
+        <div className="ml-auto flex gap-2">
+          <a
+            href={reportingApi.exportPdfUrl({ from, to, basis })}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <FileText size={13} /> Rapport rapide (PDF)
+          </a>
+          <a
+            href={reportingApi.exportExcelUrl({ from, to, basis })}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <Download size={13} /> Export Excel
+          </a>
+        </div>
       </div>
 
       {loading || !summary || !composition ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
       ) : (
         <>
-          {/* Créances en retard ≠ Impayées — deliberately distinct cards, per spec */}
+          {/* Créances en retard ≠ Impayées — deliberately distinct cards, per spec.
+              Each card now links straight to the section it summarizes. */}
           <div className="grid grid-cols-4 gap-3 mb-6">
-            <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+            <Link
+              to="/creances"
+              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
+            >
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <AlertTriangle size={11} /> En retard
               </p>
@@ -188,8 +237,11 @@ export default function DashboardPage() {
               <p className="text-[10px] text-neutral-500">
                 {summary.overdueCount} échéance{summary.overdueCount !== 1 ? "s" : ""}
               </p>
-            </div>
-            <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+            </Link>
+            <Link
+              to="/creances"
+              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
+            >
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <Clock size={11} /> Impayées (toutes)
               </p>
@@ -197,14 +249,17 @@ export default function DashboardPage() {
               <p className="text-[10px] text-neutral-500">
                 {summary.unpaidCount} échéance{summary.unpaidCount !== 1 ? "s" : ""}
               </p>
-            </div>
-            <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+            </Link>
+            <Link
+              to="/stock"
+              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
+            >
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <Package size={11} /> Stock bas
               </p>
               <p className="text-[18px] font-bold text-neutral-800 mt-1">{summary.lowStockCount}</p>
               <p className="text-[10px] text-neutral-500">article{summary.lowStockCount !== 1 ? "s" : ""} sous seuil</p>
-            </div>
+            </Link>
             <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <PiggyBank size={11} /> Épargne — solde net période
@@ -275,10 +330,36 @@ export default function DashboardPage() {
           </div>
 
           {/* KPIs — Client / Apporteur / Employé, per spec */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <KpiTable title="KPI Client" rows={clientKpis} />
             <KpiTable title="KPI Apporteur" rows={apporteurKpis} />
             <KpiTable title="KPI Employé" rows={employeKpis} />
+          </div>
+
+          {/* Recent activity — reads the existing audit log, no new tracking.
+              Kept short (8 items) so it stays a quick glance, not a full log. */}
+          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-neutral-200">
+              <p className="text-[11.5px] font-semibold text-neutral-800">Dernières actions</p>
+            </div>
+            <div className="divide-y divide-neutral-100">
+              {activity.map((a) => (
+                <div key={a.id} className="px-4 py-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-[12px] text-neutral-800">{humanizeAction(a.action)}</span>
+                    {a.actorName && (
+                      <span className="text-[11px] text-neutral-500"> · {a.actorName}</span>
+                    )}
+                  </div>
+                  <span className="text-[10.5px] text-neutral-400">
+                    {new Date(a.createdAt).toLocaleString("fr-FR")}
+                  </span>
+                </div>
+              ))}
+              {activity.length === 0 && (
+                <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">Aucune activité récente.</p>
+              )}
+            </div>
           </div>
         </>
       )}

@@ -125,6 +125,13 @@
 - Replaced the dashboard placeholder with a real Dashboard page: date-range presets (this month/30 days/this year) with accrual/cash toggle, CA composition, overdue/unpaid/low-stock/épargne summary tiles, client/apporteur/employé KPI tables, and an Excel export action.
 - Widened the sidebar (180px → 225px expanded) to fit the new dashboard nav label.
 
+## Sprint 10 Dashboard Enhancements (2026-07-17)
+
+- Added a PDF export endpoint (`/api/reporting/export/pdf`) rendering the dashboard report (CA composition, summary, KPIs) via the shared print template.
+- Added a recent-activity endpoint (`/api/reporting/recent-activity`) surfacing the latest audit-log entries with actor/entity context.
+- Added client `getRecentActivity`/`exportPdfUrl` wrappers and a humanized action-label map for the dashboard's activity feed.
+- Added a recent-activity feed and a PDF export action alongside the existing Excel export on the Dashboard page, plus explanatory tooltips on the accrual/cash toggle.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)

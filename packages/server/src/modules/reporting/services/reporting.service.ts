@@ -12,11 +12,13 @@ import {
   payments,
   parties,
   users,
+  auditLog,
 } from "../../../db/schema.js";
-import { eq, and, gte, lte, inArray, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, inArray, isNull, desc } from "drizzle-orm";
 import { getCreances } from "../../penalties/services/creance.service.js";
 import { listLowStockArticles } from "../../stock/services/stock.service.js";
 import type {
+  ActivityRow,
   CaCompositionBucket,
   CaCompositionResult,
   DashboardSummary,
@@ -257,6 +259,29 @@ export async function getEpargneSoldeNetPeriode(params: DateRangeParams): Promis
   }
 
   return { totalDeposits, totalWithdrawals, netChange: totalDeposits - totalWithdrawals };
+}
+
+// Reads the audit trail every module has already been writing to all
+// session — no new tracking needed, this is purely a display layer over
+// logAudit() calls that already happen on every meaningful mutation
+// (invoice issued, payment recorded, commission logged, stock movement,
+// épargne movement, etc.).
+export async function getRecentActivity(limit = 10): Promise<ActivityRow[]> {
+  const rows = await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+
+  const userIds = [...new Set(rows.map((r) => r.userId).filter((id): id is number => id != null))];
+  const userRows = userIds.length > 0 ? await db.select().from(users).where(inArray(users.id, userIds)) : [];
+  const nameById = new Map(userRows.map((u) => [u.id, u.fullName]));
+
+  return rows.map((r) => ({
+    id: r.id,
+    action: r.action,
+    entityType: r.entityType,
+    entityId: r.entityId ?? undefined,
+    actorName: r.userId != null ? nameById.get(r.userId) : undefined,
+    metadata: (r.metadata as Record<string, unknown>) ?? undefined,
+    createdAt: r.createdAt,
+  }));
 }
 
 export async function getLowStockCount(): Promise<number> {
