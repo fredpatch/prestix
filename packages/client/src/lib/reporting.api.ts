@@ -53,13 +53,18 @@ export interface ActivityRow {
 }
 
 export const reportingApi = {
-  getSummary: (params: DateRangeParams) => api.get<DashboardSummary>("/reporting/summary", { params }),
+  getSummary: (params: DateRangeParams) =>
+    api.get<DashboardSummary>("/reporting/summary", { params }),
   getCaComposition: (params: DateRangeParams) =>
     api.get<CaCompositionResult>("/reporting/ca-composition", { params }),
-  getClientKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
-  getApporteurKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/apporteurs", { params }),
-  getEmployeKpis: (params: DateRangeParams) => api.get<KpiRow[]>("/reporting/kpis/employes", { params }),
-  getRecentActivity: (limit = 10) => api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
+  getClientKpis: (params: DateRangeParams) =>
+    api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
+  getApporteurKpis: (params: DateRangeParams) =>
+    api.get<KpiRow[]>("/reporting/kpis/apporteurs", { params }),
+  getEmployeKpis: (params: DateRangeParams) =>
+    api.get<KpiRow[]>("/reporting/kpis/employes", { params }),
+  getRecentActivity: (limit = 10) =>
+    api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
   exportExcelUrl: (params: DateRangeParams) =>
     `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}`,
   exportPdfUrl: (params: DateRangeParams) =>

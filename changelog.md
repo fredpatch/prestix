@@ -138,6 +138,11 @@
 ## Fixes (2026-07-17)
 
 - Fixed proforma-to-invoice promotion dropping `referrerPartyId`: the référent selected on a proforma was never carried forward to the resulting invoice.
+- Fixed a date-range boundary bug across every reporting query (CA composition buckets, épargne net-balance, client/apporteur/employé KPIs): `to` was parsed as midnight UTC at the *start* of that day, so any `lte` comparison silently excluded same-day activity happening later than midnight. Added a shared `endOfDay()` helper so `to` is always compared against 23:59:59.999 UTC.
+
+## Refactors (2026-07-17)
+
+- Split `DashboardPage.tsx` (was ~390 lines) into a `pages/dashboard/` module: a `useDashboardData` hook owning the fetch/state, pure helpers (`date-presets.ts`, `action-labels.ts`, `format.ts`), and presentational components (`DashboardFilterBar`, `SummaryCards`, `CaCompositionTable`, `KpiTable`, `RecentActivityFeed`). `DashboardPage` is now a ~55-line orchestrator. No behavioral change; dropped an unused `useAuth()` leftover from the old placeholder.
 
 ## Validation Notes (2026-07-12)
 

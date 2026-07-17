@@ -1,383 +1,57 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Loader2,
-  Download,
-  AlertTriangle,
-  Clock,
-  Package,
-  PiggyBank,
-  FileText,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  reportingApi,
-  type ActivityRow,
-  type CaCompositionResult,
-  type DashboardSummary,
-  type KpiRow,
-} from "@/lib/reporting.api";
-import { useAuth } from "@/App";
+import { Loader2 } from "lucide-react";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-
-function todayISO(): string {
-  return new Date().toISOString().split("T")[0];
-}
-function monthStartISO(): string {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
-}
-function daysAgoISO(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().split("T")[0];
-}
-function yearStartISO(): string {
-  return new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0];
-}
-
-const PRESETS = [
-  { label: "Ce mois", from: monthStartISO(), to: todayISO() },
-  { label: "30 derniers jours", from: daysAgoISO(30), to: todayISO() },
-  { label: "Cette année", from: yearStartISO(), to: todayISO() },
-];
-
-function fmt(n: number): string {
-  return n.toLocaleString("fr-FR");
-}
-
-// Fallback-friendly — covers the actions an owner would actually care to see
-// at a glance; anything not listed here still renders (humanized fallback),
-// so a future action type never shows up blank.
-const ACTION_LABELS: Record<string, string> = {
-  INVOICE_ISSUED: "Facture émise",
-  INVOICE_CANCELLED: "Facture annulée",
-  PAYMENT_RECORDED: "Paiement enregistré",
-  PROFORMA_CREATED: "Proforma créé",
-  INSTALLMENT_RESCHEDULED: "Échéance reprogrammée",
-  DOCUMENT_PRINTED: "Document imprimé",
-  STOCK_ARTICLE_CREATED: "Article stock créé",
-  STOCK_NEGATIVE_OVERRIDE: "Stock négatif forcé",
-  COMMISSION_TRANSACTION_CREATED: "Commission enregistrée",
-  COMMISSION_EDIT_REQUESTED: "Modification commission demandée",
-  COMMISSION_EDIT_APPROVED: "Modification commission approuvée",
-  COMMISSION_EDIT_REJECTED: "Modification commission refusée",
-  SAVINGS_ACCOUNT_OPENED: "Compte épargne ouvert",
-  SAVINGS_DEPOSIT_RECORDED: "Dépôt épargne",
-  SAVINGS_WITHDRAWAL_RECORDED: "Retrait épargne",
-  SAVINGS_TRANSACTION_REVERSED: "Mouvement épargne annulé",
-  CREDIT_AUTO_CONVERTED_TO_EPARGNE_SUBSCRIPTION: "Crédit converti en épargne",
-  CREDIT_AUTO_CONVERTED_TO_EPARGNE_DEPOSIT: "Crédit converti en dépôt épargne",
-};
-
-function humanizeAction(action: string): string {
-  return ACTION_LABELS[action] ?? action.replace(/_/g, " ").toLowerCase();
-}
-
-function KpiTable({ title, rows }: { title: string; rows: KpiRow[] }) {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-neutral-200">
-        <p className="text-[11.5px] font-semibold text-neutral-800">{title}</p>
-      </div>
-      <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
-          <tr>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-              Nom
-            </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-              Volume
-            </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-              Valeur (XAF)
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.slice(0, 10).map((r) => (
-            <tr key={r.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-2 text-[12px] text-neutral-800">{r.name}</td>
-              <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{r.volume}</td>
-              <td className="px-4 py-2 text-[12px] font-medium text-neutral-800 text-right">
-                {fmt(r.value)}
-              </td>
-            </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
-                Aucune donnée pour cette période.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+import { useDashboardData } from "./dashboard/useDashboardData";
+import { DashboardFilterBar } from "./dashboard/DashboardFilterBar";
+import { SummaryCards } from "./dashboard/SummaryCards";
+import { CaCompositionTable } from "./dashboard/CaCompositionTable";
+import { KpiTable } from "./dashboard/KpiTable";
+import { RecentActivityFeed } from "./dashboard/RecentActivityFeed";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [from, setFrom] = useState(PRESETS[0].from);
-  const [to, setTo] = useState(PRESETS[0].to);
-  const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
-
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [composition, setComposition] = useState<CaCompositionResult | null>(null);
-  const [clientKpis, setClientKpis] = useState<KpiRow[]>([]);
-  const [apporteurKpis, setApporteurKpis] = useState<KpiRow[]>([]);
-  const [employeKpis, setEmployeKpis] = useState<KpiRow[]>([]);
-  const [activity, setActivity] = useState<ActivityRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
   usePageHeader({ title: "Tableau de bord" });
 
-  useEffect(() => {
-    setLoading(true);
-    const params = { from, to, basis };
-    Promise.all([
-      reportingApi.getSummary(params),
-      reportingApi.getCaComposition(params),
-      reportingApi.getClientKpis(params),
-      reportingApi.getApporteurKpis(params),
-      reportingApi.getEmployeKpis(params),
-      reportingApi.getRecentActivity(8),
-    ]).then(([summaryRes, compRes, clientRes, apporteurRes, employeRes, activityRes]) => {
-      setSummary(summaryRes.data);
-      setComposition(compRes.data);
-      setClientKpis(clientRes.data);
-      setApporteurKpis(apporteurRes.data);
-      setEmployeKpis(employeRes.data);
-      setActivity(activityRes.data);
-      setLoading(false);
-    });
-  }, [from, to, basis]);
+  const {
+    from,
+    to,
+    basis,
+    setFrom,
+    setTo,
+    setBasis,
+    summary,
+    composition,
+    clientKpis,
+    apporteurKpis,
+    employeKpis,
+    activity,
+    loading,
+  } = useDashboardData();
 
   return (
     <div>
-      {/* Date range + basis — shared by every section below, per spec:
-          "consistent from/to across all sections" */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        {PRESETS.map((p) => (
-          <Button
-            key={p.label}
-            size="sm"
-            variant={from === p.from && to === p.to ? "default" : "outline"}
-            onClick={() => {
-              setFrom(p.from);
-              setTo(p.to);
-            }}
-          >
-            {p.label}
-          </Button>
-        ))}
-        <input
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          className="h-9 rounded border border-neutral-200 bg-white px-2 text-[12px]"
-        />
-        <span className="text-[11px] text-neutral-400">→</span>
-        <input
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          className="h-9 rounded border border-neutral-200 bg-white px-2 text-[12px]"
-        />
-
-        <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden ml-2">
-          <button
-            type="button"
-            onClick={() => setBasis("accrual")}
-            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "accrual" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
-            title="Compte les ventes au moment où elles sont conclues (facture émise, commission enregistrée)"
-          >
-            Engagement
-          </button>
-          <button
-            type="button"
-            onClick={() => setBasis("cash")}
-            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "cash" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
-            title="Compte l'argent au moment où il est réellement reçu"
-          >
-            Encaissement
-          </button>
-        </div>
-
-        <div className="ml-auto flex gap-2">
-          <a
-            href={reportingApi.exportPdfUrl({ from, to, basis })}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-          >
-            <FileText size={13} /> Rapport rapide (PDF)
-          </a>
-          <a
-            href={reportingApi.exportExcelUrl({ from, to, basis })}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-          >
-            <Download size={13} /> Export Excel
-          </a>
-        </div>
-      </div>
+      <DashboardFilterBar
+        from={from}
+        to={to}
+        basis={basis}
+        onFromChange={setFrom}
+        onToChange={setTo}
+        onBasisChange={setBasis}
+      />
 
       {loading || !summary || !composition ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
       ) : (
         <>
-          {/* Créances en retard ≠ Impayées — deliberately distinct cards, per spec.
-              Each card now links straight to the section it summarizes. */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
-            <Link
-              to="/creances"
-              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
-            >
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
-                <AlertTriangle size={11} /> En retard
-              </p>
-              <p className="text-[18px] font-bold text-red-600 mt-1">
-                {fmt(summary.overdueAmount)} XAF
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                {summary.overdueCount} échéance{summary.overdueCount !== 1 ? "s" : ""}
-              </p>
-            </Link>
-            <Link
-              to="/creances?overdue=false"
-              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
-            >
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
-                <Clock size={11} /> Impayées (toutes)
-              </p>
-              <p className="text-[18px] font-bold text-amber-600 mt-1">
-                {fmt(summary.unpaidAmount)} XAF
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                {summary.unpaidCount} échéance{summary.unpaidCount !== 1 ? "s" : ""}
-              </p>
-            </Link>
-            <Link
-              to="/stock"
-              className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
-            >
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
-                <Package size={11} /> Stock bas
-              </p>
-              <p className="text-[18px] font-bold text-neutral-800 mt-1">{summary.lowStockCount}</p>
-              <p className="text-[10px] text-neutral-500">
-                article{summary.lowStockCount !== 1 ? "s" : ""} sous seuil
-              </p>
-            </Link>
-            <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
-                <PiggyBank size={11} /> Épargne — solde net période
-              </p>
-              <p
-                className={`text-[18px] font-bold mt-1 ${summary.epargneSoldeNetPeriode.netChange >= 0 ? "text-emerald-600" : "text-red-600"}`}
-              >
-                {fmt(summary.epargneSoldeNetPeriode.netChange)} XAF
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                Métrique globale — pas un solde client, pas du CA
-              </p>
-            </div>
-          </div>
+          <SummaryCards summary={summary} />
+          <CaCompositionTable composition={composition} />
 
-          {/* CA composition — gross always shown, gain always shown, buckets dynamic */}
-          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
-            <div className="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between">
-              <p className="text-[11.5px] font-semibold text-neutral-800">Composition du CA</p>
-              <p className="text-[10.5px] text-neutral-500">
-                Factures émises uniquement — brouillons et annulées exclues
-              </p>
-            </div>
-            <table className="w-full text-left">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
-                <tr>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                    Bucket
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                    CA Brut (XAF)
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                    Gain (XAF)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {composition.buckets.map((b) => (
-                  <tr key={b.bucketKey} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-4 py-2 text-[12px] text-neutral-800">{b.label}</td>
-                    <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">
-                      {fmt(b.gross)}
-                    </td>
-                    <td className="px-4 py-2 text-[12px] font-medium text-emerald-700 text-right">
-                      {fmt(b.gain)}
-                    </td>
-                  </tr>
-                ))}
-                {composition.buckets.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-4 py-6 text-center text-[11.5px] text-neutral-500"
-                    >
-                      Aucune donnée pour cette période.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="bg-neutral-50">
-                  <td className="px-4 py-2 text-[12px] font-semibold text-neutral-800">TOTAL</td>
-                  <td className="px-4 py-2 text-[13px] font-bold text-neutral-800 text-right">
-                    {fmt(composition.totalGross)}
-                  </td>
-                  <td className="px-4 py-2 text-[13px] font-bold text-brand-gold-dark text-right">
-                    {fmt(composition.totalGain)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          {/* KPIs — Client / Apporteur / Employé, per spec */}
+          {/* KPIs - Client / Apporteur / Employé, per spec */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <KpiTable title="KPI Client" rows={clientKpis} />
             <KpiTable title="KPI Apporteur" rows={apporteurKpis} />
             <KpiTable title="KPI Employé" rows={employeKpis} />
           </div>
 
-          {/* Recent activity — reads the existing audit log, no new tracking.
-              Kept short (8 items) so it stays a quick glance, not a full log. */}
-          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-neutral-200">
-              <p className="text-[11.5px] font-semibold text-neutral-800">Dernières actions</p>
-            </div>
-            <div className="divide-y divide-neutral-100">
-              {activity.map((a) => (
-                <div key={a.id} className="px-4 py-2 flex items-center justify-between">
-                  <div>
-                    <span className="text-[12px] text-neutral-800">{humanizeAction(a.action)}</span>
-                    {a.actorName && (
-                      <span className="text-[11px] text-neutral-500"> · {a.actorName}</span>
-                    )}
-                  </div>
-                  <span className="text-[10.5px] text-neutral-400">
-                    {new Date(a.createdAt).toLocaleString("fr-FR")}
-                  </span>
-                </div>
-              ))}
-              {activity.length === 0 && (
-                <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
-                  Aucune activité récente.
-                </p>
-              )}
-            </div>
-          </div>
+          <RecentActivityFeed activity={activity} />
         </>
       )}
     </div>
