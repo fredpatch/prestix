@@ -27,7 +27,6 @@ export function DashboardFilterBar({
       {PRESETS.map((p) => (
         <Button
           key={p.label}
-          size="sm"
           variant={from === p.from && to === p.to ? "default" : "outline"}
           onClick={() => {
             onFromChange(p.from);

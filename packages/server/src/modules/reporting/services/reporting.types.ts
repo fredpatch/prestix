@@ -31,6 +31,34 @@ export interface KpiRow {
   value: number;
 }
 
+// Employé KPI specifically needs a per-activity-type breakdown, not just one
+// combined volume number — Lucrèce's own framing: "volume d'action des
+// employés, dépendamment des différentes activités de l'agence." The person
+// who CREATES an invoice isn't always the person who later RECORDS a payment
+// on it, so these are tracked as five genuinely separate counts, not one.
+export interface EmployeeActivityBreakdown {
+  invoicesIssued: number;
+  paymentsRecorded: number;
+  commissionsLogged: number;
+  stockMovements: number;
+  savingsTransactions: number;
+}
+
+export interface EmployeeKpiRow extends KpiRow {
+  breakdown: EmployeeActivityBreakdown;
+}
+
+// The actual drill-down — real transaction rows, not aggregated numbers.
+// This is what makes the Employé KPI usable for prime/incentive decisions
+// rather than just a scoreboard.
+export interface EmployeeActivityDetail {
+  invoices: { id: number; number?: string; date: string; amount: number; partyName: string }[];
+  payments: { id: number; invoiceId: number; invoiceNumber?: string; date: string; amount: number; method: string }[];
+  commissions: { id: number; type: string; typeLabel: string; date: string; amount: number }[];
+  stockMovements: { id: number; articleName: string; type: string; quantity: number; date: string }[];
+  savingsTransactions: { id: number; nature: string; amount: number; date: string }[];
+}
+
 export interface EpargneSoldeNetPeriode {
   totalDeposits: number;
   totalWithdrawals: number;

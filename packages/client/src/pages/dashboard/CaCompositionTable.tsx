@@ -1,14 +1,21 @@
 import type { CaCompositionResult } from "@/lib/reporting.api";
 import { fmt } from "./format";
+import { cn } from "@/lib/utils";
 
 interface CaCompositionTableProps {
   composition: CaCompositionResult;
+  className?: string;
 }
 
 // CA composition - gross always shown, gain always shown, buckets dynamic
-export function CaCompositionTable({ composition }: CaCompositionTableProps) {
+export function CaCompositionTable({ composition, className }: CaCompositionTableProps) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6">
+    <div
+      className={cn(
+        "bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6",
+        className,
+      )}
+    >
       <div className="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between">
         <p className="text-[11.5px] font-semibold text-neutral-800">Composition du CA</p>
         <p className="text-[10.5px] text-neutral-500">

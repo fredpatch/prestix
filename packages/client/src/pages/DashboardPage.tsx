@@ -38,11 +38,13 @@ export default function DashboardPage() {
       />
 
       {loading || !summary || !composition ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-neutral-400 mx-auto" size={18} />
       ) : (
         <>
           <SummaryCards summary={summary} />
-          <CaCompositionTable composition={composition} />
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <CaCompositionTable composition={composition} className="col-span-2" />
+          </div>
 
           {/* KPIs - Client / Apporteur / Employé, per spec */}
           <div className="grid grid-cols-3 gap-4 mb-6">

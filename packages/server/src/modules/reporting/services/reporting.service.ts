@@ -13,6 +13,8 @@ import {
   parties,
   users,
   auditLog,
+  stockMovements,
+  stockArticles,
 } from "../../../db/schema.js";
 import { eq, and, gte, lte, inArray, isNull, desc } from "drizzle-orm";
 import { getCreances } from "../../penalties/services/creance.service.js";
@@ -23,6 +25,8 @@ import type {
   CaCompositionResult,
   DashboardSummary,
   DateRangeParams,
+  EmployeeActivityDetail,
+  EmployeeKpiRow,
   EpargneSoldeNetPeriode,
   KpiRow,
 } from "./reporting.types.js";
@@ -474,7 +478,7 @@ async function resolvePartyNames(byParty: Map<number, { volume: number; value: n
 // CA, and "who recorded the commission" for commission CA — combined per
 // agent, matching "volume + value per agent" as a real performance metric,
 // not a single ambiguous agentId field.
-export async function getEmployeKpis(params: DateRangeParams): Promise<KpiRow[]> {
+export async function getEmployeKpis(params: DateRangeParams): Promise<EmployeeKpiRow[]> {
   const from = new Date(params.from);
   const to = endOfDay(params.to);
 
@@ -502,21 +506,82 @@ export async function getEmployeKpis(params: DateRangeParams): Promise<KpiRow[]>
       ),
     );
 
-  const byAgent = new Map<number, { volume: number; value: number }>();
+  // Volume-only categories (Lucrèce's ask: "volume d'action... dépendamment
+  // des différentes activités de l'agence") — these don't feed CA/value, but
+  // still count as real activity for prime/incentive decisions. Filtered by
+  // their own timestamp regardless of basis — a stock movement or épargne
+  // transaction doesn't have a meaningful "accrual vs cash" distinction of
+  // its own, it just happened or it didn't.
+  const agentPayments = await db
+    .select()
+    .from(payments)
+    .where(and(gte(payments.createdAt, from), lte(payments.createdAt, to)));
+
+  const agentStockMovements = await db
+    .select()
+    .from(stockMovements)
+    .where(and(gte(stockMovements.createdAt, from), lte(stockMovements.createdAt, to)));
+
+  const agentSavingsTransactions = await db
+    .select()
+    .from(savingsTransactions)
+    .where(
+      and(
+        eq(savingsTransactions.status, "recorded"),
+        gte(savingsTransactions.recordedAt, from),
+        lte(savingsTransactions.recordedAt, to),
+      ),
+    );
+
+  const byAgent = new Map<
+    number,
+    { volume: number; value: number; breakdown: EmployeeKpiRow["breakdown"] }
+  >();
+
+  function ensure(agentId: number) {
+    if (!byAgent.has(agentId)) {
+      byAgent.set(agentId, {
+        volume: 0,
+        value: 0,
+        breakdown: {
+          invoicesIssued: 0,
+          paymentsRecorded: 0,
+          commissionsLogged: 0,
+          stockMovements: 0,
+          savingsTransactions: 0,
+        },
+      });
+    }
+    return byAgent.get(agentId)!;
+  }
 
   for (const inv of agentInvoices) {
-    const current = byAgent.get(inv.createdBy) ?? { volume: 0, value: 0 };
+    const current = ensure(inv.createdBy);
     current.volume += 1;
     current.value += parseFloat(inv.totalAmount);
-    byAgent.set(inv.createdBy, current);
+    current.breakdown.invoicesIssued += 1;
   }
 
   for (const c of agentCommissions) {
     if (!c.agentId) continue; // system-originated rows (none for commissions today, but stay defensive)
-    const current = byAgent.get(c.agentId) ?? { volume: 0, value: 0 };
+    const current = ensure(c.agentId);
     current.volume += 1;
     current.value += parseFloat(c.commissionAmount);
-    byAgent.set(c.agentId, current);
+    current.breakdown.commissionsLogged += 1;
+  }
+
+  for (const p of agentPayments) {
+    if (!p.agentId) continue;
+    ensure(p.agentId).breakdown.paymentsRecorded += 1;
+  }
+
+  for (const m of agentStockMovements) {
+    ensure(m.agentId).breakdown.stockMovements += 1;
+  }
+
+  for (const s of agentSavingsTransactions) {
+    if (!s.agentId) continue; // auto-conversion cron rows have no human agent
+    ensure(s.agentId).breakdown.savingsTransactions += 1;
   }
 
   if (byAgent.size === 0) return [];
@@ -526,4 +591,118 @@ export async function getEmployeKpis(params: DateRangeParams): Promise<KpiRow[]>
   return Array.from(byAgent.entries())
     .map(([id, agg]) => ({ id, name: nameById.get(id) ?? `Agent #${id}`, ...agg }))
     .sort((a, b) => b.value - a.value);
+}
+
+// The actual drill-down for one employee — real transaction rows across all
+// five activity categories, not aggregated counts. This is what makes the
+// Employé KPI usable for a real prime/incentive decision rather than just a
+// leaderboard number.
+export async function getEmployeeActivityDetail(
+  agentId: number,
+  params: DateRangeParams,
+): Promise<EmployeeActivityDetail> {
+  const from = new Date(params.from);
+  const to = endOfDay(params.to);
+
+  const agentInvoices = await db
+    .select()
+    .from(invoices)
+    .where(
+      and(
+        eq(invoices.createdBy, agentId),
+        eq(invoices.status, "issued"),
+        gte(invoices.issuedAt, from),
+        lte(invoices.issuedAt, to),
+      ),
+    );
+
+  const agentPayments = await db
+    .select()
+    .from(payments)
+    .where(and(eq(payments.agentId, agentId), gte(payments.createdAt, from), lte(payments.createdAt, to)));
+  const paymentInvoiceIds = [...new Set(agentPayments.map((p) => p.invoiceId))];
+  const paymentInvoices =
+    paymentInvoiceIds.length > 0
+      ? await db.select().from(invoices).where(inArray(invoices.id, paymentInvoiceIds))
+      : [];
+  const invoiceNumberById = new Map(paymentInvoices.map((i) => [i.id, i.number ?? undefined]));
+
+  const agentCommissions = await db
+    .select()
+    .from(commissionTransactions)
+    .where(
+      and(
+        eq(commissionTransactions.agentId, agentId),
+        eq(commissionTransactions.active, true),
+        gte(commissionTransactions.date, params.from),
+        lte(commissionTransactions.date, params.to),
+      ),
+    );
+  const commissionTypes = await db.select().from(commissionTypeCatalog);
+  const commissionLabelByCode = new Map(commissionTypes.map((t) => [t.code, t.label]));
+
+  const agentStockMovements = await db
+    .select()
+    .from(stockMovements)
+    .where(
+      and(eq(stockMovements.agentId, agentId), gte(stockMovements.createdAt, from), lte(stockMovements.createdAt, to)),
+    );
+  const articleIds = [...new Set(agentStockMovements.map((m) => m.articleId))];
+  const articles = articleIds.length > 0 ? await db.select().from(stockArticles).where(inArray(stockArticles.id, articleIds)) : [];
+  const articleNameById = new Map(articles.map((a) => [a.id, a.name]));
+
+  const agentSavingsTransactions = await db
+    .select()
+    .from(savingsTransactions)
+    .where(
+      and(
+        eq(savingsTransactions.agentId, agentId),
+        eq(savingsTransactions.status, "recorded"),
+        gte(savingsTransactions.recordedAt, from),
+        lte(savingsTransactions.recordedAt, to),
+      ),
+    );
+
+  const invoicePartyIds = [...new Set(agentInvoices.map((i) => i.partyId))];
+  const invoiceParties =
+    invoicePartyIds.length > 0 ? await db.select().from(parties).where(inArray(parties.id, invoicePartyIds)) : [];
+  const partyNameById = new Map(invoiceParties.map((p) => [p.id, p.fullName]));
+
+  return {
+    invoices: agentInvoices.map((i) => ({
+      id: i.id,
+      number: i.number ?? undefined,
+      date: (i.issuedAt ?? i.createdAt).toISOString(),
+      amount: parseFloat(i.totalAmount),
+      partyName: partyNameById.get(i.partyId) ?? "—",
+    })),
+    payments: agentPayments.map((p) => ({
+      id: p.id,
+      invoiceId: p.invoiceId,
+      invoiceNumber: invoiceNumberById.get(p.invoiceId),
+      date: p.createdAt.toISOString(),
+      amount: parseFloat(p.amountApplied),
+      method: p.method,
+    })),
+    commissions: agentCommissions.map((c) => ({
+      id: c.id,
+      type: c.type,
+      typeLabel: commissionLabelByCode.get(c.type) ?? c.type,
+      date: c.date,
+      amount: parseFloat(c.commissionAmount),
+    })),
+    stockMovements: agentStockMovements.map((m) => ({
+      id: m.id,
+      articleName: articleNameById.get(m.articleId) ?? "—",
+      type: m.type,
+      quantity: m.quantity,
+      date: m.createdAt.toISOString(),
+    })),
+    savingsTransactions: agentSavingsTransactions.map((s) => ({
+      id: s.id,
+      nature: s.nature,
+      amount: parseFloat(s.totalAmount),
+      date: (s.recordedAt ?? s.createdAt).toISOString(),
+    })),
+  };
 }

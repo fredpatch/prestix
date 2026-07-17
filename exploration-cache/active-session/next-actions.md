@@ -1,7 +1,7 @@
-1. Sprint 10 (M12 — Dashboard & Reporting): read feasibility spec, plan
-   aggregation queries. Four separate "capture now, display later" deferrals
-   converge here: ticket margin (S6), stock low-threshold (S7), commission
-   agentId/type/amount (S8), épargne inscription fee (S9).
+1. Sprint 10 (M12 — Dashboard & Reporting): backend core, dashboard frontend,
+   PDF/Excel export, recent-activity feed, and employee-activity-drilldown
+   backend are done (2026-07-17). Still needed: frontend UI for the employee
+   drill-down (no trigger/detail view yet), and full API/runtime smoke.
 2. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing — code mirrors the direct-
    subscription fix but wasn't re-verified with the same rigor.

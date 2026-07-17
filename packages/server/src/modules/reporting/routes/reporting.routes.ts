@@ -14,6 +14,7 @@ router.get("/ca-composition", requireAgent, reportingController.getCaComposition
 router.get("/kpis/clients", requireAgent, reportingController.getClientKpis);
 router.get("/kpis/apporteurs", requireAgent, reportingController.getApporteurKpis);
 router.get("/kpis/employes", requireAgent, reportingController.getEmployeKpis);
+router.get("/employees/:agentId/detail", requireAgent, reportingController.getEmployeeActivityDetail);
 router.get("/export/excel", requireAgent, reportingController.exportExcel);
 router.get("/recent-activity", requireAgent, reportingController.getRecentActivity);
 router.get("/export/pdf", requireAgent, reportingController.exportPdf);

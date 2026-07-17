@@ -65,6 +65,17 @@ export async function getEmployeKpis(req: Request, res: Response): Promise<void>
   }
 }
 
+export async function getEmployeeActivityDetail(req: Request, res: Response): Promise<void> {
+  try {
+    const agentId = parseInt(req.params.agentId);
+    const params = parseDateRange(req);
+    res.json(await reportingService.getEmployeeActivityDetail(agentId, params));
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
 export async function exportExcel(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);

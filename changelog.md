@@ -140,6 +140,17 @@
 - Fixed proforma-to-invoice promotion dropping `referrerPartyId`: the référent selected on a proforma was never carried forward to the resulting invoice.
 - Fixed a date-range boundary bug across every reporting query (CA composition buckets, épargne net-balance, client/apporteur/employé KPIs): `to` was parsed as midnight UTC at the *start* of that day, so any `lte` comparison silently excluded same-day activity happening later than midnight. Added a shared `endOfDay()` helper so `to` is always compared against 23:59:59.999 UTC.
 
+## Sprint 10 Employee Activity Drill-down — Backend (2026-07-17)
+
+- Extended `getEmployeKpis` to return a per-agent `EmployeeActivityBreakdown` (invoices issued, payments recorded, commissions logged, stock movements, savings transactions) instead of one combined volume/value number — separate counts because the person who creates an invoice isn't always the one who later records its payment.
+- Added `/api/reporting/employees/:agentId/detail` returning real transaction-level rows (invoices, payments, commissions, stock movements, savings transactions) for one employee over a date range — the actual drill-down behind the KPI, intended for prime/incentive decisions rather than a bare leaderboard number.
+- Frontend drill-down UI not built yet; this is the backend slice only.
+
+## Sprint 10 Dashboard UI Polish (2026-07-17)
+
+- Reduced the shared `Button` component's density (smaller text, shorter default height, tighter icon-button sizing) for a more compact dashboard layout.
+- Added a `className` passthrough to `CaCompositionTable` so it can be placed in a grid alongside future dashboard panels.
+
 ## Refactors (2026-07-17)
 
 - Split `DashboardPage.tsx` (was ~390 lines) into a `pages/dashboard/` module: a `useDashboardData` hook owning the fetch/state, pure helpers (`date-presets.ts`, `action-labels.ts`, `format.ts`), and presentational components (`DashboardFilterBar`, `SummaryCards`, `CaCompositionTable`, `KpiTable`, `RecentActivityFeed`). `DashboardPage` is now a ~55-line orchestrator. No behavioral change; dropped an unused `useAuth()` leftover from the old placeholder.
