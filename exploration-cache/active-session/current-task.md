@@ -21,10 +21,14 @@ for maintainability, no behavioral change.
 Real bug also fixed in passing: proforma→invoice promotion was dropping
 `referrerPartyId`.
 
+Employee activity drill-down is now complete end-to-end: the Employé KPI
+panel uses a dedicated `EmployeeKpiTable` with a per-activity breakdown and a
+drill-down link into `EmployeeActivityDetailPage` (`/reporting/employees/:agentId`),
+which lists the agent's invoices/payments/commissions/stock/savings rows for
+the selected date range and basis.
+
 ## Not yet done
 
-- Employee activity drill-down has a backend endpoint
-  (`/api/reporting/employees/:agentId/detail`) but no frontend trigger/UI yet.
 - Reporting API/runtime smoke not yet run end-to-end.
 - Global `Button` density change (smaller text/height) needs a visual pass
   across other pages that use it, not just the dashboard.

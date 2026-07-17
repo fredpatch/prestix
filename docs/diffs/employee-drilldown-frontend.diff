@@ -1,0 +1,349 @@
+diff --git a/packages/client/src/App.tsx b/packages/client/src/App.tsx
+index 6f044b5..e25ea9a 100644
+--- a/packages/client/src/App.tsx
++++ b/packages/client/src/App.tsx
+@@ -22,6 +22,7 @@ import StockArticlesPage from "./pages/StockArticlesPage";
+ import CommissionsPage from "./pages/CommissionsPage";
+ import CommissionEditQueuePage from "./pages/CommissionEditQueuePage";
+ import DashboardPage from "./pages/DashboardPage";
++import EmployeeActivityDetailPage from "./pages/EmployeeActivityDetailPage";
+ 
+ interface AuthUser {
+   id: number;
+@@ -136,6 +137,7 @@ export default function App() {
+             }
+           >
+             <Route path="/dashboard" element={<DashboardPage />} />
++            <Route path="/reporting/employees/:agentId" element={<EmployeeActivityDetailPage />} />
+             <Route path="/parties" element={<PartiesPage />} />
+             <Route path="/parties/:id" element={<PartyDetailPage />} />
+             <Route path="/proformas" element={<ProformasPage />} />
+diff --git a/packages/client/src/lib/reporting.api.ts b/packages/client/src/lib/reporting.api.ts
+index 4142478..377f94e 100644
+--- a/packages/client/src/lib/reporting.api.ts
++++ b/packages/client/src/lib/reporting.api.ts
+@@ -26,6 +26,26 @@ export interface KpiRow {
+   value: number;
+ }
+ 
++export interface EmployeeActivityBreakdown {
++  invoicesIssued: number;
++  paymentsRecorded: number;
++  commissionsLogged: number;
++  stockMovements: number;
++  savingsTransactions: number;
++}
++
++export interface EmployeeKpiRow extends KpiRow {
++  breakdown: EmployeeActivityBreakdown;
++}
++
++export interface EmployeeActivityDetail {
++  invoices: { id: number; number?: string; date: string; amount: number; partyName: string }[];
++  payments: { id: number; invoiceId: number; invoiceNumber?: string; date: string; amount: number; method: string }[];
++  commissions: { id: number; type: string; typeLabel: string; date: string; amount: number }[];
++  stockMovements: { id: number; articleName: string; type: string; quantity: number; date: string }[];
++  savingsTransactions: { id: number; nature: string; amount: number; date: string }[];
++}
++
+ export interface EpargneSoldeNetPeriode {
+   totalDeposits: number;
+   totalWithdrawals: number;
+@@ -62,7 +82,9 @@ export const reportingApi = {
+   getApporteurKpis: (params: DateRangeParams) =>
+     api.get<KpiRow[]>("/reporting/kpis/apporteurs", { params }),
+   getEmployeKpis: (params: DateRangeParams) =>
+-    api.get<KpiRow[]>("/reporting/kpis/employes", { params }),
++    api.get<EmployeeKpiRow[]>("/reporting/kpis/employes", { params }),
++  getEmployeeActivityDetail: (agentId: number, params: DateRangeParams) =>
++    api.get<EmployeeActivityDetail>(`/reporting/employees/${agentId}/detail`, { params }),
+   getRecentActivity: (limit = 10) =>
+     api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
+   exportExcelUrl: (params: DateRangeParams) =>
+diff --git a/packages/client/src/pages/DashboardPage.tsx b/packages/client/src/pages/DashboardPage.tsx
+index e969b2a..cafca15 100644
+--- a/packages/client/src/pages/DashboardPage.tsx
++++ b/packages/client/src/pages/DashboardPage.tsx
+@@ -5,6 +5,7 @@ import { DashboardFilterBar } from "./dashboard/DashboardFilterBar";
+ import { SummaryCards } from "./dashboard/SummaryCards";
+ import { CaCompositionTable } from "./dashboard/CaCompositionTable";
+ import { KpiTable } from "./dashboard/KpiTable";
++import { EmployeeKpiTable } from "./dashboard/EmployeeKpiTable";
+ import { RecentActivityFeed } from "./dashboard/RecentActivityFeed";
+ 
+ export default function DashboardPage() {
+@@ -50,7 +51,7 @@ export default function DashboardPage() {
+           <div className="grid grid-cols-3 gap-4 mb-6">
+             <KpiTable title="KPI Client" rows={clientKpis} />
+             <KpiTable title="KPI Apporteur" rows={apporteurKpis} />
+-            <KpiTable title="KPI Employé" rows={employeKpis} />
++            <EmployeeKpiTable rows={employeKpis} from={from} to={to} basis={basis} />
+           </div>
+ 
+           <RecentActivityFeed activity={activity} />
+diff --git a/packages/client/src/pages/EmployeeActivityDetailPage.tsx b/packages/client/src/pages/EmployeeActivityDetailPage.tsx
+new file mode 100644
+index 0000000..f980fb3
+--- /dev/null
++++ b/packages/client/src/pages/EmployeeActivityDetailPage.tsx
+@@ -0,0 +1,155 @@
++import { useEffect, useState } from "react";
++import { useParams, useSearchParams } from "react-router-dom";
++import { Loader2 } from "lucide-react";
++import { reportingApi, type EmployeeActivityDetail } from "@/lib/reporting.api";
++import { usePageHeader } from "@/components/layouts/lib/page-header";
++
++function fmt(n: number): string {
++  return n.toLocaleString("fr-FR");
++}
++
++function fmtDate(d: string): string {
++  return new Date(d).toLocaleDateString("fr-FR");
++}
++
++const METHOD_LABELS: Record<string, string> = {
++  cash: "Cash",
++  mobile_money: "Mobile Money",
++  virement: "Virement",
++  credit: "Crédit / Avoir",
++  epargne: "Épargne voyage",
++};
++
++const STOCK_TYPE_LABELS: Record<string, string> = { IN: "Entrée", OUT: "Sortie", ADJUST: "Ajustement" };
++const SAVINGS_NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
++
++interface SectionTableProps {
++  title: string;
++  columns: string[];
++  rows: (string | number)[][];
++  emptyLabel: string;
++}
++
++function SectionTable({ title, columns, rows, emptyLabel }: SectionTableProps) {
++  return (
++    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-4">
++      <div className="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between">
++        <p className="text-[11.5px] font-semibold text-neutral-800">{title}</p>
++        <p className="text-[10.5px] text-neutral-500">{rows.length} ligne{rows.length !== 1 ? "s" : ""}</p>
++      </div>
++      {rows.length === 0 ? (
++        <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">{emptyLabel}</p>
++      ) : (
++        <table className="w-full text-left">
++          <thead className="bg-neutral-50 border-b border-neutral-200">
++            <tr>
++              {columns.map((c, i) => (
++                <th
++                  key={c}
++                  className={`px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 ${i === columns.length - 1 ? "text-right" : ""}`}
++                >
++                  {c}
++                </th>
++              ))}
++            </tr>
++          </thead>
++          <tbody>
++            {rows.map((row, i) => (
++              <tr key={i} className="border-b border-neutral-100 last:border-0">
++                {row.map((cell, j) => (
++                  <td
++                    key={j}
++                    className={`px-4 py-2 text-[12px] ${j === row.length - 1 ? "text-right font-medium text-neutral-800" : "text-neutral-700"}`}
++                  >
++                    {cell}
++                  </td>
++                ))}
++              </tr>
++            ))}
++          </tbody>
++        </table>
++      )}
++    </div>
++  );
++}
++
++export default function EmployeeActivityDetailPage() {
++  const { agentId } = useParams<{ agentId: string }>();
++  const [searchParams] = useSearchParams();
++  const [detail, setDetail] = useState<EmployeeActivityDetail | null>(null);
++  const [loading, setLoading] = useState(true);
++
++  usePageHeader({ title: "Détail employé", backTo: "/dashboard" });
++
++  useEffect(() => {
++    const from = searchParams.get("from") ?? new Date().toISOString().split("T")[0];
++    const to = searchParams.get("to") ?? new Date().toISOString().split("T")[0];
++    const basis = (searchParams.get("basis") as "accrual" | "cash") ?? "accrual";
++
++    setLoading(true);
++    reportingApi.getEmployeeActivityDetail(parseInt(agentId!), { from, to, basis }).then((res) => {
++      setDetail(res.data);
++      setLoading(false);
++    });
++  }, [agentId, searchParams]);
++
++  if (loading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
++
++  return (
++    <div>
++      <p className="text-neutral-500 text-sm mb-6">
++        Détail des transactions pour la période sélectionnée — utile pour les décisions de prime
++        d'encouragement.
++      </p>
++
++      <SectionTable
++        title="Factures émises"
++        columns={["Facture", "Client", "Date", "Montant (XAF)"]}
++        rows={detail.invoices.map((i) => [i.number ?? `#${i.id}`, i.partyName, fmtDate(i.date), fmt(i.amount)])}
++        emptyLabel="Aucune facture émise sur cette période."
++      />
++
++      <SectionTable
++        title="Paiements enregistrés"
++        columns={["Facture", "Méthode", "Date", "Montant (XAF)"]}
++        rows={detail.payments.map((p) => [
++          p.invoiceNumber ?? `#${p.invoiceId}`,
++          METHOD_LABELS[p.method] ?? p.method,
++          fmtDate(p.date),
++          fmt(p.amount),
++        ])}
++        emptyLabel="Aucun paiement enregistré sur cette période."
++      />
++
++      <SectionTable
++        title="Commissions enregistrées"
++        columns={["Type", "Date", "Montant (XAF)"]}
++        rows={detail.commissions.map((c) => [c.typeLabel, fmtDate(c.date), fmt(c.amount)])}
++        emptyLabel="Aucune commission enregistrée sur cette période."
++      />
++
++      <SectionTable
++        title="Mouvements de stock"
++        columns={["Article", "Type", "Quantité", "Date"]}
++        rows={detail.stockMovements.map((m) => [
++          m.articleName,
++          STOCK_TYPE_LABELS[m.type] ?? m.type,
++          m.quantity,
++          fmtDate(m.date),
++        ])}
++        emptyLabel="Aucun mouvement de stock sur cette période."
++      />
++
++      <SectionTable
++        title="Mouvements épargne"
++        columns={["Nature", "Date", "Montant (XAF)"]}
++        rows={detail.savingsTransactions.map((s) => [
++          SAVINGS_NATURE_LABELS[s.nature] ?? s.nature,
++          fmtDate(s.date),
++          fmt(s.amount),
++        ])}
++        emptyLabel="Aucun mouvement épargne sur cette période."
++      />
++    </div>
++  );
++}
+diff --git a/packages/client/src/pages/dashboard/EmployeeKpiTable.tsx b/packages/client/src/pages/dashboard/EmployeeKpiTable.tsx
+new file mode 100644
+index 0000000..bd8b5fb
+--- /dev/null
++++ b/packages/client/src/pages/dashboard/EmployeeKpiTable.tsx
+@@ -0,0 +1,78 @@
++import { Link } from "react-router-dom";
++import { ChevronRight } from "lucide-react";
++import type { EmployeeKpiRow } from "@/lib/reporting.api";
++import { fmt } from "./format";
++
++interface EmployeeKpiTableProps {
++  rows: EmployeeKpiRow[];
++  from: string;
++  to: string;
++  basis: "accrual" | "cash";
++}
++
++// Separate from the generic KpiTable (used by Client/Apporteur) on purpose —
++// Employé is the one role with a real per-activity-type breakdown and a
++// drill-down link, per Lucrèce's own framing ("volume d'action... dépendamment
++// des différentes activités"). Leaking that into the shared component would
++// have made Client/Apporteur's simpler shape more complicated for no reason.
++function breakdownSummary(b: EmployeeKpiRow["breakdown"]): string {
++  const parts: string[] = [];
++  if (b.invoicesIssued > 0) parts.push(`${b.invoicesIssued} facture${b.invoicesIssued > 1 ? "s" : ""}`);
++  if (b.paymentsRecorded > 0) parts.push(`${b.paymentsRecorded} paiement${b.paymentsRecorded > 1 ? "s" : ""}`);
++  if (b.commissionsLogged > 0) parts.push(`${b.commissionsLogged} commission${b.commissionsLogged > 1 ? "s" : ""}`);
++  if (b.stockMovements > 0) parts.push(`${b.stockMovements} mvt stock`);
++  if (b.savingsTransactions > 0) parts.push(`${b.savingsTransactions} épargne`);
++  return parts.length > 0 ? parts.join(" · ") : "Aucune activité";
++}
++
++export function EmployeeKpiTable({ rows, from, to, basis }: EmployeeKpiTableProps) {
++  return (
++    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
++      <div className="px-4 py-2.5 border-b border-neutral-200">
++        <p className="text-[11.5px] font-semibold text-neutral-800">KPI Employé</p>
++      </div>
++      <table className="w-full text-left">
++        <thead className="bg-neutral-50 border-b border-neutral-200">
++          <tr>
++            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
++              Nom
++            </th>
++            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
++              Valeur (XAF)
++            </th>
++            <th className="px-4 py-2 w-10"></th>
++          </tr>
++        </thead>
++        <tbody>
++          {rows.slice(0, 10).map((r) => (
++            <tr key={r.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
++              <td className="px-4 py-2">
++                <p className="text-[12px] text-neutral-800">{r.name}</p>
++                <p className="text-[10px] text-neutral-500">{breakdownSummary(r.breakdown)}</p>
++              </td>
++              <td className="px-4 py-2 text-[12px] font-medium text-neutral-800 text-right align-top">
++                {fmt(r.value)}
++              </td>
++              <td className="px-4 py-2 text-right align-top">
++                <Link
++                  to={`/reporting/employees/${r.id}?from=${from}&to=${to}&basis=${basis}`}
++                  className="inline-flex items-center text-neutral-400 hover:text-brand-gold-dark"
++                  title="Voir détail"
++                >
++                  <ChevronRight size={14} />
++                </Link>
++              </td>
++            </tr>
++          ))}
++          {rows.length === 0 && (
++            <tr>
++              <td colSpan={3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
++                Aucune donnée pour cette période.
++              </td>
++            </tr>
++          )}
++        </tbody>
++      </table>
++    </div>
++  );
++}
+diff --git a/packages/client/src/pages/dashboard/useDashboardData.ts b/packages/client/src/pages/dashboard/useDashboardData.ts
+index aa37fd1..6764425 100644
+--- a/packages/client/src/pages/dashboard/useDashboardData.ts
++++ b/packages/client/src/pages/dashboard/useDashboardData.ts
+@@ -4,6 +4,7 @@ import {
+   type ActivityRow,
+   type CaCompositionResult,
+   type DashboardSummary,
++  type EmployeeKpiRow,
+   type KpiRow,
+ } from "@/lib/reporting.api";
+ import { PRESETS } from "./date-presets";
+@@ -17,7 +18,7 @@ export function useDashboardData() {
+   const [composition, setComposition] = useState<CaCompositionResult | null>(null);
+   const [clientKpis, setClientKpis] = useState<KpiRow[]>([]);
+   const [apporteurKpis, setApporteurKpis] = useState<KpiRow[]>([]);
+-  const [employeKpis, setEmployeKpis] = useState<KpiRow[]>([]);
++  const [employeKpis, setEmployeKpis] = useState<EmployeeKpiRow[]>([]);
+   const [activity, setActivity] = useState<ActivityRow[]>([]);
+   const [loading, setLoading] = useState(true);
+ 

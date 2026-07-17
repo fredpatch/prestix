@@ -5,6 +5,7 @@ import { DashboardFilterBar } from "./dashboard/DashboardFilterBar";
 import { SummaryCards } from "./dashboard/SummaryCards";
 import { CaCompositionTable } from "./dashboard/CaCompositionTable";
 import { KpiTable } from "./dashboard/KpiTable";
+import { EmployeeKpiTable } from "./dashboard/EmployeeKpiTable";
 import { RecentActivityFeed } from "./dashboard/RecentActivityFeed";
 
 export default function DashboardPage() {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-3 gap-4 mb-6">
             <KpiTable title="KPI Client" rows={clientKpis} />
             <KpiTable title="KPI Apporteur" rows={apporteurKpis} />
-            <KpiTable title="KPI Employé" rows={employeKpis} />
+            <EmployeeKpiTable rows={employeKpis} from={from} to={to} basis={basis} />
           </div>
 
           <RecentActivityFeed activity={activity} />

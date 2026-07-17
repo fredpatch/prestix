@@ -31,10 +31,12 @@ Sprint 10 reporting backend: `/api/reporting` (agent+ read-only) provides
 dashboard summary, CA composition, client/apporteur/employé KPIs (employé
 KPI now includes a per-agent activity breakdown), Excel export, PDF export,
 recent-activity feed (audit-log-backed, transaction-whitelisted), and an
-employee-activity-detail drill-down endpoint (backend only, no frontend yet).
-All date-range queries use a shared `endOfDay()` helper after a real boundary
-bug was found and fixed. Dashboard frontend is built and refactored into a
-`pages/dashboard/` module (hook + pure helpers + presentational components).
+employee-activity-detail drill-down endpoint. All date-range queries use a
+shared `endOfDay()` helper after a real boundary bug was found and fixed.
+Dashboard frontend is built and refactored into a `pages/dashboard/` module
+(hook + pure helpers + presentational components). The employee drill-down
+is now complete end-to-end: `EmployeeKpiTable` on the dashboard links into
+`EmployeeActivityDetailPage` (`/reporting/employees/:agentId`).
 
 ## Validation Snapshot (2026-07-17)
 
@@ -43,7 +45,6 @@ bug was found and fixed. Dashboard frontend is built and refactored into a
 - `npm run build -w packages/client`: PASS after DashboardPage refactor.
 - Reporting API/runtime smoke (summary, CA composition, KPIs, exports,
   recent-activity, employee drill-down): still pending end-to-end.
-- Employee activity drill-down frontend: not built yet.
 - Legacy Beta cross-compare is still blocked on data access.
 
 ## Key Constraints Active Right Now

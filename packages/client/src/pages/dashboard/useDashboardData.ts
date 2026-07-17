@@ -4,6 +4,7 @@ import {
   type ActivityRow,
   type CaCompositionResult,
   type DashboardSummary,
+  type EmployeeKpiRow,
   type KpiRow,
 } from "@/lib/reporting.api";
 import { PRESETS } from "./date-presets";
@@ -17,7 +18,7 @@ export function useDashboardData() {
   const [composition, setComposition] = useState<CaCompositionResult | null>(null);
   const [clientKpis, setClientKpis] = useState<KpiRow[]>([]);
   const [apporteurKpis, setApporteurKpis] = useState<KpiRow[]>([]);
-  const [employeKpis, setEmployeKpis] = useState<KpiRow[]>([]);
+  const [employeKpis, setEmployeKpis] = useState<EmployeeKpiRow[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 

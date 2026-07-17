@@ -144,7 +144,12 @@
 
 - Extended `getEmployeKpis` to return a per-agent `EmployeeActivityBreakdown` (invoices issued, payments recorded, commissions logged, stock movements, savings transactions) instead of one combined volume/value number — separate counts because the person who creates an invoice isn't always the one who later records its payment.
 - Added `/api/reporting/employees/:agentId/detail` returning real transaction-level rows (invoices, payments, commissions, stock movements, savings transactions) for one employee over a date range — the actual drill-down behind the KPI, intended for prime/incentive decisions rather than a bare leaderboard number.
-- Frontend drill-down UI not built yet; this is the backend slice only.
+
+## Sprint 10 Employee Activity Drill-down — Frontend (2026-07-17)
+
+- Added `EmployeeKpiTable`, replacing the generic `KpiTable` for the Employé KPI panel, showing each agent's per-activity-type breakdown summary and a drill-down link (kept separate from the shared `KpiTable` since Client/Apporteur have no equivalent breakdown).
+- Added `EmployeeActivityDetailPage` at `/reporting/employees/:agentId`, listing an agent's invoices, payments, commissions, stock movements, and savings transactions for the selected date range/basis, carried over via query params from the dashboard.
+- Extended `reporting.api.ts` with `EmployeeKpiRow`, `EmployeeActivityBreakdown`, `EmployeeActivityDetail` types and `getEmployeeActivityDetail`.
 
 ## Sprint 10 Dashboard UI Polish (2026-07-17)
 
