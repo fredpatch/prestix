@@ -6,14 +6,18 @@ repo : prestix
 
 See `plan.md` and `exploration-cache/` for project state.
 
-## Current status (2026-07-12)
+## Current status (2026-07-17)
 
 - Sprint 0 scaffold is complete.
-- Sprint 1 backend foundation is committed (`bootstrap`, `auth`, `users`, `settings`, RBAC, default settings seed).
-- Validation blockers remain before functional QA:
-  - server typecheck fails (`TS5103`, invalid `ignoreDeprecations` value)
-  - `npm run db:seed` fails in `packages/server` (exit 1)
-  - Docker daemon unavailable, so compose smoke checks are pending
+- Sprints 1-9 backend/frontend are committed: bootstrap/auth/users/settings/RBAC,
+  Party & Party History, Credit/Avoir, Proformas/Invoices/Delivery Notes, Payments,
+  Créances, Stock, Commissions, and Épargne Voyage (savings).
+- Sprint 10 (M12 — Dashboard & Reporting) is underway: `/api/reporting` backend
+  (summary, CA composition, client/apporteur/employé KPIs, Excel/PDF export,
+  recent-activity feed, employee activity drill-down), a real Dashboard page,
+  and an employee activity drill-down UI are built end-to-end.
+- Still pending: full reporting API/runtime smoke test end-to-end.
+- See `changelog.md` and `exploration-cache/` for detailed, dated history.
 
 ## Dev
 
