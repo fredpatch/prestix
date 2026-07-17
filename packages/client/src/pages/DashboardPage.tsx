@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2, Download, AlertTriangle, Clock, Package, PiggyBank, FileText } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  AlertTriangle,
+  Clock,
+  Package,
+  PiggyBank,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   reportingApi,
@@ -148,10 +156,6 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <p className="text-neutral-500 text-sm mb-4">
-        Connecté : {user?.fullName} ({user?.role})
-      </p>
-
       {/* Date range + basis — shared by every section below, per spec:
           "consistent from/to across all sections" */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -233,19 +237,23 @@ export default function DashboardPage() {
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <AlertTriangle size={11} /> En retard
               </p>
-              <p className="text-[18px] font-bold text-red-600 mt-1">{fmt(summary.overdueAmount)} XAF</p>
+              <p className="text-[18px] font-bold text-red-600 mt-1">
+                {fmt(summary.overdueAmount)} XAF
+              </p>
               <p className="text-[10px] text-neutral-500">
                 {summary.overdueCount} échéance{summary.overdueCount !== 1 ? "s" : ""}
               </p>
             </Link>
             <Link
-              to="/creances"
+              to="/creances?overdue=false"
               className="bg-white border border-neutral-200 rounded-lg px-4 py-3 hover:border-brand-gold-dark transition-colors"
             >
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
                 <Clock size={11} /> Impayées (toutes)
               </p>
-              <p className="text-[18px] font-bold text-amber-600 mt-1">{fmt(summary.unpaidAmount)} XAF</p>
+              <p className="text-[18px] font-bold text-amber-600 mt-1">
+                {fmt(summary.unpaidAmount)} XAF
+              </p>
               <p className="text-[10px] text-neutral-500">
                 {summary.unpaidCount} échéance{summary.unpaidCount !== 1 ? "s" : ""}
               </p>
@@ -258,7 +266,9 @@ export default function DashboardPage() {
                 <Package size={11} /> Stock bas
               </p>
               <p className="text-[18px] font-bold text-neutral-800 mt-1">{summary.lowStockCount}</p>
-              <p className="text-[10px] text-neutral-500">article{summary.lowStockCount !== 1 ? "s" : ""} sous seuil</p>
+              <p className="text-[10px] text-neutral-500">
+                article{summary.lowStockCount !== 1 ? "s" : ""} sous seuil
+              </p>
             </Link>
             <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 flex items-center gap-1">
@@ -301,7 +311,9 @@ export default function DashboardPage() {
                 {composition.buckets.map((b) => (
                   <tr key={b.bucketKey} className="border-b border-neutral-100 last:border-0">
                     <td className="px-4 py-2 text-[12px] text-neutral-800">{b.label}</td>
-                    <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{fmt(b.gross)}</td>
+                    <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">
+                      {fmt(b.gross)}
+                    </td>
                     <td className="px-4 py-2 text-[12px] font-medium text-emerald-700 text-right">
                       {fmt(b.gain)}
                     </td>
@@ -309,7 +321,10 @@ export default function DashboardPage() {
                 ))}
                 {composition.buckets.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
+                    <td
+                      colSpan={3}
+                      className="px-4 py-6 text-center text-[11.5px] text-neutral-500"
+                    >
                       Aucune donnée pour cette période.
                     </td>
                   </tr>
@@ -357,7 +372,9 @@ export default function DashboardPage() {
                 </div>
               ))}
               {activity.length === 0 && (
-                <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">Aucune activité récente.</p>
+                <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
+                  Aucune activité récente.
+                </p>
               )}
             </div>
           </div>

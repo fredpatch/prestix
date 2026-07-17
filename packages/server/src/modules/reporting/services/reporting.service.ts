@@ -261,19 +261,51 @@ export async function getEpargneSoldeNetPeriode(params: DateRangeParams): Promis
   return { totalDeposits, totalWithdrawals, netChange: totalDeposits - totalWithdrawals };
 }
 
+// Dashboard's "dernières actions" is meant to be scannable at a glance — real
+// transactions and status changes, not every administrative/procedural audit
+// row (a document print, a type edit request that was later rejected, etc.).
+// The FULL unfiltered audit log stays available for a future dedicated
+// "Journal d'audit" page — this whitelist only narrows what the DASHBOARD
+// shows, it doesn't change what gets logged.
+const TRANSACTION_ACTIONS = new Set([
+  "INVOICE_ISSUED",
+  "INVOICE_CANCELLED",
+  "PAYMENT_RECORDED",
+  "COMMISSION_TRANSACTION_CREATED",
+  "COMMISSION_EDIT_APPROVED",
+  "SAVINGS_ACCOUNT_OPENED",
+  "SAVINGS_DEPOSIT_RECORDED",
+  "SAVINGS_WITHDRAWAL_RECORDED",
+  "SAVINGS_TRANSACTION_REVERSED",
+  "CREDIT_AUTO_CONVERTED_TO_EPARGNE_SUBSCRIPTION",
+  "CREDIT_AUTO_CONVERTED_TO_EPARGNE_DEPOSIT",
+  "INSTALLMENT_RESCHEDULED",
+]);
+
 // Reads the audit trail every module has already been writing to all
 // session — no new tracking needed, this is purely a display layer over
 // logAudit() calls that already happen on every meaningful mutation
 // (invoice issued, payment recorded, commission logged, stock movement,
 // épargne movement, etc.).
-export async function getRecentActivity(limit = 10): Promise<ActivityRow[]> {
-  const rows = await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+export async function getRecentActivity(limit = 10, transactionOnly = true): Promise<ActivityRow[]> {
+  // Over-fetch when filtering, since a chunk of the most recent rows may get
+  // dropped by the whitelist — without this, a burst of "document printed"
+  // rows could leave the dashboard showing fewer than `limit` items even
+  // though older real transactions exist further back.
+  const rows = await db
+    .select()
+    .from(auditLog)
+    .orderBy(desc(auditLog.createdAt))
+    .limit(transactionOnly ? limit * 5 : limit);
 
-  const userIds = [...new Set(rows.map((r) => r.userId).filter((id): id is number => id != null))];
+  const filtered = transactionOnly ? rows.filter((r) => TRANSACTION_ACTIONS.has(r.action)) : rows;
+  const page = filtered.slice(0, limit);
+
+  const userIds = [...new Set(page.map((r) => r.userId).filter((id): id is number => id != null))];
   const userRows = userIds.length > 0 ? await db.select().from(users).where(inArray(users.id, userIds)) : [];
   const nameById = new Map(userRows.map((u) => [u.id, u.fullName]));
 
-  return rows.map((r) => ({
+  return page.map((r) => ({
     id: r.id,
     action: r.action,
     entityType: r.entityType,

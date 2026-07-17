@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
 import { creanceApi, type CreanceRow } from "@/lib/creance.api";
 import { useAuth } from "@/App";
@@ -8,9 +8,10 @@ import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 export default function CreancesPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [rows, setRows] = useState<CreanceRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [onlyOverdue, setOnlyOverdue] = useState(true);
+  const [onlyOverdue, setOnlyOverdue] = useState(searchParams.get("overdue") !== "false");
   const [accruing, setAccruing] = useState(false);
   const [accrueResult, setAccrueResult] = useState<string | null>(null);
 

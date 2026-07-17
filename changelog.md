@@ -131,6 +131,9 @@
 - Added a recent-activity endpoint (`/api/reporting/recent-activity`) surfacing the latest audit-log entries with actor/entity context.
 - Added client `getRecentActivity`/`exportPdfUrl` wrappers and a humanized action-label map for the dashboard's activity feed.
 - Added a recent-activity feed and a PDF export action alongside the existing Excel export on the Dashboard page, plus explanatory tooltips on the accrual/cash toggle.
+- Filtered the dashboard's recent-activity feed to a transaction-focused whitelist (invoices, payments, commissions, épargne, reschedules) by default, with an over-fetch/slice so the feed still fills to the requested limit; the unfiltered audit log remains available server-side for a future dedicated audit page.
+- Linked the dashboard's "Impayées (toutes)" tile to `/creances?overdue=false`, and made the Créances page read its overdue-only default from that query param.
+- Added client/référent name lookups to the Commissions table so commission rows show the actual party names instead of just IDs.
 
 ## Validation Notes (2026-07-12)
 

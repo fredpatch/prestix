@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { partyApi, type Party } from "@/lib/party.api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/App";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
@@ -12,6 +13,7 @@ export default function CommissionsPage() {
   const { user } = useAuth();
   const [commissions, setCommissions] = useState<CommissionTransaction[]>([]);
   const [types, setTypes] = useState<CommissionType[]>([]);
+  const [parties, setParties] = useState<Record<number, Party>>({});
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +33,20 @@ export default function CommissionsPage() {
     commissionApi.list(typeFilter ? { type: typeFilter } : {}).then((res) => {
       setCommissions(res.data);
       setLoading(false);
+
+      // Fetch only the parties actually referenced (client + référent), not
+      // the whole table — cheap, and gives a direct visual check that a
+      // référent selected in the entry form actually saved correctly.
+      const partyIds = [
+        ...new Set(
+          res.data.flatMap((c) => [c.clientPartyId, c.referrerPartyId]).filter((id): id is number => !!id),
+        ),
+      ];
+      if (partyIds.length > 0) {
+        Promise.all(partyIds.map((id) => partyApi.getById(id))).then((results) => {
+          setParties(Object.fromEntries(results.map((r) => [r.data.id, r.data])));
+        });
+      }
     });
   }
 
@@ -86,6 +102,12 @@ export default function CommissionsPage() {
                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
                   Note
                 </th>
+                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                  Client
+                </th>
+                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                  Référent
+                </th>
                 <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
                   Montant
                 </th>
@@ -102,6 +124,12 @@ export default function CommissionsPage() {
                   </td>
                   <td className="px-4 py-2.5 text-[12px] text-neutral-500 max-w-[220px] truncate" title={c.note}>
                     {c.note || "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
+                    {c.clientPartyId ? (parties[c.clientPartyId]?.fullName ?? "…") : "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
+                    {c.referrerPartyId ? (parties[c.referrerPartyId]?.fullName ?? "…") : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
                     {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
@@ -132,7 +160,7 @@ export default function CommissionsPage() {
               ))}
               {commissions.length === 0 && (
                 <tr>
-                  <td colSpan={canDelete ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                  <td colSpan={canDelete ? 8 : 7} className="px-4 py-8 text-center text-[12px] text-neutral-500">
                     Aucune commission.
                   </td>
                 </tr>

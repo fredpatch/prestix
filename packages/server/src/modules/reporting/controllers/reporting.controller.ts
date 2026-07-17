@@ -84,7 +84,8 @@ export async function exportExcel(req: Request, res: Response): Promise<void> {
 export async function getRecentActivity(req: Request, res: Response): Promise<void> {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-    const rows = await reportingService.getRecentActivity(limit);
+    const transactionOnly = req.query.transactionOnly !== "false"; // default true
+    const rows = await reportingService.getRecentActivity(limit, transactionOnly);
     res.json(rows);
   } catch (error) {
     console.error("[reporting]", error);
