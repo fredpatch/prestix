@@ -138,8 +138,8 @@ export const reportingApi = {
     api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
   exportExcelUrl: (params: DateRangeParams, modules?: string[]) =>
     `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}${modules ? `&modules=${modules.join(",")}` : ""}`,
-  exportPdfUrl: (params: DateRangeParams) =>
-    `/api/reporting/export/pdf?from=${params.from}&to=${params.to}&basis=${params.basis}`,
+  exportPdfUrl: (params: DateRangeParams, modules?: string[]) =>
+    `/api/reporting/export/pdf?from=${params.from}&to=${params.to}&basis=${params.basis}${modules ? `&modules=${modules.join(",")}` : ""}`,
   getCreancesByParty: () => api.get<CreanceByParty[]>("/reporting/creances-by-party"),
   getAccrualVsCashComparison: (params: { from: string; to: string }) =>
     api.get<AccrualVsCashComparison>("/reporting/accrual-vs-cash", { params }),

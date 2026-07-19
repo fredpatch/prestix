@@ -1,6 +1,7 @@
 node_modules/
 dist/
 tmp/
+docs/diffs/
 .env
 .env.dev
 .env.staging

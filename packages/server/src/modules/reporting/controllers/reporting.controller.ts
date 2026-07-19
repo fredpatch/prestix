@@ -156,7 +156,8 @@ export async function getRecentActivity(req: Request, res: Response): Promise<vo
 export async function exportPdf(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
-    const pdf = await generateDashboardReportPdf(params);
+    const modules = req.query.modules ? ((req.query.modules as string).split(",") as ReportModule[]) : undefined;
+    const pdf = await generateDashboardReportPdf(params, modules);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="rapport-${params.from}-${params.to}.pdf"`);
     res.send(pdf);

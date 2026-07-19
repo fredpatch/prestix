@@ -20,11 +20,9 @@ const MODULES: { key: string; label: string }[] = [
 // The direct fix for Fred's real observation: the export buttons elsewhere
 // on this page always exported the same fixed "everything" shape regardless
 // of which tab was open. This tab is the actual place exports belong — pick
-// exactly what to include, matching SICOT's own "Rapports" pattern. PDF stays
-// the fixed quick-summary (same shape as the Dashboard's own PDF button —
-// extending it to conditionally include arbitrary sections would mean real
-// template rework, deliberately not attempted in this pass); Excel gets the
-// real module selection, since its multi-sheet shape suits that naturally.
+// exactly what to include, matching SICOT's own "Rapports" pattern. Both
+// PDF and Excel now honor the same module selection (PDF template was
+// reworked to support optional sections, matching Excel's own design).
 export function RapportsTab({ from, to, basis }: RapportsTabProps) {
   const [selectedModules, setSelectedModules] = useState<string[]>(MODULES.map((m) => m.key));
 
@@ -35,17 +33,15 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
   }
 
   const excelUrl = reportingApi.exportExcelUrl({ from, to, basis }, selectedModules);
-  const pdfUrl = reportingApi.exportPdfUrl({ from, to, basis });
+  const pdfUrl = reportingApi.exportPdfUrl({ from, to, basis }, selectedModules);
 
   return (
     <div className="space-y-4">
       <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
-          Générer un rapport Excel
-        </p>
+        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Générer un rapport</p>
         <p className="text-[10.5px] text-neutral-500 mb-3">
-          Choisissez les sections à inclure — chaque section devient une ou plusieurs feuilles dans
-          le fichier généré, pour la période et la base sélectionnées en haut de page.
+          Choisissez les sections à inclure — pour la période et la base sélectionnées en haut de
+          page. Chaque section devient une feuille en Excel, ou une partie du document en PDF.
         </p>
 
         <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4">
@@ -65,40 +61,38 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
           ))}
         </div>
 
-        <a
-          href={selectedModules.length > 0 ? excelUrl : undefined}
-          className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-medium ${
-            selectedModules.length > 0
-              ? "bg-brand-gold-dark text-white hover:opacity-90"
-              : "bg-neutral-200 text-neutral-400 cursor-not-allowed pointer-events-none"
-          }`}
-        >
-          <FileDown size={13} /> Générer et télécharger (Excel)
-        </a>
+        <div className="flex gap-2">
+          <a
+            href={selectedModules.length > 0 ? excelUrl : undefined}
+            className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-medium ${
+              selectedModules.length > 0
+                ? "bg-brand-gold-dark text-white hover:opacity-90"
+                : "bg-neutral-200 text-neutral-400 cursor-not-allowed pointer-events-none"
+            }`}
+          >
+            <FileDown size={13} /> Générer Excel
+          </a>
+          <a
+            href={selectedModules.length > 0 ? pdfUrl : undefined}
+            target="_blank"
+            rel="noreferrer"
+            className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border text-[12px] font-medium ${
+              selectedModules.length > 0
+                ? "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                : "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed pointer-events-none"
+            }`}
+          >
+            <FileText size={13} /> Générer PDF
+          </a>
+        </div>
         {selectedModules.length === 0 && (
           <p className="text-[10.5px] text-red-600 mt-1.5">Sélectionnez au moins une section.</p>
         )}
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Rapport rapide (PDF)</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
-          Résumé fixe (composition CA + indicateurs clés), avec logo et mise en forme — même contenu
-          que le bouton du Tableau de bord.
-        </p>
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <FileText size={13} /> Ouvrir le PDF
-        </a>
-      </div>
-
       <p className="text-[10.5px] text-neutral-400">
         Historique des rapports générés et génération automatique périodique : prévus pour une passe
-        ultérieure, pas encore construits.
+        ultérieure (module de gestion documentaire nécessaire) — V2.
       </p>
     </div>
   );
