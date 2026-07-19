@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
-  "lastUpdated": "2026-07-17",
-  "currentSprint": "Sprint 10 Dashboard & Reporting (M12)",
+  "lastUpdated": "2026-07-19",
+  "currentSprint": "Sprint 11 Data migration preparation",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -20,6 +20,7 @@
     "sessions/2026-07-15.md",
     "sessions/2026-07-16.md",
     "sessions/2026-07-17.md",
+    "sessions/2026-07-19.md",
     "tasks/backlog.md",
     "tasks/sprint-0.md",
     "technical/brand-reference.md",

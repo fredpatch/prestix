@@ -204,13 +204,33 @@
 - Credit-conversion path's fee-visibility fix needs deeper independent verification (see note above).
 - Auto-converted deposits need a visible "Converti" distinction from ordinary cash deposits (UI/status hardening, deferred).
 
-## Sprint 10 – Dashboard & Reporting (M12) | 2 weeks
+## Sprint 10 – Dashboard & Reporting (M12) ✅ CLOSED (2026-07-19) | 2 weeks
 
-- [ ] **CA composition (gross buckets) + gain; single reporting module** — CRITICAL
-- [ ] **Overdue single-source (fix legacy KPI bug)** — CRITICAL
-- [ ] Date filter presets + custom; accrual/cash toggle — HIGH
-- [ ] Client/Apporteur/Employé KPIs (volume + value) — HIGH
-- [ ] Dashboard + basic report + Excel/PDF export; clean empty-state — HIGH
+> M12 grew from a dashboard-only slice into a two-surface reporting experience:
+> the operational Dashboard remains the quick overview, while `/analyse` is the
+> deeper decision screen. No new reporting tables were added; all metrics are
+> derived from the data captured in M4-M11. The remaining confidence item is
+> runtime/API smoke against real-ish data, not missing implementation.
+
+- [x] **CA composition (gross buckets) + gain; single reporting module** — CRITICAL — `/api/reporting` aggregates billetterie, PrestiShop, commissions, epargne inscription fees, and penalties with accrual/cash support; buckets now include `volume` for "most used" analysis.
+- [x] **Overdue single-source (fix legacy KPI bug)** — CRITICAL — dashboard/reporting/party-detail creance views call the shared `getCreances()` aggregation; `partyId` filtering was added without forking the overdue logic.
+- [x] Date filter presets + custom; accrual/cash toggle — HIGH — Dashboard and Analyse share the period/basis controls; reporting date bounds use an `endOfDay()` helper to include same-day activity correctly.
+- [x] Client/Apporteur/Employé KPIs (volume + value) — HIGH — client/referrer KPI panels built, employee KPIs include per-activity breakdown and drill-down rows for invoices, payments, commissions, stock, and savings.
+- [x] Dashboard + basic report + Excel/PDF export; clean empty-state — HIGH — dashboard summary, recent activity, Excel/PDF exports, selectable report modules, and dedicated Analyse tabs are in the repo.
+
+### Beyond-scope work completed this sprint
+
+- Added `/analyse` route/nav with six tabs: Vue globale, Employés, Clients & Référents, Services, Créances & Engagements, and Rapports.
+- Added `ChartCanvas` as a Chart.js wrapper for line/bar/doughnut visuals, including StrictMode-safe cleanup.
+- Added CA trend, service trend, creances-by-party, accrual-vs-cash comparison, and open-engagement reporting endpoints.
+- Expanded Excel/PDF exports so the Rapports tab can choose report modules (`global`, `employes`, `clients_referents`, `services`, `creances`) instead of exporting one fixed dashboard-shaped report.
+- Filled the Party History commercial section from invoices and proformas, closing the old Sprint 3 TODO.
+- Removed obsolete `docs/diffs/*.diff` working artifacts.
+
+### Still flagged, not closed
+
+- Full reporting/analyse API-runtime smoke is still needed end-to-end before beta confidence.
+- Sprint 9 credit-conversion fee-pair verification and auto-converted epargne deposit labeling remain open hardening items.
 
 ## Sprint 11 – Data migration | 1.5 weeks
 

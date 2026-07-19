@@ -1,34 +1,31 @@
 ## Task
 
-Sprint 10 — Dashboard & Reporting (M12), underway (2026-07-17). Backend
-reporting core, dashboard frontend, PDF/Excel export, recent-activity feed,
-and employee activity drill-down (backend only) are built. See
-`sessions/2026-07-17.md` for the full session log.
+Documentation/cache sync after the July 19 analysis-section work. Compare from
+`d6e8027` (`docs: Update README status to reflect Sprint 10 progress`) through
+`HEAD` (`a9ba28c`) and update `exploration-cache/`, `TASKS.md`, and
+`changelog.md` to match the current code.
 
-## Sprint 10 progress so far
+## Current Project State
 
-Backend: `/api/reporting` module (summary, CA composition, client/apporteur/
-employé KPIs, Excel export, PDF export, recent-activity, employee activity
-detail drill-down). All date-range queries fixed for an end-of-day boundary
-bug that was silently excluding same-day activity.
+Sprint 10 - Dashboard & Reporting (M12) is closed in code. The repo now has
+both the operational Dashboard and a dedicated `/analyse` section with six
+tabs: Vue globale, Employes, Clients & Referents, Services, Creances &
+Engagements, and Rapports.
 
-Frontend: real Dashboard page replacing the Sprint-1 placeholder — date
-presets, accrual/cash toggle, summary tiles, CA composition, KPI tables,
-recent-activity feed, PDF/Excel export actions. Refactored into a
-`pages/dashboard/` module (hook + pure helpers + presentational components)
-for maintainability, no behavioral change.
+Backend reporting is read-only agent+ and now includes dashboard summary, CA
+composition with volume, CA trend, per-service trend, client/apporteur/employe
+KPIs, employee activity drill-down, creances by party, accrual-vs-cash
+comparison, open engagement totals, recent activity, and selectable-module
+Excel/PDF exports.
 
-Real bug also fixed in passing: proforma→invoice promotion was dropping
-`referrerPartyId`.
+Related cleanup closed two older gaps: party-history commercial data now lists
+invoices and proformas for the party, and `/api/creances` can be filtered by
+`partyId` while still using the same single receivables aggregation source.
 
-Employee activity drill-down is now complete end-to-end: the Employé KPI
-panel uses a dedicated `EmployeeKpiTable` with a per-activity breakdown and a
-drill-down link into `EmployeeActivityDetailPage` (`/reporting/employees/:agentId`),
-which lists the agent's invoices/payments/commissions/stock/savings rows for
-the selected date range and basis.
+## Not Yet Done
 
-## Not yet done
-
-- Reporting API/runtime smoke not yet run end-to-end.
-- Global `Button` density change (smaller text/height) needs a visual pass
-  across other pages that use it, not just the dashboard.
+- Full reporting/analyse API-runtime smoke not yet run end-to-end.
+- Sprint 9 credit-conversion fee-pair deep check remains flagged.
+- Auto-converted epargne deposits still need a visible converted/source label.
+- Sprint 11 migration dry-run and M6 cross-compare remain blocked on legacy
+  Beta production data access.

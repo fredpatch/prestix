@@ -9,7 +9,7 @@ import { ClientsReferrersTab } from "./analyse/ClientsReferrersTab";
 import { ServicesTab } from "./analyse/ServicesTab";
 import { CreancesEngagementsTab } from "./analyse/CreancesEngagementsTab";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { RapportsTab } from "./analyse/Rapportstab";
+import { RapportsTab } from "./analyse/RapportsTab";
 
 // Structure modeled on SICOT's analytics section (tab-per-domain, shared
 // period selector, charts + comparison tables) per Fred's explicit direction.

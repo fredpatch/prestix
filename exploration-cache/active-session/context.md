@@ -1,15 +1,15 @@
 ## Where We Left Off
 
-Sprint 9 (Epargne Voyage, M11) is closed. Sprint 10 - Dashboard & Reporting
-(M12) is underway (2026-07-17): reporting backend core, dashboard frontend,
-PDF/Excel export, recent-activity feed, and employee-activity-drilldown
-backend are built. See `sessions/2026-07-17.md`.
+Sprint 10 (Dashboard & Reporting, M12) is closed in code after the July 19
+analysis-section pass. See `sessions/2026-07-17.md` for the reporting-core
+slice and `sessions/2026-07-19.md` for the dedicated Analyse section and
+report export expansion.
 
 ## What's In Scope Today
 
-Cache/changelog sync after the Sprint 10 reporting/dashboard work (backend
-core, frontend, enhancements, referrer/date-range bug fixes, DashboardPage
-refactor, employee drill-down backend), then commit and push.
+Cache/changelog/TASKS sync from `d6e8027` through `HEAD` after the recent
+analysis-section pushes. During validation, one tiny code fix was made for a
+case-mismatched `RapportsTab` import in `AnalysePage.tsx`.
 
 ## State Of The Codebase
 
@@ -28,23 +28,34 @@ serializable transactions to protect against double-spend. Client savings UI
 is built (Sprint 9).
 
 Sprint 10 reporting backend: `/api/reporting` (agent+ read-only) provides
-dashboard summary, CA composition, client/apporteur/employé KPIs (employé
-KPI now includes a per-agent activity breakdown), Excel export, PDF export,
-recent-activity feed (audit-log-backed, transaction-whitelisted), and an
-employee-activity-detail drill-down endpoint. All date-range queries use a
-shared `endOfDay()` helper after a real boundary bug was found and fixed.
-Dashboard frontend is built and refactored into a `pages/dashboard/` module
-(hook + pure helpers + presentational components). The employee drill-down
-is now complete end-to-end: `EmployeeKpiTable` on the dashboard links into
-`EmployeeActivityDetailPage` (`/reporting/employees/:agentId`).
+dashboard summary, CA composition with volume, CA trend, service trend,
+client/apporteur/employe KPIs (employe KPI includes per-agent activity
+breakdown), employee-activity-detail drill-down, creances by party, accrual
+vs cash comparison, open engagements, recent activity, and selectable-module
+Excel/PDF exports. All date-range queries use a shared `endOfDay()` helper
+after a real boundary bug was found and fixed.
 
-## Validation Snapshot (2026-07-17)
+Sprint 10 frontend: Dashboard is an operational overview page, while
+`/analyse` is now the richer decision screen. It uses the dashboard's shared
+period/basis filter, `ChartCanvas` (Chart.js wrapper), shadcn tabs, and tabs
+for global trend, employees, clients/referrers, services, creances &
+engagements, and report module selection. The employee drill-down remains
+available at `/reporting/employees/:agentId`.
 
-- `npm run typecheck -w packages/server`: PASS after Sprint 10 reporting work.
-- `npx tsc --noEmit -p packages/client/tsconfig.json`: PASS after DashboardPage refactor.
-- `npm run build -w packages/client`: PASS after DashboardPage refactor.
-- Reporting API/runtime smoke (summary, CA composition, KPIs, exports,
-  recent-activity, employee drill-down): still pending end-to-end.
+Party history commercial data is now filled from invoices and proformas,
+not a placeholder. Creances can be filtered by `partyId` while preserving the
+single aggregation source used by dashboard/reporting/party detail.
+
+## Validation Snapshot (2026-07-19)
+
+- `npm run typecheck`: PASS after fixing the `RapportsTab` import casing in
+  `AnalysePage.tsx`.
+- `npm run build -w packages/client`: sandboxed run failed with the known
+  Vite/esbuild Windows `spawn EPERM`; elevated rerun PASS. Existing Vite
+  chunk-size warning remains.
+- Reporting/analyse API-runtime smoke (summary, trends, KPIs, exports,
+  recent-activity, employee drill-down, creances, party history): still
+  pending end-to-end.
 - Legacy Beta cross-compare is still blocked on data access.
 
 ## Key Constraints Active Right Now

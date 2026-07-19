@@ -1,27 +1,27 @@
-1. Sprint 10 (M12 — Dashboard & Reporting): backend core, dashboard frontend,
-   PDF/Excel export, recent-activity feed, and employee-activity-drilldown
-   (backend + frontend) are done (2026-07-17). Still needed: full API/runtime
-   smoke test end-to-end.
-2. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
-   fix needs deeper independent testing — code mirrors the direct-
-   subscription fix but wasn't re-verified with the same rigor.
-3. FLAGGED, not closed (Sprint 9): auto-converted épargne deposits need a
-   visible "Converti" distinction from ordinary cash deposits in the ledger
-   UI — currently indistinguishable.
-4. Notion write failed mid-Sprint-9 with a "No approval received" tool error
-   — retry logging the auto-converted-deposit item once Notion access is
+1. Sprint 10 (M12 - Dashboard & Reporting) is closed in code after the July 19
+   analysis-section pass. Still needed before beta confidence: full reporting/
+   analyse API-runtime smoke across summary, trends, KPIs, exports, employee
+   drill-down, creances, and party-history commercial display.
+2. Sprint 11 starts next: Mongo->PG migration scripts, dry-run tooling,
+   reconciliation report, and historical warning handling. This is still
+   blocked until legacy Beta production data access is available.
+3. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
+   fix needs deeper independent testing - code mirrors the direct-subscription
+   fix but wasn't re-verified with the same rigor.
+4. FLAGGED, not closed (Sprint 9): auto-converted epargne deposits need a
+   visible "Converti" distinction from ordinary cash deposits in the ledger UI.
+5. Notion write failed mid-Sprint-9 with a "No approval received" tool error -
+   retry logging the auto-converted-deposit item once Notion access is
    confirmed working again.
-5. Sprint 12 hardening item filed in Notion: recordPayment→createCreditLot
-   cross-transaction risk on overpayment (see Notion backlog, Sprint 12)
-6. Deferred hardening item (from Sprint 1): retrofit remaining hardcoded
+6. Sprint 12 hardening item filed in Notion: recordPayment->createCreditLot
+   cross-transaction risk on overpayment (see Notion backlog, Sprint 12).
+7. Deferred hardening item (from Sprint 1): retrofit remaining hardcoded
    neutral-*/brand-* Tailwind pages to semantic tokens for full dark-mode
-   coverage
-7. Open migration-backfill decisions still pending Lucrèce (see
+   coverage.
+8. Open migration-backfill decisions still pending Lucrece (see
    mongo-pg-migration-mapping.md): company-type party fields, credit-lot
-   decision-window backfill, épargne fee/status backfill
-8. STILL BLOCKED: Beta prod data access — needed for the Sprint 11 migration
-   dry-run AND Sprint 5's M6 cross-compare gate (not yet done)
-9. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number
-   appear on the printed document itself, or stay internal-only?
-10. Pre-existing gap noted during Sprint 9, not fixed (out of scope): party-
-    history's "commercial" section is still an unfilled Sprint 3 TODO.
+   decision-window backfill, epargne fee/status backfill.
+9. STILL BLOCKED: Beta prod data access - needed for the Sprint 11 migration
+   dry-run AND Sprint 5's M6 cross-compare gate.
+10. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number
+    appear on the printed document itself, or stay internal-only?

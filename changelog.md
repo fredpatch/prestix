@@ -160,6 +160,22 @@
 
 - Split `DashboardPage.tsx` (was ~390 lines) into a `pages/dashboard/` module: a `useDashboardData` hook owning the fetch/state, pure helpers (`date-presets.ts`, `action-labels.ts`, `format.ts`), and presentational components (`DashboardFilterBar`, `SummaryCards`, `CaCompositionTable`, `KpiTable`, `RecentActivityFeed`). `DashboardPage` is now a ~55-line orchestrator. No behavioral change; dropped an unused `useAuth()` leftover from the old placeholder.
 
+## Sprint 10 Analysis Section Close-out (2026-07-19)
+
+- Added the `/analyse` route and sidebar entry for a dedicated analysis surface separate from the operational Dashboard.
+- Added `AnalysePage` with shared period/basis controls and six tabs: Vue globale, Employés, Clients & Référents, Services, Créances & Engagements, and Rapports.
+- Added `ChartCanvas`, a reusable Chart.js wrapper with line/bar/doughnut controller registration, shared brand-aligned chart colors, accessibility labels, and StrictMode-safe cleanup.
+- Added analysis tab components for global CA trend, employee performance, client/referrer comparison, service composition/trend, receivables/engagements, and selectable report exports.
+- Extended the reporting API/client contract with CA volume, CA trend, service trend, creances by party, accrual-vs-cash comparison, open engagements, and optional module selection for Excel/PDF exports.
+- Expanded `/api/reporting` routes/controllers/services for the new analysis endpoints while keeping the module agent+ read-only and table-free.
+- Expanded Excel and PDF reporting exports to support selected modules (`global`, `employes`, `clients_referents`, `services`, `creances`) and added report sections/sheets for services, creances, accrual-vs-cash, and open engagements.
+- Filled Party History's commercial section from invoices and proformas, including computed proforma totals from `proformaLines`, closing the old Sprint 3 placeholder.
+- Added optional `partyId` filtering to `/api/creances` and the client `creanceApi.list()` wrapper while preserving the shared receivables aggregation source used by Dashboard/Analyse/party detail.
+- Updated party-history client types to expose typed commercial proforma/invoice rows.
+- Fixed the Analyse page import casing for `RapportsTab` after `npm run typecheck` exposed a Windows case-sensitivity mismatch.
+- Removed obsolete `docs/diffs/*.diff` working artifacts and updated `.gitignore` for the current repo workflow.
+- Validation: `npm run typecheck` passes; client build passes after elevated rerun for the known Vite/esbuild Windows `spawn EPERM`, with the existing chunk-size warning.
+
 ## Validation Notes (2026-07-12)
 
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)
