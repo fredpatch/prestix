@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @import "tailwindcss";
 
@@ -6,12 +6,10 @@
 
 @import "shadcn/tailwind.css";
 
-@import "@fontsource-variable/geist";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: "Mulish", "Candara", "Segoe UI", sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", sans-serif;
 
   --color-brand-blue: #4dd9ff;
   --color-brand-gold-light: #f5e65e;
@@ -21,7 +19,13 @@
 }
 
 html {
-  font-size: 11px; /* Le Prestigieux charte graphique base size */
+  font-size: 11px; /* TODO (Sprint 11c-3): root should be 16px per Tailwind's
+    own convention — currently fighting the framework's rem-based spacing and
+    text-scale utilities, which is why most of the app hand-writes arbitrary
+    px values instead of using Tailwind's scale classes. Deliberately NOT
+    changed here — confirmed with Fred this needs a real visual QA pass
+    alongside the type-scale migration, not a silent global shift bundled
+    into a font swap. */
 }
 
 body {
@@ -29,8 +33,6 @@ body {
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: "Geist Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
