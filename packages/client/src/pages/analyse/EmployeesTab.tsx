@@ -1,0 +1,83 @@
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { reportingApi, type EmployeeKpiRow } from "@/lib/reporting.api";
+import { EmployeeKpiTable } from "../dashboard/EmployeeKpiTable";
+import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+
+interface EmployeesTabProps {
+  from: string;
+  to: string;
+  basis: "accrual" | "cash";
+}
+
+export function EmployeesTab({ from, to, basis }: EmployeesTabProps) {
+  const [rows, setRows] = useState<EmployeeKpiRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    reportingApi.getEmployeKpis({ from, to, basis }).then((res) => {
+      setRows(res.data);
+      setLoading(false);
+    });
+  }, [from, to, basis]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-16 text-neutral-400">
+        <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
+      </div>
+    );
+  }
+
+  const top = rows.slice(0, 10);
+
+  return (
+    <div>
+      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6">
+        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+          Comparaison — valeur générée par employé
+        </p>
+        <p className="text-[10.5px] text-neutral-500 mb-3">
+          Factures créées + commissions enregistrées, sur la période sélectionnée.
+        </p>
+        {top.length === 0 ? (
+          <p className="text-[11.5px] text-neutral-500 text-center py-12">Aucune donnée sur cette période.</p>
+        ) : (
+          <ChartCanvas
+            label="Comparaison valeur par employé"
+            height={Math.max(180, top.length * 34)}
+            config={{
+              type: "bar",
+              data: {
+                labels: top.map((r) => r.name),
+                datasets: [
+                  {
+                    label: "Valeur (XAF)",
+                    data: top.map((r) => r.value),
+                    backgroundColor: CHART_COLORS.primary,
+                    borderRadius: 4,
+                  },
+                ],
+              },
+              options: {
+                indexAxis: "y",
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: {
+                    ticks: { font: { size: 11 }, color: CHART_COLORS.muted },
+                    grid: { color: CHART_COLORS.grid },
+                    beginAtZero: true,
+                  },
+                  y: { ticks: { font: { size: 11 }, color: CHART_COLORS.muted }, grid: { display: false } },
+                },
+              },
+            }}
+          />
+        )}
+      </div>
+
+      <EmployeeKpiTable rows={rows} from={from} to={to} basis={basis} />
+    </div>
+  );
+}

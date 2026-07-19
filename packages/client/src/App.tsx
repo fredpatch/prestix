@@ -23,6 +23,7 @@ import CommissionsPage from "./pages/CommissionsPage";
 import CommissionEditQueuePage from "./pages/CommissionEditQueuePage";
 import DashboardPage from "./pages/DashboardPage";
 import EmployeeActivityDetailPage from "./pages/EmployeeActivityDetailPage";
+import AnalysePage from "./pages/AnalysePage";
 
 interface AuthUser {
   id: number;
@@ -138,6 +139,7 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/reporting/employees/:agentId" element={<EmployeeActivityDetailPage />} />
+            <Route path="/analyse" element={<AnalysePage />} />
             <Route path="/parties" element={<PartiesPage />} />
             <Route path="/parties/:id" element={<PartyDetailPage />} />
             <Route path="/proformas" element={<ProformasPage />} />

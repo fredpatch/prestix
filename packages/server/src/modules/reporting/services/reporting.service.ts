@@ -236,6 +236,128 @@ async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionB
   return { bucketKey: "penalty", label: "Pénalités", gross: total, gain: total };
 }
 
+// Bucket granularity adapts to range length — a 6-month range bucketed by day
+// would be unreadable, a 5-day range bucketed by month would be useless.
+function pickBucketGranularity(from: Date, to: Date): "day" | "week" | "month" {
+  const days = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+  if (days <= 31) return "day";
+  if (days <= 180) return "week";
+  return "month";
+}
+
+function bucketKeyFor(date: Date, granularity: "day" | "week" | "month"): string {
+  if (granularity === "day") return date.toISOString().split("T")[0];
+  if (granularity === "month") return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  // week — Monday-anchored, per ISO convention
+  const d = new Date(date);
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() - day + 1);
+  return d.toISOString().split("T")[0];
+}
+
+// "Évolution dans le temps" — Lucrèce's own ask, not in the original M12
+// spec. Deliberately self-contained rather than refactoring
+// getTicketAndShopBuckets/getCommissionBuckets/etc. to also support bucketing
+// — those are tested, working aggregation functions; duplicating a slightly
+// different query here is safer than risking them for a new, different need.
+// Scoped to TOTAL gross+gain per bucket for this first pass, not a
+// per-category breakdown — that's a real "more later" if the section grows,
+// per Fred's own framing.
+export async function getCaTrend(
+  params: DateRangeParams,
+): Promise<{ bucket: string; gross: number; gain: number }[]> {
+  const from = new Date(params.from);
+  const to = endOfDay(params.to);
+  const granularity = pickBucketGranularity(from, to);
+
+  const buckets = new Map<string, { gross: number; gain: number }>();
+  function add(date: Date, gross: number, gain: number) {
+    const key = bucketKeyFor(date, granularity);
+    const current = buckets.get(key) ?? { gross: 0, gain: 0 };
+    current.gross += gross;
+    current.gain += gain;
+    buckets.set(key, current);
+  }
+
+  // Ticket/shop — accrual basis only for the trend (a cash-basis trend would
+  // need per-payment bucketing, real added complexity deferred for now).
+  const issuedInvoices = await db
+    .select()
+    .from(invoices)
+    .where(and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)));
+  const invoiceIds = issuedInvoices.map((i) => i.id);
+  const issuedAtById = new Map(issuedInvoices.map((i) => [i.id, i.issuedAt!]));
+
+  if (invoiceIds.length > 0) {
+    const lines = await db.select().from(invoiceLines).where(inArray(invoiceLines.invoiceId, invoiceIds));
+    const ticketLineIds = lines.filter((l) => l.lineType === "ticket").map((l) => l.id);
+    const shopLineIds = lines.filter((l) => l.lineType === "shop").map((l) => l.id);
+    const ticketDetailRows =
+      ticketLineIds.length > 0
+        ? await db.select().from(ticketDetails).where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
+        : [];
+    const shopDetailRows =
+      shopLineIds.length > 0
+        ? await db.select().from(shopDetails).where(inArray(shopDetails.invoiceLineId, shopLineIds))
+        : [];
+    const ticketDetailByLineId = new Map(ticketDetailRows.map((t) => [t.invoiceLineId, t]));
+    const shopDetailByLineId = new Map(shopDetailRows.map((s) => [s.invoiceLineId, s]));
+
+    for (const line of lines) {
+      const invoiceDate = issuedAtById.get(line.invoiceId);
+      if (!invoiceDate) continue;
+      const lineTotal = parseFloat(line.lineTotal);
+      if (line.lineType === "ticket") {
+        const td = ticketDetailByLineId.get(line.id);
+        add(invoiceDate, lineTotal, lineTotal - (td ? parseFloat(td.supplierPrice) : 0));
+      } else if (line.lineType === "shop") {
+        const sd = shopDetailByLineId.get(line.id);
+        add(invoiceDate, lineTotal, lineTotal - (sd ? parseFloat(sd.supplierPrice) * line.quantity : 0));
+      }
+    }
+  }
+
+  // Commission — full amount, no cost, own date field.
+  const commissionRows = await db
+    .select()
+    .from(commissionTransactions)
+    .where(
+      and(
+        eq(commissionTransactions.active, true),
+        gte(commissionTransactions.date, params.from),
+        lte(commissionTransactions.date, params.to),
+      ),
+    );
+  for (const c of commissionRows) {
+    const amount = parseFloat(c.commissionAmount);
+    add(new Date(c.date), amount, amount);
+  }
+
+  // Épargne inscription fee — full amount, no cost.
+  const feeRows = await db
+    .select()
+    .from(savingsAccounts)
+    .where(and(gte(savingsAccounts.createdAt, from), lte(savingsAccounts.createdAt, to)));
+  for (const a of feeRows) {
+    const amount = parseFloat(a.inscriptionFeeAmount);
+    add(a.createdAt, amount, amount);
+  }
+
+  // Penalty — accrual rows, full amount, no cost.
+  const penaltyRows = await db
+    .select()
+    .from(penalties)
+    .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
+  for (const p of penaltyRows) {
+    const amount = parseFloat(p.amountXaf);
+    add(p.accruedAt, amount, amount);
+  }
+
+  return Array.from(buckets.entries())
+    .map(([bucket, v]) => ({ bucket, gross: v.gross, gain: v.gain }))
+    .sort((a, b) => a.bucket.localeCompare(b.bucket));
+}
+
 export async function getCaComposition(params: DateRangeParams): Promise<CaCompositionResult> {
   const { billetterie, prestishop } = await getTicketAndShopBuckets(params);
   const commissionBuckets = await getCommissionBuckets(params);

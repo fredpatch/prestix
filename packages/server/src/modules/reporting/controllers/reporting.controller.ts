@@ -35,6 +35,16 @@ export async function getCaComposition(req: Request, res: Response): Promise<voi
   }
 }
 
+export async function getCaTrend(req: Request, res: Response): Promise<void> {
+  try {
+    const params = parseDateRange(req);
+    res.json(await reportingService.getCaTrend(params));
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
 export async function getClientKpis(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);

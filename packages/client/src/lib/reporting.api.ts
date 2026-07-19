@@ -77,6 +77,8 @@ export const reportingApi = {
     api.get<DashboardSummary>("/reporting/summary", { params }),
   getCaComposition: (params: DateRangeParams) =>
     api.get<CaCompositionResult>("/reporting/ca-composition", { params }),
+  getCaTrend: (params: DateRangeParams) =>
+    api.get<{ bucket: string; gross: number; gain: number }[]>("/reporting/ca-trend", { params }),
   getClientKpis: (params: DateRangeParams) =>
     api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
   getApporteurKpis: (params: DateRangeParams) =>

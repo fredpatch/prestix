@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
+  BarChart3,
   Users,
   Settings2,
   ChevronLeft,
@@ -38,6 +39,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, moduleCode: "dashboard" },
+  { to: "/analyse", label: "Analyse", icon: BarChart3, moduleCode: "dashboard" },
   { to: "/parties", label: "Parties", icon: Contact, moduleCode: "party" },
   { to: "/proformas", label: "Proformas", icon: FileText, moduleCode: "documents" },
   { to: "/invoices", label: "Factures", icon: Receipt, moduleCode: "documents" },
