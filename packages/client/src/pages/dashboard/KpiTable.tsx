@@ -1,12 +1,15 @@
+import { Link } from "react-router-dom";
 import type { KpiRow } from "@/lib/reporting.api";
 import { fmt } from "./format";
 
 interface KpiTableProps {
   title: string;
   rows: KpiRow[];
+  linkTo?: (id: number) => string; // optional — dashboard usage stays plain text, analyse usage links to the party page
+  limit?: number;
 }
 
-export function KpiTable({ title, rows }: KpiTableProps) {
+export function KpiTable({ title, rows, linkTo, limit = 10 }: KpiTableProps) {
   return (
     <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
       <div className="px-4 py-2.5 border-b border-neutral-200">
@@ -27,9 +30,17 @@ export function KpiTable({ title, rows }: KpiTableProps) {
           </tr>
         </thead>
         <tbody>
-          {rows.slice(0, 10).map((r) => (
-            <tr key={r.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-2 text-[12px] text-neutral-800">{r.name}</td>
+          {rows.slice(0, limit).map((r) => (
+            <tr key={r.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
+              <td className="px-4 py-2 text-[12px] text-neutral-800">
+                {linkTo ? (
+                  <Link to={linkTo(r.id)} className="hover:text-brand-gold-dark hover:underline">
+                    {r.name}
+                  </Link>
+                ) : (
+                  r.name
+                )}
+              </td>
               <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{r.volume}</td>
               <td className="px-4 py-2 text-[12px] font-medium text-neutral-800 text-right">
                 {fmt(r.value)}
