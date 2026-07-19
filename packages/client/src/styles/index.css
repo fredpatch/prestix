@@ -16,6 +16,25 @@
   --color-brand-gold-dark: #a77800;
   --color-brand-gray: #666666;
   --color-brand-gray-light: #d9d9d9;
+
+  /* Fixed-px type scale (Sprint 11c-1) — deliberately NOT rem-based, so it's
+     immune to the html{font-size:11px} issue tracked for Sprint 11c-3.
+     Calibrated to the app's ALREADY-established density (10-13px body/table
+     text, 15-20px emphasis/totals throughout this whole build) rather than
+     Tailwind's generic 16px-root defaults, which would suddenly look larger
+     than everything already built with arbitrary text-[Npx] values. Fixes
+     the 28+ existing bare text-sm/text-xs/etc usages retroactively — no
+     component changes needed for those to render correctly now. */
+  --text-xs: 11px;
+  --text-xs--line-height: 1.4;
+  --text-sm: 12px;
+  --text-sm--line-height: 1.5;
+  --text-base: 14px;
+  --text-base--line-height: 1.5;
+  --text-lg: 16px;
+  --text-lg--line-height: 1.4;
+  --text-xl: 20px;
+  --text-xl--line-height: 1.3;
 }
 
 html {
