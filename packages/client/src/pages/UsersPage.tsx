@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Loader2, KeyRound, Power } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usersApi, type User, type Role } from "@/lib/users.api";
@@ -8,6 +9,8 @@ import { RolesBadge } from "./users/components/RolesBadges";
 import { AccountStatusBadge } from "./users/components/AccountStatusBadge";
 import { EditUserDialog } from "./users/components/dialogs/EditUserDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { getApiErrorMessage } from "@/lib/api-error";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -40,10 +43,7 @@ export default function UsersPage() {
       await usersApi.toggleActivation(u.id, !u.active);
       load();
     } catch (err: unknown) {
-      alert(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Action impossible.",
-      );
+      toast.error(getApiErrorMessage(err, "Action impossible."));
     } finally {
       setActionId(null);
     }
@@ -53,7 +53,7 @@ export default function UsersPage() {
     setActionId(u.id);
     try {
       await usersApi.resetOTP(u.id);
-      alert(`Nouveau code OTP envoyé à ${u.email}.`);
+      toast.success(`Nouveau code OTP envoyé à ${u.email}.`);
     } finally {
       setActionId(null);
     }
@@ -79,17 +79,21 @@ export default function UsersPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as Role | "")}
-          className="h-10 rounded border border-neutral-200 bg-white px-3 text-sm text-neutral-800"
+        <Select
+          value={roleFilter || "__all__"}
+          onValueChange={(v) => setRoleFilter(v === "__all__" ? "" : (v as Role))}
         >
-          <option value="">Tous les rôles</option>
-          <option value="agent">Agent</option>
-          <option value="manager">Manager</option>
-          <option value="admin">Admin</option>
-          <option value="super_admin">Super Admin</option>
-        </select>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Tous les rôles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous les rôles</SelectItem>
+            <SelectItem value="agent">Agent</SelectItem>
+            <SelectItem value="manager">Manager</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="super_admin">Super Admin</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (

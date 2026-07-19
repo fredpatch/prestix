@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { partyApi, type Party } from "@/lib/party.api";
 import { CreatePartyDialog } from "./party/components/CreatePartyDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function PartiesPage() {
   const [parties, setParties] = useState<Party[]>([]);
@@ -53,15 +54,19 @@ export default function PartiesPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as "" | "client" | "referrer")}
-          className="h-10 rounded border border-neutral-200 bg-white px-3 text-sm text-neutral-800"
+        <Select
+          value={roleFilter || "__all__"}
+          onValueChange={(v) => setRoleFilter(v === "__all__" ? "" : (v as "client" | "referrer"))}
         >
-          <option value="">Tous</option>
-          <option value="client">Clients</option>
-          <option value="referrer">Référents</option>
-        </select>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Tous" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous</SelectItem>
+            <SelectItem value="client">Clients</SelectItem>
+            <SelectItem value="referrer">Référents</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (

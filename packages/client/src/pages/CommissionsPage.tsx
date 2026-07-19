@@ -8,6 +8,7 @@ import { useAuth } from "@/App";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { CreateCommissionDialog } from "./commission/CreateCommissionDialog";
 import { RequestCommissionEditDialog } from "./commission/RequestCommissionEditDialog";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 export default function CommissionsPage() {
   const { user } = useAuth();
@@ -72,18 +73,19 @@ export default function CommissionsPage() {
       </div>
 
       <div className="mb-4">
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="h-9 rounded border border-neutral-200 bg-white px-3 text-[12px]"
-        >
-          <option value="">Tous les types</option>
-          {types.map((t) => (
-            <option key={t.code} value={t.code}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        <Select value={typeFilter || "__all__"} onValueChange={(v) => setTypeFilter(v === "__all__" ? "" : v)}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Tous les types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous les types</SelectItem>
+            {types.map((t) => (
+              <SelectItem key={t.code} value={t.code}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
