@@ -16,8 +16,17 @@ export interface PartyHistoryEpargneEntry {
   recordedAt?: Date;
 }
 
+export interface PartyHistoryCommercialEntry {
+  id: number;
+  docType: "proforma" | "invoice";
+  number?: string;
+  status: string;
+  date: Date;
+  amount: string;
+}
+
 export interface PartyHistoryResult {
-  commercial: PartyHistoryPage<unknown>; // filled in Sprint 3 once invoices (M4) exist
+  commercial: PartyHistoryPage<PartyHistoryCommercialEntry>;
   epargne: PartyHistoryPage<PartyHistoryEpargneEntry>;
 }
 

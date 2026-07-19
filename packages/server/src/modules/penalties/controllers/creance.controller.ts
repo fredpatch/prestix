@@ -5,7 +5,8 @@ import { accrueOverduePenalties } from "../services/penalty.service.js";
 export async function list(req: Request, res: Response): Promise<void> {
   try {
     const onlyOverdue = req.query.overdue === "true";
-    res.json(await getCreances(onlyOverdue));
+    const partyId = req.query.partyId ? parseInt(req.query.partyId as string) : undefined;
+    res.json(await getCreances(onlyOverdue, partyId));
   } catch (error) {
     console.error("[creances]", error);
     res.status(500).json({ message: "Erreur interne." });

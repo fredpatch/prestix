@@ -1,18 +1,15 @@
 import { db } from "../../../db/index.js";
-import { parties, savingsAccounts, savingsTransactions } from "../../../db/schema.js";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { parties, savingsAccounts, savingsTransactions, invoices, proformas, proformaLines } from "../../../db/schema.js";
+import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import type { PartyHistoryFilters, PartyHistoryResult } from "./party-history.types.js";
 
-// Scaffold only (Sprint 2 / M3). Commercial section wires up in Sprint 3 once `invoices`
-// exists (M4); épargne section wires up in Sprint 9 once `savings_transactions` exists
-// (M11). Response SHAPE is final now — commercial/épargne always separate, always
-// independently paginated (?page= vs ?epargnePage=) per the M3 spec. Only the query
-// bodies are pending; callers written against this contract today won't need to change
-// when the real data lands.
-//
-// NOTE (Sprint 9): the commercial section's query is STILL a TODO below — that's a
-// pre-existing Sprint 3 gap, not something this sprint touches. Only épargne is filled
-// in here, matching M11's actual scope.
+// Scaffold from Sprint 2 / M3, filled in here — commercial section was a
+// pre-existing gap left over from Sprint 3 (invoices/M4 existed for a long
+// time before this query was ever actually written), noticed and closed
+// while working through Fred's Analyse-section requests rather than a
+// planned task of its own. Response SHAPE is unchanged — commercial/épargne
+// always separate, always independently paginated (?page= vs ?epargnePage=)
+// per the original M3 spec.
 export async function getPartyHistory(
   partyId: number,
   filters: PartyHistoryFilters,
@@ -24,6 +21,50 @@ export async function getPartyHistory(
   const pageSize = filters.pageSize ?? 20;
   const epargnePage = filters.epargnePage ?? 1;
   const epargnePageSize = filters.epargnePageSize ?? 20;
+
+  // Both proformas AND invoices — "historique commercial" means every
+  // commercial document involving this party, not just settled sales. A
+  // proforma that was never promoted still represents real interaction with
+  // the client worth showing here.
+  const partyInvoices = await db.select().from(invoices).where(eq(invoices.partyId, partyId));
+  const partyProformas = await db.select().from(proformas).where(eq(proformas.partyId, partyId));
+
+  // Proformas don't carry a stored total (computed from lines at read time,
+  // same as everywhere else in the app) — sum them here for the list view.
+  let proformaTotals = new Map<number, number>();
+  if (partyProformas.length > 0) {
+    const lines = await db
+      .select()
+      .from(proformaLines)
+      .where(inArray(proformaLines.proformaId, partyProformas.map((p) => p.id)));
+    proformaTotals = new Map();
+    for (const l of lines) {
+      proformaTotals.set(l.proformaId, (proformaTotals.get(l.proformaId) ?? 0) + parseFloat(l.lineTotal));
+    }
+  }
+
+  const commercialEntries: PartyHistoryResult["commercial"]["data"] = [
+    ...partyInvoices.map((i) => ({
+      id: i.id,
+      docType: "invoice" as const,
+      number: i.number ?? undefined,
+      status: i.status,
+      date: i.issuedAt ?? i.createdAt,
+      amount: i.totalAmount,
+    })),
+    ...partyProformas.map((p) => ({
+      id: p.id,
+      docType: "proforma" as const,
+      number: p.number,
+      status: p.status,
+      date: p.createdAt,
+      amount: (proformaTotals.get(p.id) ?? 0).toFixed(2),
+    })),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  const commercialTotal = commercialEntries.length;
+  const commercialStart = (page - 1) * pageSize;
+  const commercialData = commercialEntries.slice(commercialStart, commercialStart + pageSize);
 
   // savings_transactions has no partyId column of its own — it only knows its
   // accountId, and an account belongs to a party. Join through
@@ -55,11 +96,7 @@ export async function getPartyHistory(
   }
 
   return {
-    // TODO (Sprint 3 / M4, still pending — pre-existing gap, not part of Sprint 9):
-    // query `invoices` where buyerPartyId = partyId, ordered desc, paginated by
-    // page/pageSize.
-    commercial: { data: [], total: 0, page, pageSize },
-
+    commercial: { data: commercialData, total: commercialTotal, page, pageSize },
     epargne: { data: epargneData, total: epargneTotal, page: epargnePage, pageSize: epargnePageSize },
   };
 }

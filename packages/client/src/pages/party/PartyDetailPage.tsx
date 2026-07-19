@@ -5,6 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
 import { creditApi, type CreditLot } from "@/lib/credit.api";
+import { creanceApi, type CreanceRow } from "@/lib/creance.api";
 import { savingsApi, type SavingsAccount, type SavingsTransaction } from "@/lib/savings.api";
 import { useAuth } from "@/App";
 import { EditPartyDialog } from "./EditPartyDialog";
@@ -25,6 +26,7 @@ export default function PartyDetailPage() {
   const [party, setParty] = useState<Party | null>(null);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [creditLots, setCreditLots] = useState<CreditLot[]>([]);
+  const [creances, setCreances] = useState<CreanceRow[]>([]);
   const [history, setHistory] = useState<PartyHistory | null>(null);
   const [savingsAccount, setSavingsAccount] = useState<SavingsAccount | null>(null);
   const [savingsTransactions, setSavingsTransactions] = useState<SavingsTransaction[]>([]);
@@ -40,11 +42,13 @@ export default function PartyDetailPage() {
       creditApi.getBalance(partyId),
       creditApi.listLots(partyId),
       partyApi.getHistory(partyId),
-    ]).then(([partyRes, balanceRes, lotsRes, historyRes]) => {
+      creanceApi.list(false, partyId),
+    ]).then(([partyRes, balanceRes, lotsRes, historyRes, creancesRes]) => {
       setParty(partyRes.data);
       setCreditBalance(balanceRes.data.balance);
       setCreditLots(lotsRes.data);
       setHistory(historyRes.data);
+      setCreances(creancesRes.data);
       setLoading(false);
     });
 
@@ -82,6 +86,8 @@ export default function PartyDetailPage() {
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
   const canReverse = user && ["admin", "super_admin"].includes(user.role);
   const openLots = creditLots.filter((l) => !l.convertedAt && parseFloat(l.remainingAmount) > 0);
+  const creancesTotal = creances.reduce((sum, c) => sum + parseFloat(c.principalDue) + parseFloat(c.penaltyDue), 0);
+  const overdueCount = creances.filter((c) => c.isOverdue).length;
 
   return (
     <div>
@@ -141,10 +147,22 @@ export default function PartyDetailPage() {
           <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
             Créances (dû à l'agence)
           </p>
-          <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
-          <p className="text-[10px] text-neutral-400">
-            Disponible avec le module Documents (Sprint 3)
-          </p>
+          {creances.length === 0 ? (
+            <>
+              <p className="text-[18px] font-bold text-neutral-400 mt-1">0 XAF</p>
+              <p className="text-[10px] text-neutral-500">Aucune créance en cours</p>
+            </>
+          ) : (
+            <>
+              <p className="text-[18px] font-bold text-red-600 mt-1">
+                {creancesTotal.toLocaleString("fr-FR")} XAF
+              </p>
+              <p className="text-[10px] text-neutral-500">
+                {creances.length} échéance{creances.length > 1 ? "s" : ""}
+                {overdueCount > 0 && ` · ${overdueCount} en retard`}
+              </p>
+            </>
+          )}
         </div>
         <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
           <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
@@ -228,11 +246,31 @@ export default function PartyDetailPage() {
         </TabsContent>
 
         <TabsContent value="commercial">
-          <p className="text-[12px] text-neutral-500 py-4">
-            {history?.commercial.total === 0
-              ? "Aucun historique commercial — disponible une fois le module Documents (Sprint 3) en place."
-              : `${history?.commercial.total} document(s)`}
-          </p>
+          {!history || history.commercial.data.length === 0 ? (
+            <p className="text-[12px] text-neutral-500 py-4">Aucun document commercial pour cette partie.</p>
+          ) : (
+            <div className="space-y-2 py-2">
+              {history.commercial.data.map((entry) => (
+                <Link
+                  key={`${entry.docType}-${entry.id}`}
+                  to={entry.docType === "invoice" ? `/invoices/${entry.id}` : `/proformas/${entry.id}`}
+                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-brand-gold-dark transition-colors"
+                >
+                  <div>
+                    <p className="text-[12px] font-medium text-neutral-800">
+                      {entry.docType === "invoice" ? "Facture" : "Proforma"} {entry.number ?? `#${entry.id}`}
+                    </p>
+                    <p className="text-[10.5px] text-neutral-500">
+                      {new Date(entry.date).toLocaleDateString("fr-FR")} · {entry.status}
+                    </p>
+                  </div>
+                  <p className="text-[13px] font-semibold text-neutral-800">
+                    {parseFloat(entry.amount).toLocaleString("fr-FR")} XAF
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="epargne">

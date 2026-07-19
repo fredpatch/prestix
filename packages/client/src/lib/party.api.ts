@@ -40,8 +40,17 @@ export interface PartyHistoryPage<T = unknown> {
   pageSize: number;
 }
 
+export interface PartyHistoryCommercialEntry {
+  id: number;
+  docType: "proforma" | "invoice";
+  number?: string;
+  status: string;
+  date: string;
+  amount: string;
+}
+
 export interface PartyHistory {
-  commercial: PartyHistoryPage;
+  commercial: PartyHistoryPage<PartyHistoryCommercialEntry>;
   epargne: PartyHistoryPage;
 }
 

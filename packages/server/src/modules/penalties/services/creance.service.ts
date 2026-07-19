@@ -5,11 +5,14 @@ import type { CreanceRow } from "./penalty.types.js";
 
 // M6/M3: "Overdue = status issued AND dueDate < today" (kept exactly from
 // legacy — the one rule explicitly worth preserving). This is the SINGLE
-// aggregation query — Sprint 10 (M12 dashboard) calls this same function
-// rather than re-deriving "overdue" with its own ad-hoc filter, which is
-// exactly the legacy bug the spec calls out to fix.
-export async function getCreances(onlyOverdue = false): Promise<CreanceRow[]> {
-  const issuedInvoices = await db.select().from(invoices).where(eq(invoices.status, "issued"));
+// aggregation query — Sprint 10 (M12 dashboard) AND the party-detail page's
+// créances card both call this same function rather than re-deriving
+// "overdue"/"owed" with their own ad-hoc filter, which is exactly the legacy
+// bug the spec calls out to fix.
+export async function getCreances(onlyOverdue = false, partyId?: number): Promise<CreanceRow[]> {
+  const invoiceConditions = [eq(invoices.status, "issued")];
+  if (partyId) invoiceConditions.push(eq(invoices.partyId, partyId));
+  const issuedInvoices = await db.select().from(invoices).where(and(...invoiceConditions));
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
