@@ -6,12 +6,13 @@ import { PRESETS } from "./dashboard/date-presets";
 import { GlobalTab } from "./analyse/GlobalTab";
 import { EmployeesTab } from "./analyse/EmployeesTab";
 import { ClientsReferrersTab } from "./analyse/ClientsReferrersTab";
+import { ServicesTab } from "./analyse/ServicesTab";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 // Structure modeled on SICOT's analytics section (tab-per-domain, shared
 // period selector, charts + comparison tables) per Fred's explicit direction.
-// Three tabs built so far — Vue globale, Employés, Clients & Référents.
-// Services, Créances & Engagements, and Rapports are planned but not yet
+// Four tabs built so far — Vue globale, Employés, Clients & Référents,
+// Services. Créances & Engagements and Rapports are planned but not yet
 // built, deliberately, rather than shipping empty placeholder tabs.
 export default function AnalysePage() {
   const [from, setFrom] = useState(PRESETS[0].from);
@@ -43,6 +44,7 @@ export default function AnalysePage() {
           <TabsTrigger value="global">Vue globale</TabsTrigger>
           <TabsTrigger value="employes">Employés</TabsTrigger>
           <TabsTrigger value="clients-referents">Clients & Référents</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global">
@@ -53,6 +55,9 @@ export default function AnalysePage() {
         </TabsContent>
         <TabsContent value="clients-referents">
           <ClientsReferrersTab from={from} to={to} basis={basis} />
+        </TabsContent>
+        <TabsContent value="services">
+          <ServicesTab from={from} to={to} basis={basis} />
         </TabsContent>
       </Tabs>
     </div>

@@ -16,6 +16,7 @@ export interface CaCompositionBucket {
   label: string;
   gross: number;
   gain: number;
+  volume: number; // transaction count — "most used" per Lucrèce's ask, distinct from CA value
 }
 
 export interface CaCompositionResult {

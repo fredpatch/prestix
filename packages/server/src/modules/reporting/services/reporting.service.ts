@@ -89,8 +89,8 @@ async function getTicketAndShopBuckets(
     // zero, not "query returned everything" (inArray with an empty array
     // behaves oddly across drivers, so this is handled explicitly).
     return {
-      billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: 0, gain: 0 },
-      prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: 0, gain: 0 },
+      billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: 0, gain: 0, volume: 0 },
+      prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: 0, gain: 0, volume: 0 },
     };
   }
 
@@ -102,8 +102,10 @@ async function getTicketAndShopBuckets(
 
   let ticketGross = 0;
   let ticketGain = 0;
+  let ticketVolume = 0;
   let shopGross = 0;
   let shopGain = 0;
+  let shopVolume = 0;
 
   if (invoiceIds.length > 0) {
     const lines = await db
@@ -131,6 +133,7 @@ async function getTicketAndShopBuckets(
 
       if (line.lineType === "ticket") {
         ticketGross += lineTotal;
+        ticketVolume += 1;
         const td = ticketDetailByLineId.get(line.id);
         // Ticket quantity is always 1 (M8 spec: one passenger per line), so
         // supplierPrice needs no quantity multiplier here.
@@ -138,6 +141,7 @@ async function getTicketAndShopBuckets(
         ticketGain += lineTotal - supplierCost;
       } else if (line.lineType === "shop") {
         shopGross += lineTotal;
+        shopVolume += 1;
         const sd = shopDetailByLineId.get(line.id);
         // Shop supplierPrice IS per-unit, unlike ticket — quantity matters here.
         const supplierCost = sd ? parseFloat(sd.supplierPrice) * line.quantity : 0;
@@ -147,8 +151,8 @@ async function getTicketAndShopBuckets(
   }
 
   return {
-    billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: ticketGross, gain: ticketGain },
-    prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: shopGross, gain: shopGain },
+    billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: ticketGross, gain: ticketGain, volume: ticketVolume },
+    prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: shopGross, gain: shopGain, volume: shopVolume },
   };
 }
 
@@ -176,17 +180,20 @@ async function getCommissionBuckets(params: DateRangeParams): Promise<CaComposit
   // hardcoded to the 6 seeded types, since the catalog is explicitly
   // super_admin-extensible (confirmed working in Sprint 8 with "Course du
   // mois"). A new custom type shows up here automatically, no code change.
-  const totalsByType = new Map<string, number>();
+  const totalsByType = new Map<string, { total: number; volume: number }>();
   for (const row of rows) {
-    const current = totalsByType.get(row.type) ?? 0;
-    totalsByType.set(row.type, current + parseFloat(row.commissionAmount));
+    const current = totalsByType.get(row.type) ?? { total: 0, volume: 0 };
+    current.total += parseFloat(row.commissionAmount);
+    current.volume += 1;
+    totalsByType.set(row.type, current);
   }
 
-  return Array.from(totalsByType.entries()).map(([type, total]) => ({
+  return Array.from(totalsByType.entries()).map(([type, agg]) => ({
     bucketKey: `commission:${type}`,
     label: `Commission — ${labelByCode.get(type) ?? type}`,
-    gross: total,
-    gain: total, // full, no cost, per spec
+    gross: agg.total,
+    gain: agg.total, // full, no cost, per spec
+    volume: agg.volume,
   }));
 }
 
@@ -201,7 +208,13 @@ async function getEpargneInscriptionBucket(params: DateRangeParams): Promise<CaC
     .where(and(gte(savingsAccounts.createdAt, from), lte(savingsAccounts.createdAt, to)));
 
   const total = rows.reduce((sum, r) => sum + parseFloat(r.inscriptionFeeAmount), 0);
-  return { bucketKey: "epargne_inscription", label: "Épargne — Frais d'inscription", gross: total, gain: total };
+  return {
+    bucketKey: "epargne_inscription",
+    label: "Épargne — Frais d'inscription",
+    gross: total,
+    gain: total,
+    volume: rows.length,
+  };
 }
 
 async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionBucket> {
@@ -209,6 +222,7 @@ async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionB
   const to = endOfDay(params.to);
 
   let total = 0;
+  let volume = 0;
   if (params.basis === "accrual") {
     // Revenue recognized when EARNED — the accrual rows themselves.
     const rows = await db
@@ -216,6 +230,7 @@ async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionB
       .from(penalties)
       .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
     total = rows.reduce((sum, r) => sum + parseFloat(r.amountXaf), 0);
+    volume = rows.length;
   } else {
     // Actual money received — penalty PAYMENTS, not accrual rows. This is the
     // one bucket where cash-basis sums fundamentally different underlying
@@ -231,9 +246,10 @@ async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionB
         ),
       );
     total = rows.reduce((sum, r) => sum + parseFloat(r.amountApplied), 0);
+    volume = rows.length;
   }
 
-  return { bucketKey: "penalty", label: "Pénalités", gross: total, gain: total };
+  return { bucketKey: "penalty", label: "Pénalités", gross: total, gain: total, volume };
 }
 
 // Bucket granularity adapts to range length — a 6-month range bucketed by day
@@ -355,6 +371,78 @@ export async function getCaTrend(
 
   return Array.from(buckets.entries())
     .map(([bucket, v]) => ({ bucket, gross: v.gross, gain: v.gain }))
+    .sort((a, b) => a.bucket.localeCompare(b.bucket));
+}
+
+// Same "évolution dans le temps" need as getCaTrend, but per major category
+// instead of one combined total — Services tab's whole point. Kept to 5
+// top-level categories (not one line per commission sub-type) so the chart
+// stays readable regardless of how many commission types the catalog grows
+// to. Same self-contained-rather-than-refactored reasoning as getCaTrend.
+export async function getServiceTrend(
+  params: DateRangeParams,
+): Promise<{ bucket: string; billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }[]> {
+  const from = new Date(params.from);
+  const to = endOfDay(params.to);
+  const granularity = pickBucketGranularity(from, to);
+
+  const buckets = new Map<string, { billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }>();
+  function ensure(key: string) {
+    if (!buckets.has(key)) buckets.set(key, { billetterie: 0, prestishop: 0, commission: 0, epargne: 0, penalty: 0 });
+    return buckets.get(key)!;
+  }
+
+  const issuedInvoices = await db
+    .select()
+    .from(invoices)
+    .where(and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)));
+  const invoiceIds = issuedInvoices.map((i) => i.id);
+  const issuedAtById = new Map(issuedInvoices.map((i) => [i.id, i.issuedAt!]));
+
+  if (invoiceIds.length > 0) {
+    const lines = await db.select().from(invoiceLines).where(inArray(invoiceLines.invoiceId, invoiceIds));
+    for (const line of lines) {
+      const invoiceDate = issuedAtById.get(line.invoiceId);
+      if (!invoiceDate) continue;
+      const key = bucketKeyFor(invoiceDate, granularity);
+      const lineTotal = parseFloat(line.lineTotal);
+      if (line.lineType === "ticket") ensure(key).billetterie += lineTotal;
+      else if (line.lineType === "shop") ensure(key).prestishop += lineTotal;
+    }
+  }
+
+  const commissionRows = await db
+    .select()
+    .from(commissionTransactions)
+    .where(
+      and(
+        eq(commissionTransactions.active, true),
+        gte(commissionTransactions.date, params.from),
+        lte(commissionTransactions.date, params.to),
+      ),
+    );
+  for (const c of commissionRows) {
+    ensure(bucketKeyFor(new Date(c.date), granularity)).commission += parseFloat(c.commissionAmount);
+  }
+
+  const feeRows = await db
+    .select()
+    .from(savingsAccounts)
+    .where(and(gte(savingsAccounts.createdAt, from), lte(savingsAccounts.createdAt, to)));
+  for (const a of feeRows) {
+    ensure(bucketKeyFor(a.createdAt, granularity)).epargne += parseFloat(a.inscriptionFeeAmount);
+  }
+
+  const penaltyRows = await db
+    .select()
+    .from(penalties)
+    .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
+  for (const p of penaltyRows) {
+    ensure(bucketKeyFor(p.accruedAt, granularity)).penalty += parseFloat(p.amountXaf);
+  }
+
+  return Array.from(buckets.entries())
+    .map(([bucket, v]) => ({ bucket, ...v }))
     .sort((a, b) => a.bucket.localeCompare(b.bucket));
 }
 

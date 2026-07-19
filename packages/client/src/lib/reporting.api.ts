@@ -11,6 +11,7 @@ export interface CaCompositionBucket {
   label: string;
   gross: number;
   gain: number;
+  volume: number;
 }
 
 export interface CaCompositionResult {
@@ -79,6 +80,11 @@ export const reportingApi = {
     api.get<CaCompositionResult>("/reporting/ca-composition", { params }),
   getCaTrend: (params: DateRangeParams) =>
     api.get<{ bucket: string; gross: number; gain: number }[]>("/reporting/ca-trend", { params }),
+  getServiceTrend: (params: DateRangeParams) =>
+    api.get<{ bucket: string; billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }[]>(
+      "/reporting/service-trend",
+      { params },
+    ),
   getClientKpis: (params: DateRangeParams) =>
     api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
   getApporteurKpis: (params: DateRangeParams) =>

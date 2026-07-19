@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 interface CaCompositionTableProps {
   composition: CaCompositionResult;
   className?: string;
+  showVolume?: boolean; // off by default — dashboard stays as-is, Services tab turns it on
 }
 
 // CA composition - gross always shown, gain always shown, buckets dynamic
-export function CaCompositionTable({ composition, className }: CaCompositionTableProps) {
+export function CaCompositionTable({ composition, className, showVolume = false }: CaCompositionTableProps) {
   return (
     <div
       className={cn(
@@ -28,6 +29,11 @@ export function CaCompositionTable({ composition, className }: CaCompositionTabl
             <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
               Bucket
             </th>
+            {showVolume && (
+              <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                Volume
+              </th>
+            )}
             <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
               CA Brut (XAF)
             </th>
@@ -40,6 +46,9 @@ export function CaCompositionTable({ composition, className }: CaCompositionTabl
           {composition.buckets.map((b) => (
             <tr key={b.bucketKey} className="border-b border-neutral-100 last:border-0">
               <td className="px-4 py-2 text-[12px] text-neutral-800">{b.label}</td>
+              {showVolume && (
+                <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{b.volume}</td>
+              )}
               <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{fmt(b.gross)}</td>
               <td className="px-4 py-2 text-[12px] font-medium text-emerald-700 text-right">
                 {fmt(b.gain)}
@@ -48,7 +57,7 @@ export function CaCompositionTable({ composition, className }: CaCompositionTabl
           ))}
           {composition.buckets.length === 0 && (
             <tr>
-              <td colSpan={3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
+              <td colSpan={showVolume ? 4 : 3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
                 Aucune donnée pour cette période.
               </td>
             </tr>
@@ -57,6 +66,7 @@ export function CaCompositionTable({ composition, className }: CaCompositionTabl
         <tfoot>
           <tr className="bg-neutral-50">
             <td className="px-4 py-2 text-[12px] font-semibold text-neutral-800">TOTAL</td>
+            {showVolume && <td className="px-4 py-2"></td>}
             <td className="px-4 py-2 text-[13px] font-bold text-neutral-800 text-right">
               {fmt(composition.totalGross)}
             </td>

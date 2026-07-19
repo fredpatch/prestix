@@ -12,6 +12,7 @@ router.use(authenticate);
 router.get("/summary", requireAgent, reportingController.getSummary);
 router.get("/ca-composition", requireAgent, reportingController.getCaComposition);
 router.get("/ca-trend", requireAgent, reportingController.getCaTrend);
+router.get("/service-trend", requireAgent, reportingController.getServiceTrend);
 router.get("/kpis/clients", requireAgent, reportingController.getClientKpis);
 router.get("/kpis/apporteurs", requireAgent, reportingController.getApporteurKpis);
 router.get("/kpis/employes", requireAgent, reportingController.getEmployeKpis);
