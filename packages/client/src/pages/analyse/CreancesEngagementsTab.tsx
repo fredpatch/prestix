@@ -25,7 +25,7 @@ const MODULES: { key: string; label: string }[] = [
 // extending it to conditionally include arbitrary sections would mean real
 // template rework, deliberately not attempted in this pass); Excel gets the
 // real module selection, since its multi-sheet shape suits that naturally.
-export function RapportsTab({ from, to, basis }: RapportsTabProps) {
+export function CreancesEngagementsTab({ from, to, basis }: RapportsTabProps) {
   const [selectedModules, setSelectedModules] = useState<string[]>(MODULES.map((m) => m.key));
 
   function toggleModule(key: string) {

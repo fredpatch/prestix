@@ -8,13 +8,20 @@ import { EmployeesTab } from "./analyse/EmployeesTab";
 import { ClientsReferrersTab } from "./analyse/ClientsReferrersTab";
 import { ServicesTab } from "./analyse/ServicesTab";
 import { CreancesEngagementsTab } from "./analyse/CreancesEngagementsTab";
+import { RapportsTab } from "./analyse/Rapportstab";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 // Structure modeled on SICOT's analytics section (tab-per-domain, shared
 // period selector, charts + comparison tables) per Fred's explicit direction.
-// Five tabs built so far — Vue globale, Employés, Clients & Référents,
-// Services, Créances & Engagements. Rapports is the last planned tab, not
-// yet built, deliberately, rather than shipping an empty placeholder.
+// All six planned tabs now built — Vue globale, Employés, Clients &
+// Référents, Services, Créances & Engagements, Rapports. Report history and
+// automatic periodic generation (SICOT has both) are explicitly NOT built —
+// noted directly in the Rapports tab, not silently skipped.
+//
+// Export buttons removed from the shared filter bar here (showExports=false)
+// — they used to export a fixed dashboard-shaped report regardless of which
+// tab was open, which is exactly the mismatch Fred flagged. Real exports
+// with module selection now live in the Rapports tab.
 export default function AnalysePage() {
   const [from, setFrom] = useState(PRESETS[0].from);
   const [to, setTo] = useState(PRESETS[0].to);
@@ -38,6 +45,7 @@ export default function AnalysePage() {
         onFromChange={setFrom}
         onToChange={setTo}
         onBasisChange={setBasis}
+        showExports={false}
       />
 
       <Tabs defaultValue="global">
@@ -47,6 +55,7 @@ export default function AnalysePage() {
           <TabsTrigger value="clients-referents">Clients & Référents</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="creances">Créances & Engagements</TabsTrigger>
+          <TabsTrigger value="rapports">Rapports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global">
@@ -63,6 +72,9 @@ export default function AnalysePage() {
         </TabsContent>
         <TabsContent value="creances">
           <CreancesEngagementsTab from={from} to={to} />
+        </TabsContent>
+        <TabsContent value="rapports">
+          <RapportsTab from={from} to={to} basis={basis} />
         </TabsContent>
       </Tabs>
     </div>
