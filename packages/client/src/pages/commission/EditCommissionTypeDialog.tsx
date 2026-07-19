@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 
 interface EditCommissionTypeDialogProps {
@@ -145,16 +146,17 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
                       onChange={(e) => updateRow(i, { key: e.target.value })}
                       className="col-span-5 h-8 text-[12px]"
                     />
-                    <select
-                      value={row.kind}
-                      onChange={(e) => updateRow(i, { kind: e.target.value as FieldKind })}
-                      className="col-span-5 h-8 rounded border border-neutral-200 bg-white px-2 text-[12px]"
-                    >
-                      <option value="string">Texte</option>
-                      <option value="string_optional">Texte optionnel</option>
-                      <option value="period">Période (début/fin)</option>
-                      <option value="enum">Liste déroulante</option>
-                    </select>
+                    <Select value={row.kind} onValueChange={(v) => updateRow(i, { kind: v as FieldKind })}>
+                      <SelectTrigger className="col-span-5 h-8 text-[12px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">Texte</SelectItem>
+                        <SelectItem value="string_optional">Texte optionnel</SelectItem>
+                        <SelectItem value="period">Période (début/fin)</SelectItem>
+                        <SelectItem value="enum">Liste déroulante</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button
                       variant="ghost"
                       size="icon"

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 import { commissionApi, type CommissionDetails } from "@/lib/commission.api";
 import { PartySelect } from "@/pages/documents/PartySelect";
@@ -110,21 +111,24 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
         <div className="space-y-4">
           <div>
             <Label>Type</Label>
-            <select
-              value={selectedTypeCode}
-              onChange={(e) => {
-                setSelectedTypeCode(e.target.value);
+            <Select
+              value={selectedTypeCode || undefined}
+              onValueChange={(v) => {
+                setSelectedTypeCode(v);
                 setDetails({}); // switching type resets the dynamic fields — different schema entirely
               }}
-              className="flex h-10 w-full rounded border border-neutral-200 bg-white px-3 text-sm"
             >
-              <option value="">— Sélectionner —</option>
-              {types.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="— Sélectionner —" />
+              </SelectTrigger>
+              <SelectContent>
+                {types.map((t) => (
+                  <SelectItem key={t.code} value={t.code}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

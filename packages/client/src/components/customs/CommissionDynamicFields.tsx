@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import type { CommissionDetails } from "@/lib/commission.api";
 
 interface CommissionDynamicFieldsProps {
@@ -50,18 +51,21 @@ export function CommissionDynamicFields({
           return (
             <div key={key}>
               <Label>{fieldLabel(key)}</Label>
-              <select
-                value={(values[key] as string) ?? ""}
-                onChange={(e) => updateField(key, e.target.value)}
-                className="flex h-10 w-full rounded border border-neutral-200 bg-white px-3 text-sm"
+              <Select
+                value={(values[key] as string) || undefined}
+                onValueChange={(v) => updateField(key, v)}
               >
-                <option value="">- Sélectionner -</option>
-                {options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="— Sélectionner —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           );
         }
