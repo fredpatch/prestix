@@ -1,5 +1,12 @@
 # Decisions Log (append-only, newest first)
 
+## 2026-07-19 — Sprint 11 (Data migration) cancelled, not just blocked
+
+- Original plan assumed a real production dataset existed in the legacy tripwise-monorepo (MongoDB) worth migrating to PostgreSQL. Confirmed with Fred this premise was wrong: tripwise-monorepo was itself a dev/test deployment used with Lucrèce, never mature production data — same status the whole session already treated Beta prod access as ("blocked"), but the actual answer was that there's nothing meaningful to migrate even if access were granted.
+- Reframes the whole project's remaining goal: not "preserve historical data," but "get Lucrèce to adopt the new, simplified design" — PrestiX exists specifically because the old system felt too complicated, which is the whole reason a rebuild happened at all.
+- tripwise-monorepo's role as UI/business-logic reference oracle is unaffected — that was always about validating patterns, never about data.
+- Replaced with three real next priorities, not yet individually scoped: UI hardening & state improvement, notifications, and a full filterable audit journal page (already logged as backlog during Sprint 10).
+
 ## 2026-07-16 — Épargne withdrawal raised to admin+, reframed as exception (Sprint 9)
 
 - Original spec reading treated standalone withdrawal as a routine manager+ action, same tier as deposit. Confirmed with Fred during smoke testing this is wrong: money only ever leaves an épargne account by being spent (a ticket or shop purchase via épargne-as-payment), never withdrawn as cash on demand.

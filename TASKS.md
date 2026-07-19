@@ -232,11 +232,33 @@
 - Full reporting/analyse API-runtime smoke is still needed end-to-end before beta confidence.
 - Sprint 9 credit-conversion fee-pair verification and auto-converted epargne deposit labeling remain open hardening items.
 
-## Sprint 11 – Data migration | 1.5 weeks
+## Sprint 11 – Data migration ❌ NOT NEEDED (2026-07-19)
 
-- [ ] **Mongo→PG migration scripts + field mapping** — CRITICAL
-- [ ] Reconciliation report; historical negative-balance warnings — CRITICAL
-- [ ] Dry-run on staging — CRITICAL
+> Not "blocked" — genuinely cancelled. Confirmed with Fred: the legacy
+> tripwise-monorepo was itself in a dev/test phase with Lucrèce, never a
+> mature production system. PrestiX exists specifically because that version
+> felt too complicated to use and needed simplifying — there's no real
+> production dataset worth migrating, and no access to it either way. The
+> actual goal going forward is getting Lucrèce to accept and adopt the new,
+> simplified design — not preserving old data. Reference material only:
+> tripwise-monorepo remains the UI/business-logic oracle it always was, that
+> role is unaffected by this decision.
+
+- [x] ~~Mongo→PG migration scripts + field mapping~~ — not needed
+- [x] ~~Reconciliation report; historical negative-balance warnings~~ — not needed
+- [x] ~~Dry-run on staging~~ — not needed
+
+## Sprint 11b – UI Hardening, Notifications & Audit Journal | scope TBD
+
+> Real next priorities per Fred, replacing the cancelled migration sprint.
+> Goal shifted from "preserve old data" to "get Lucrèce to actually adopt the
+> new, simplified design" — these three items are what stands between where
+> the app is now and that goal. Not yet scoped in detail; each needs its own
+> planning pass before building.
+
+- [ ] UI hardening & state improvement — carries forward several specific items already flagged this session: auto-converted épargne deposit labeling (Sprint 9), Sprint 9 credit-conversion fee-pair re-verification, dark-mode retrofit for remaining hardcoded Tailwind classes (Sprint 1), full reporting/Analyse API-runtime smoke test
+- [ ] Notifications — not scoped yet, no prior design decisions made
+- [ ] Journal d'audit (full filterable page) — already logged as a backlog item during Sprint 10 (dedicated page or Paramètres tab, filters by user/action/date/entity, reads the same audit_log every module already writes to)
 
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 

@@ -2,9 +2,12 @@
    analysis-section pass. Still needed before beta confidence: full reporting/
    analyse API-runtime smoke across summary, trends, KPIs, exports, employee
    drill-down, creances, and party-history commercial display.
-2. Sprint 11 starts next: Mongo->PG migration scripts, dry-run tooling,
-   reconciliation report, and historical warning handling. This is still
-   blocked until legacy Beta production data access is available.
+2. Sprint 11 (data migration) is CANCELLED, not blocked — confirmed with
+   Fred: legacy tripwise-monorepo was dev/test data, nothing real to
+   migrate even with access. Sprint 5's M6 cross-compare gate against legacy
+   Beta data is moot for the same reason. Real next priorities instead,
+   none yet individually scoped: (a) UI hardening & state improvement,
+   (b) notifications, (c) Journal d'audit (full filterable page).
 3. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing - code mirrors the direct-subscription
    fix but wasn't re-verified with the same rigor.
@@ -18,10 +21,9 @@
 7. Deferred hardening item (from Sprint 1): retrofit remaining hardcoded
    neutral-*/brand-* Tailwind pages to semantic tokens for full dark-mode
    coverage.
-8. Open migration-backfill decisions still pending Lucrece (see
-   mongo-pg-migration-mapping.md): company-type party fields, credit-lot
-   decision-window backfill, epargne fee/status backfill.
-9. STILL BLOCKED: Beta prod data access - needed for the Sprint 11 migration
-   dry-run AND Sprint 5's M6 cross-compare gate.
-10. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number
-    appear on the printed document itself, or stay internal-only?
+8. Open migration-backfill decisions — now moot, tied to the cancelled
+   Sprint 11 (was: company-type party fields, credit-lot decision-window
+   backfill, epargne fee/status backfill for a Mongo migration that no
+   longer happens).
+9. Open question from Sprint 6, still unanswered: should PNR/GDS/ticket-number
+   appear on the printed document itself, or stay internal-only?
