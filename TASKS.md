@@ -248,17 +248,60 @@
 - [x] ~~Reconciliation report; historical negative-balance warnings~~ — not needed
 - [x] ~~Dry-run on staging~~ — not needed
 
-## Sprint 11b – UI Hardening, Notifications & Audit Journal | scope TBD
+## Sprint 11c-1 – UI Hardening: Foundations | scope TBD
 
-> Real next priorities per Fred, replacing the cancelled migration sprint.
-> Goal shifted from "preserve old data" to "get Lucrèce to actually adopt the
-> new, simplified design" — these three items are what stands between where
-> the app is now and that goal. Not yet scoped in detail; each needs its own
-> planning pass before building.
+> Phase 1 of 3 — nothing else in this initiative works well without these
+> pieces in place first. Confirmed with Fred: font changes from Mulish to
+> Plus Jakarta Sans (Mulish was already the declared/loaded font, not
+> Candara as first assumed — Candara was only ever the CSS fallback).
 
-- [ ] UI hardening & state improvement — carries forward several specific items already flagged this session: auto-converted épargne deposit labeling (Sprint 9), Sprint 9 credit-conversion fee-pair re-verification, dark-mode retrofit for remaining hardcoded Tailwind classes (Sprint 1), full reporting/Analyse API-runtime smoke test
-- [ ] Notifications — not scoped yet, no prior design decisions made
-- [ ] Journal d'audit (full filterable page) — already logged as a backlog item during Sprint 10 (dedicated page or Paramètres tab, filters by user/action/date/entity, reads the same audit_log every module already writes to)
+- [ ] Install `sonner`, `@tanstack/react-query`, `@tanstack/react-table` (none currently installed — confirmed via package.json audit)
+- [ ] Font swap: Mulish → Plus Jakarta Sans
+- [ ] Define a real type scale — replaces ad-hoc arbitrary px values (found `10px`/`10.5px`/`12px` all on one page, no defined scale)
+- [ ] React Query provider + query client setup
+- [ ] Sonner `<Toaster />` + shared API-error-to-toast helper
+
+## Sprint 11c-2 – UI Hardening: Contained Fixes | scope TBD
+
+> Phase 2 of 3 — small, self-contained wins, don't require the Phase 3
+> architectural migration to land first.
+
+- [ ] Replace the 2 raw `alert()` calls with Sonner toasts
+- [ ] Convert the 8 files still using native `<select>` to shadcn `<Select>` (6 files already use shadcn)
+- [ ] Add shadcn Calendar component (date pickers currently plain `<input type="date">`)
+- [ ] Split the two largest components (~700 lines each — `InvoiceLineItemsComposer.tsx`, `ProformaLineItemsComposer.tsx`) into logic/helpers/subcomponents
+
+## Sprint 11c-3 – UI Hardening: Architectural Migration | scope TBD
+
+> Phase 3 of 3 — the actual big lift. `react-hook-form`/`zod` are already
+> installed and used in 6 files (the larger creation forms); this extends
+> that pattern to the remaining simple dialogs still on plain `useState`.
+
+- [ ] Generic TanStack Table components — read-only (KPI tables) and filterable/manageable (DataTable) variants, migrate existing hand-rolled tables to them
+- [ ] Migrate page-by-page data-fetching from `useState`+`useEffect`+axios to React Query hooks (queries, mutations, query keys)
+- [ ] Extend React Hook Form to remaining simple dialogs not yet using it
+- [ ] Wire API error messages → toast universally as a natural byproduct of React Query's centralized error handling
+- [ ] Scan for and flag any unhandled cases surfaced during the migration
+
+## Sprint 11d – Notifications | scope TBD
+
+> Third of Fred's three real next priorities, replacing the cancelled
+> migration sprint. Not yet scoped — no design decisions made (which events
+> to notify on, in-app vs. email, real-time vs. polling, etc.). Sequenced
+> after UI hardening since Sonner (installed in 11c-1) will likely be part
+> of how in-app notifications actually render.
+
+- [ ] To be planned
+
+## Sprint 11e – Journal d'audit | scope TBD
+
+> Already logged as a backlog item during Sprint 10. Full filterable audit
+> log page (dedicated page or Paramètres tab), filters by user/action/date/
+> entity, reads the existing `audit_log` every module already writes to via
+> `logAudit()` — no new tracking needed, purely a display layer. Likely
+> benefits from the TanStack Table work in 11c-3 landing first.
+
+- [ ] To be planned
 
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 
