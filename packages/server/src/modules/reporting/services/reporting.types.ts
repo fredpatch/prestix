@@ -85,3 +85,28 @@ export interface ActivityRow {
   metadata?: Record<string, unknown>;
   createdAt: Date;
 }
+
+export interface CreanceByParty {
+  partyId: number;
+  partyName: string;
+  principalDue: number;
+  penaltyDue: number;
+  totalDue: number;
+  overdueCount: number;
+  unpaidCount: number;
+}
+
+// "Combien on gagne" (accrual) vs "combien on gagne réellement" (cash) —
+// Lucrèce's own framing, shown SIDE BY SIDE, not toggled like everywhere
+// else in this app. Two full CA composition runs, one per basis.
+export interface AccrualVsCashComparison {
+  accrual: { totalGross: number; totalGain: number };
+  cash: { totalGross: number; totalGain: number };
+}
+
+export interface OpenEngagements {
+  draftInvoiceCount: number;
+  draftInvoiceValue: number;
+  openProformaCount: number;
+  openProformaValue: number;
+}

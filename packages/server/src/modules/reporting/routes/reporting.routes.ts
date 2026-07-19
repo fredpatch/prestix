@@ -10,6 +10,9 @@ router.use(authenticate);
 // Read-only, informational module — agent+ everywhere, no privileged
 // mutation exists here at all (unlike every other module in this app).
 router.get("/summary", requireAgent, reportingController.getSummary);
+router.get("/creances-by-party", requireAgent, reportingController.getCreancesByParty);
+router.get("/accrual-vs-cash", requireAgent, reportingController.getAccrualVsCashComparison);
+router.get("/open-engagements", requireAgent, reportingController.getOpenEngagements);
 router.get("/ca-composition", requireAgent, reportingController.getCaComposition);
 router.get("/ca-trend", requireAgent, reportingController.getCaTrend);
 router.get("/service-trend", requireAgent, reportingController.getServiceTrend);

@@ -15,20 +15,25 @@ import {
   auditLog,
   stockMovements,
   stockArticles,
+  proformas,
+  proformaLines,
 } from "../../../db/schema.js";
 import { eq, and, gte, lte, inArray, isNull, desc } from "drizzle-orm";
 import { getCreances } from "../../penalties/services/creance.service.js";
 import { listLowStockArticles } from "../../stock/services/stock.service.js";
 import type {
+  AccrualVsCashComparison,
   ActivityRow,
   CaCompositionBucket,
   CaCompositionResult,
+  CreanceByParty,
   DashboardSummary,
   DateRangeParams,
   EmployeeActivityDetail,
   EmployeeKpiRow,
   EpargneSoldeNetPeriode,
   KpiRow,
+  OpenEngagements,
 } from "./reporting.types.js";
 
 // Accrual/cash means something different per bucket — stated explicitly here
@@ -570,6 +575,93 @@ export async function getOverdueAndUnpaidSummary(): Promise<{
     overdueAmount: sum(overdueRows),
     unpaidCount: allUnpaidRows.length,
     unpaidAmount: sum(allUnpaidRows),
+  };
+}
+
+// "Qui doit" — Lucrèce's own phrase. Same getCreances() single source as
+// everywhere else, just grouped by party instead of shown per-échéance —
+// a party can owe across several invoices/installments, this collapses that
+// into one figure per party for the "who owes the agency" question.
+export async function getCreancesByParty(): Promise<CreanceByParty[]> {
+  const rows = await getCreances(false);
+  const byParty = new Map<
+    number,
+    { partyName: string; principalDue: number; penaltyDue: number; overdueCount: number; unpaidCount: number }
+  >();
+
+  for (const r of rows) {
+    const current = byParty.get(r.partyId) ?? {
+      partyName: r.partyName,
+      principalDue: 0,
+      penaltyDue: 0,
+      overdueCount: 0,
+      unpaidCount: 0,
+    };
+    current.principalDue += parseFloat(r.principalDue);
+    current.penaltyDue += parseFloat(r.penaltyDue);
+    current.unpaidCount += 1;
+    if (r.isOverdue) current.overdueCount += 1;
+    byParty.set(r.partyId, current);
+  }
+
+  return Array.from(byParty.entries())
+    .map(([partyId, agg]) => ({
+      partyId,
+      partyName: agg.partyName,
+      principalDue: agg.principalDue,
+      penaltyDue: agg.penaltyDue,
+      totalDue: agg.principalDue + agg.penaltyDue,
+      overdueCount: agg.overdueCount,
+      unpaidCount: agg.unpaidCount,
+    }))
+    .sort((a, b) => b.totalDue - a.totalDue);
+}
+
+// "Combien on gagne" vs "combien on gagne réellement" — SIDE BY SIDE, not the
+// toggle used everywhere else. Two full composition runs, one per basis.
+export async function getAccrualVsCashComparison(
+  params: Omit<DateRangeParams, "basis">,
+): Promise<AccrualVsCashComparison> {
+  const [accrual, cash] = await Promise.all([
+    getCaComposition({ ...params, basis: "accrual" }),
+    getCaComposition({ ...params, basis: "cash" }),
+  ]);
+  return {
+    accrual: { totalGross: accrual.totalGross, totalGain: accrual.totalGain },
+    cash: { totalGross: cash.totalGross, totalGain: cash.totalGain },
+  };
+}
+
+// "Engagements non clôturés" — business not yet committed: invoices still in
+// draft (never issued) and proformas still "live" (not expired/cancelled AND
+// not yet promoted — same promoted-check as the double-promotion guard in
+// invoice.service.ts, reused here for consistency rather than re-derived).
+export async function getOpenEngagements(): Promise<OpenEngagements> {
+  const draftInvoices = await db.select().from(invoices).where(eq(invoices.status, "draft"));
+  const draftInvoiceValue = draftInvoices.reduce((sum, i) => sum + parseFloat(i.totalAmount), 0);
+
+  const liveProformas = await db.select().from(proformas).where(eq(proformas.status, "draft"));
+  const promotedProformaIds = new Set(
+    (await db.select({ proformaId: invoices.proformaId }).from(invoices))
+      .map((r) => r.proformaId)
+      .filter((id): id is number => id != null),
+  );
+  const openProformas = liveProformas.filter((p) => !promotedProformaIds.has(p.id));
+
+  let openProformaValue = 0;
+  if (openProformas.length > 0) {
+    const lines = await db
+      .select()
+      .from(proformaLines)
+      .where(inArray(proformaLines.proformaId, openProformas.map((p) => p.id)));
+    openProformaValue = lines.reduce((sum, l) => sum + parseFloat(l.lineTotal), 0);
+  }
+
+  return {
+    draftInvoiceCount: draftInvoices.length,
+    draftInvoiceValue,
+    openProformaCount: openProformas.length,
+    openProformaValue,
   };
 }
 

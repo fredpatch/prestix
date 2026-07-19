@@ -1,0 +1,210 @@
+diff --git a/packages/server/src/modules/reporting/controllers/reporting.controller.ts b/packages/server/src/modules/reporting/controllers/reporting.controller.ts
+index 39b483a..12c871a 100644
+--- a/packages/server/src/modules/reporting/controllers/reporting.controller.ts
++++ b/packages/server/src/modules/reporting/controllers/reporting.controller.ts
+@@ -24,6 +24,34 @@ export async function getSummary(req: Request, res: Response): Promise<void> {
+   }
+ }
+ 
++export async function getCreancesByParty(req: Request, res: Response): Promise<void> {
++  try {
++    res.json(await reportingService.getCreancesByParty());
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getAccrualVsCashComparison(req: Request, res: Response): Promise<void> {
++  try {
++    const { from, to } = parseDateRange(req);
++    res.json(await reportingService.getAccrualVsCashComparison({ from, to }));
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
++export async function getOpenEngagements(req: Request, res: Response): Promise<void> {
++  try {
++    res.json(await reportingService.getOpenEngagements());
++  } catch (error) {
++    console.error("[reporting]", error);
++    res.status(500).json({ message: "Erreur interne." });
++  }
++}
++
+ export async function getCaComposition(req: Request, res: Response): Promise<void> {
+   try {
+     const params = parseDateRange(req);
+diff --git a/packages/server/src/modules/reporting/routes/reporting.routes.ts b/packages/server/src/modules/reporting/routes/reporting.routes.ts
+index 4f5d322..2f399b8 100644
+--- a/packages/server/src/modules/reporting/routes/reporting.routes.ts
++++ b/packages/server/src/modules/reporting/routes/reporting.routes.ts
+@@ -10,6 +10,9 @@ router.use(authenticate);
+ // Read-only, informational module — agent+ everywhere, no privileged
+ // mutation exists here at all (unlike every other module in this app).
+ router.get("/summary", requireAgent, reportingController.getSummary);
++router.get("/creances-by-party", requireAgent, reportingController.getCreancesByParty);
++router.get("/accrual-vs-cash", requireAgent, reportingController.getAccrualVsCashComparison);
++router.get("/open-engagements", requireAgent, reportingController.getOpenEngagements);
+ router.get("/ca-composition", requireAgent, reportingController.getCaComposition);
+ router.get("/ca-trend", requireAgent, reportingController.getCaTrend);
+ router.get("/service-trend", requireAgent, reportingController.getServiceTrend);
+diff --git a/packages/server/src/modules/reporting/services/reporting.service.ts b/packages/server/src/modules/reporting/services/reporting.service.ts
+index 8c8a080..07a506c 100644
+--- a/packages/server/src/modules/reporting/services/reporting.service.ts
++++ b/packages/server/src/modules/reporting/services/reporting.service.ts
+@@ -15,20 +15,25 @@ import {
+   auditLog,
+   stockMovements,
+   stockArticles,
++  proformas,
++  proformaLines,
+ } from "../../../db/schema.js";
+ import { eq, and, gte, lte, inArray, isNull, desc } from "drizzle-orm";
+ import { getCreances } from "../../penalties/services/creance.service.js";
+ import { listLowStockArticles } from "../../stock/services/stock.service.js";
+ import type {
++  AccrualVsCashComparison,
+   ActivityRow,
+   CaCompositionBucket,
+   CaCompositionResult,
++  CreanceByParty,
+   DashboardSummary,
+   DateRangeParams,
+   EmployeeActivityDetail,
+   EmployeeKpiRow,
+   EpargneSoldeNetPeriode,
+   KpiRow,
++  OpenEngagements,
+ } from "./reporting.types.js";
+ 
+ // Accrual/cash means something different per bucket — stated explicitly here
+@@ -573,6 +578,93 @@ export async function getOverdueAndUnpaidSummary(): Promise<{
+   };
+ }
+ 
++// "Qui doit" — Lucrèce's own phrase. Same getCreances() single source as
++// everywhere else, just grouped by party instead of shown per-échéance —
++// a party can owe across several invoices/installments, this collapses that
++// into one figure per party for the "who owes the agency" question.
++export async function getCreancesByParty(): Promise<CreanceByParty[]> {
++  const rows = await getCreances(false);
++  const byParty = new Map<
++    number,
++    { partyName: string; principalDue: number; penaltyDue: number; overdueCount: number; unpaidCount: number }
++  >();
++
++  for (const r of rows) {
++    const current = byParty.get(r.partyId) ?? {
++      partyName: r.partyName,
++      principalDue: 0,
++      penaltyDue: 0,
++      overdueCount: 0,
++      unpaidCount: 0,
++    };
++    current.principalDue += parseFloat(r.principalDue);
++    current.penaltyDue += parseFloat(r.penaltyDue);
++    current.unpaidCount += 1;
++    if (r.isOverdue) current.overdueCount += 1;
++    byParty.set(r.partyId, current);
++  }
++
++  return Array.from(byParty.entries())
++    .map(([partyId, agg]) => ({
++      partyId,
++      partyName: agg.partyName,
++      principalDue: agg.principalDue,
++      penaltyDue: agg.penaltyDue,
++      totalDue: agg.principalDue + agg.penaltyDue,
++      overdueCount: agg.overdueCount,
++      unpaidCount: agg.unpaidCount,
++    }))
++    .sort((a, b) => b.totalDue - a.totalDue);
++}
++
++// "Combien on gagne" vs "combien on gagne réellement" — SIDE BY SIDE, not the
++// toggle used everywhere else. Two full composition runs, one per basis.
++export async function getAccrualVsCashComparison(
++  params: Omit<DateRangeParams, "basis">,
++): Promise<AccrualVsCashComparison> {
++  const [accrual, cash] = await Promise.all([
++    getCaComposition({ ...params, basis: "accrual" }),
++    getCaComposition({ ...params, basis: "cash" }),
++  ]);
++  return {
++    accrual: { totalGross: accrual.totalGross, totalGain: accrual.totalGain },
++    cash: { totalGross: cash.totalGross, totalGain: cash.totalGain },
++  };
++}
++
++// "Engagements non clôturés" — business not yet committed: invoices still in
++// draft (never issued) and proformas still "live" (not expired/cancelled AND
++// not yet promoted — same promoted-check as the double-promotion guard in
++// invoice.service.ts, reused here for consistency rather than re-derived).
++export async function getOpenEngagements(): Promise<OpenEngagements> {
++  const draftInvoices = await db.select().from(invoices).where(eq(invoices.status, "draft"));
++  const draftInvoiceValue = draftInvoices.reduce((sum, i) => sum + parseFloat(i.totalAmount), 0);
++
++  const liveProformas = await db.select().from(proformas).where(eq(proformas.status, "draft"));
++  const promotedProformaIds = new Set(
++    (await db.select({ proformaId: invoices.proformaId }).from(invoices))
++      .map((r) => r.proformaId)
++      .filter((id): id is number => id != null),
++  );
++  const openProformas = liveProformas.filter((p) => !promotedProformaIds.has(p.id));
++
++  let openProformaValue = 0;
++  if (openProformas.length > 0) {
++    const lines = await db
++      .select()
++      .from(proformaLines)
++      .where(inArray(proformaLines.proformaId, openProformas.map((p) => p.id)));
++    openProformaValue = lines.reduce((sum, l) => sum + parseFloat(l.lineTotal), 0);
++  }
++
++  return {
++    draftInvoiceCount: draftInvoices.length,
++    draftInvoiceValue,
++    openProformaCount: openProformas.length,
++    openProformaValue,
++  };
++}
++
+ export async function getDashboardSummary(params: DateRangeParams): Promise<DashboardSummary> {
+   const [caComposition, overdueAndUnpaid, lowStockCount, epargneSoldeNetPeriode] = await Promise.all([
+     getCaComposition(params),
+diff --git a/packages/server/src/modules/reporting/services/reporting.types.ts b/packages/server/src/modules/reporting/services/reporting.types.ts
+index 59adad2..9e8a4ed 100644
+--- a/packages/server/src/modules/reporting/services/reporting.types.ts
++++ b/packages/server/src/modules/reporting/services/reporting.types.ts
+@@ -85,3 +85,28 @@ export interface ActivityRow {
+   metadata?: Record<string, unknown>;
+   createdAt: Date;
+ }
++
++export interface CreanceByParty {
++  partyId: number;
++  partyName: string;
++  principalDue: number;
++  penaltyDue: number;
++  totalDue: number;
++  overdueCount: number;
++  unpaidCount: number;
++}
++
++// "Combien on gagne" (accrual) vs "combien on gagne réellement" (cash) —
++// Lucrèce's own framing, shown SIDE BY SIDE, not toggled like everywhere
++// else in this app. Two full CA composition runs, one per basis.
++export interface AccrualVsCashComparison {
++  accrual: { totalGross: number; totalGain: number };
++  cash: { totalGross: number; totalGain: number };
++}
++
++export interface OpenEngagements {
++  draftInvoiceCount: number;
++  draftInvoiceValue: number;
++  openProformaCount: number;
++  openProformaValue: number;
++}

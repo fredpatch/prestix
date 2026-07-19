@@ -24,6 +24,34 @@ export async function getSummary(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function getCreancesByParty(req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await reportingService.getCreancesByParty());
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function getAccrualVsCashComparison(req: Request, res: Response): Promise<void> {
+  try {
+    const { from, to } = parseDateRange(req);
+    res.json(await reportingService.getAccrualVsCashComparison({ from, to }));
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function getOpenEngagements(req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await reportingService.getOpenEngagements());
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
 export async function getCaComposition(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
