@@ -10,6 +10,7 @@ interface DashboardFilterBarProps {
   onFromChange: (value: string) => void;
   onToChange: (value: string) => void;
   onBasisChange: (basis: "accrual" | "cash") => void;
+  showExports?: boolean; // on by default (Dashboard keeps its quick-export buttons); Analyse turns this off — real exports live in the Rapports tab there, where module selection actually matches the active tab
 }
 
 // Date range + basis - shared by every section below, per spec:
@@ -21,6 +22,7 @@ export function DashboardFilterBar({
   onFromChange,
   onToChange,
   onBasisChange,
+  showExports = true,
 }: DashboardFilterBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -69,22 +71,24 @@ export function DashboardFilterBar({
         </button>
       </div>
 
-      <div className="ml-auto flex gap-2">
-        <a
-          href={reportingApi.exportPdfUrl({ from, to, basis })}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <FileText size={13} /> Rapport rapide (PDF)
-        </a>
-        <a
-          href={reportingApi.exportExcelUrl({ from, to, basis })}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
-        >
-          <Download size={13} /> Export Excel
-        </a>
-      </div>
+      {showExports && (
+        <div className="ml-auto flex gap-2">
+          <a
+            href={reportingApi.exportPdfUrl({ from, to, basis })}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <FileText size={13} /> Rapport rapide (PDF)
+          </a>
+          <a
+            href={reportingApi.exportExcelUrl({ from, to, basis })}
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-neutral-200 bg-white text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+          >
+            <Download size={13} /> Export Excel
+          </a>
+        </div>
+      )}
     </div>
   );
 }

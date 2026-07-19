@@ -41,9 +41,22 @@ export interface EmployeeKpiRow extends KpiRow {
 
 export interface EmployeeActivityDetail {
   invoices: { id: number; number?: string; date: string; amount: number; partyName: string }[];
-  payments: { id: number; invoiceId: number; invoiceNumber?: string; date: string; amount: number; method: string }[];
+  payments: {
+    id: number;
+    invoiceId: number;
+    invoiceNumber?: string;
+    date: string;
+    amount: number;
+    method: string;
+  }[];
   commissions: { id: number; type: string; typeLabel: string; date: string; amount: number }[];
-  stockMovements: { id: number; articleName: string; type: string; quantity: number; date: string }[];
+  stockMovements: {
+    id: number;
+    articleName: string;
+    type: string;
+    quantity: number;
+    date: string;
+  }[];
   savingsTransactions: { id: number; nature: string; amount: number; date: string }[];
 }
 
@@ -73,6 +86,28 @@ export interface ActivityRow {
   createdAt: string;
 }
 
+export interface CreanceByParty {
+  partyId: number;
+  partyName: string;
+  principalDue: number;
+  penaltyDue: number;
+  totalDue: number;
+  overdueCount: number;
+  unpaidCount: number;
+}
+
+export interface AccrualVsCashComparison {
+  accrual: { totalGross: number; totalGain: number };
+  cash: { totalGross: number; totalGain: number };
+}
+
+export interface OpenEngagements {
+  draftInvoiceCount: number;
+  draftInvoiceValue: number;
+  openProformaCount: number;
+  openProformaValue: number;
+}
+
 export const reportingApi = {
   getSummary: (params: DateRangeParams) =>
     api.get<DashboardSummary>("/reporting/summary", { params }),
@@ -81,10 +116,16 @@ export const reportingApi = {
   getCaTrend: (params: DateRangeParams) =>
     api.get<{ bucket: string; gross: number; gain: number }[]>("/reporting/ca-trend", { params }),
   getServiceTrend: (params: DateRangeParams) =>
-    api.get<{ bucket: string; billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }[]>(
-      "/reporting/service-trend",
-      { params },
-    ),
+    api.get<
+      {
+        bucket: string;
+        billetterie: number;
+        prestishop: number;
+        commission: number;
+        epargne: number;
+        penalty: number;
+      }[]
+    >("/reporting/service-trend", { params }),
   getClientKpis: (params: DateRangeParams) =>
     api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
   getApporteurKpis: (params: DateRangeParams) =>
@@ -95,8 +136,12 @@ export const reportingApi = {
     api.get<EmployeeActivityDetail>(`/reporting/employees/${agentId}/detail`, { params }),
   getRecentActivity: (limit = 10) =>
     api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
-  exportExcelUrl: (params: DateRangeParams) =>
-    `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}`,
+  exportExcelUrl: (params: DateRangeParams, modules?: string[]) =>
+    `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}${modules ? `&modules=${modules.join(",")}` : ""}`,
   exportPdfUrl: (params: DateRangeParams) =>
     `/api/reporting/export/pdf?from=${params.from}&to=${params.to}&basis=${params.basis}`,
+  getCreancesByParty: () => api.get<CreanceByParty[]>("/reporting/creances-by-party"),
+  getAccrualVsCashComparison: (params: { from: string; to: string }) =>
+    api.get<AccrualVsCashComparison>("/reporting/accrual-vs-cash", { params }),
+  getOpenEngagements: () => api.get<OpenEngagements>("/reporting/open-engagements"),
 };

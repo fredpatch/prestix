@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import * as reportingService from "../services/reporting.service.js";
-import { generateReportingExcel } from "../services/reporting-export.service.js";
+import { generateReportingExcel, type ReportModule } from "../services/reporting-export.service.js";
 import { generateDashboardReportPdf } from "../services/reporting-pdf.service.js";
 import type { DateRangeParams } from "../services/reporting.types.js";
 
@@ -127,7 +127,8 @@ export async function getEmployeeActivityDetail(req: Request, res: Response): Pr
 export async function exportExcel(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
-    const buffer = await generateReportingExcel(params);
+    const modules = req.query.modules ? ((req.query.modules as string).split(",") as ReportModule[]) : undefined;
+    const buffer = await generateReportingExcel(params, modules);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
