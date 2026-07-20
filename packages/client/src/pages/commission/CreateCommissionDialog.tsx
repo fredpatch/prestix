@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 import { commissionApi, type CommissionDetails } from "@/lib/commission.api";
 import { PartySelect } from "@/pages/documents/PartySelect";
@@ -134,7 +135,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePicker value={date} onChange={setDate} />
             </div>
             <div>
               <Label>Montant de la commission</Label>

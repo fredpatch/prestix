@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface RequestCommissionEditDialogProps {
   commission: CommissionTransaction;
@@ -98,7 +99,7 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePicker value={date} onChange={setDate} />
             </div>
             <div>
               <Label>Montant</Label>
