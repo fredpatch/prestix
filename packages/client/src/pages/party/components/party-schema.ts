@@ -27,3 +27,23 @@ export const PARTY_DEFAULTS: PartyFormValues = {
   isClient: true,
   isReferrer: false,
 };
+
+export function partyToValues(party: {
+  fullName: string;
+  code?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  isClient: boolean;
+  isReferrer: boolean;
+}): PartyFormValues {
+  return {
+    fullName: party.fullName,
+    code: party.code ?? "",
+    phone: party.phone ?? "",
+    email: party.email ?? "",
+    address: party.address ?? "",
+    isClient: party.isClient,
+    isReferrer: party.isReferrer,
+  };
+}

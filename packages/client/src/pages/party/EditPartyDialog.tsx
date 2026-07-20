@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { partyApi, type Party } from "@/lib/party.api";
+import { getApiErrorMessage } from "@/lib/api-error";
+import {
+  partySchema,
+  PARTY_DEFAULTS,
+  partyToValues,
+  type PartyFormValues,
+} from "./components/party-schema";
 
 interface EditPartyDialogProps {
   party: Party | null;
@@ -18,52 +28,41 @@ interface EditPartyDialogProps {
 }
 
 export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogProps) {
-  const [fullName, setFullName] = useState("");
-  const [code, setCode] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [isClient, setIsClient] = useState(false);
-  const [isReferrer, setIsReferrer] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<PartyFormValues>({
+    resolver: zodResolver(partySchema),
+    defaultValues: PARTY_DEFAULTS,
+  });
 
   useEffect(() => {
-    if (party) {
-      setFullName(party.fullName);
-      setCode(party.code ?? "");
-      setPhone(party.phone ?? "");
-      setEmail(party.email ?? "");
-      setAddress(party.address ?? "");
-      setIsClient(party.isClient);
-      setIsReferrer(party.isReferrer);
-      setError(null);
-    }
-  }, [party]);
+    if (party) reset(partyToValues(party));
+  }, [party, reset]);
 
-  async function handleSubmit() {
+  const isClient = watch("isClient");
+  const isReferrer = watch("isReferrer");
+
+  async function onSubmit(values: PartyFormValues) {
     if (!party) return;
-    setSubmitting(true);
-    setError(null);
     try {
       await partyApi.update(party.id, {
-        fullName,
-        code: code || undefined,
-        phone: phone || undefined,
-        email: email || undefined,
-        address: address || undefined,
-        isClient,
-        isReferrer,
+        fullName: values.fullName,
+        code: values.code || undefined,
+        phone: values.phone || undefined,
+        email: values.email || undefined,
+        address: values.address || undefined,
+        isClient: values.isClient,
+        isReferrer: values.isReferrer,
       });
+      toast.success("Partie modifiée.");
       onUpdated();
       onClose();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la modification.",
-      );
-    } finally {
-      setSubmitting(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Erreur lors de la modification."));
     }
   }
 
@@ -80,13 +79,12 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
         </DialogHeader>
 
         {party && (
-          <div className="space-y-3">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div className="flex gap-4">
               <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={isClient}
-                  onChange={(e) => setIsClient(e.target.checked)}
+                  {...register("isClient")}
                   className="accent-brand-gold-dark"
                 />
                 Client
@@ -94,8 +92,7 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
               <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={isReferrer}
-                  onChange={(e) => setIsReferrer(e.target.checked)}
+                  {...register("isReferrer")}
                   className="accent-brand-gold-dark"
                 />
                 Référent
@@ -111,49 +108,45 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
               <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                 Nom complet
               </label>
-              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} autoFocus />
+              <Input {...register("fullName")} autoFocus />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                   Code
                 </label>
-                <Input value={code} onChange={(e) => setCode(e.target.value)} />
+                <Input {...register("code")} />
               </div>
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                   Téléphone
                 </label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input {...register("phone")} />
               </div>
             </div>
             <div>
               <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                 Email
               </label>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+              <Input {...register("email")} type="email" />
             </div>
             <div>
               <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                 Adresse
               </label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+              <Input {...register("address")} />
             </div>
-            {error && <p className="text-[11px] text-red-600">{error}</p>}
-          </div>
-        )}
 
-        <DialogFooter>
-          <Button variant="secondary" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || !fullName || (!isClient && !isReferrer)}
-          >
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={onClose}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
