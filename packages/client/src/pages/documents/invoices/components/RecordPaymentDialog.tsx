@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Loader2, Banknote, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogTrigger,
@@ -18,6 +22,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { paymentApi, type Installment, type RecordPaymentInput } from "@/lib/payment.api";
+import { getApiErrorMessage, getApiErrorCode } from "@/lib/api-error";
 
 interface RecordPaymentDialogProps {
   invoiceId: number;
@@ -32,16 +37,43 @@ const METHODS: { value: RecordPaymentInput["method"]; label: string }[] = [
   { value: "epargne", label: "Épargne voyage" },
 ];
 
+const paymentSchema = z.object({
+  amount: z
+    .number({ invalid_type_error: "Montant requis." })
+    .positive("Le montant doit être supérieur à 0."),
+  method: z.enum(["cash", "mobile_money", "virement", "credit", "epargne"]),
+  target: z.string(),
+  allocationTarget: z.enum(["principal", "penalty"]),
+});
+
+type PaymentFormValues = z.infer<typeof paymentSchema>;
+
+const PAYMENT_DEFAULTS: PaymentFormValues = {
+  amount: 0,
+  method: "cash",
+  target: "fifo",
+  allocationTarget: "principal",
+};
+
 export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDialogProps) {
   const [open, setOpen] = useState(false);
   const [installments, setInstallments] = useState<Installment[]>([]);
-  const [amount, setAmount] = useState(0);
-  const [method, setMethod] = useState<RecordPaymentInput["method"]>("cash");
-  const [target, setTarget] = useState<string>("fifo");
-  const [allocationTarget, setAllocationTarget] = useState<"principal" | "penalty">("principal");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [overpaymentPending, setOverpaymentPending] = useState<number | null>(null);
+  const [resolving, setResolving] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    getValues,
+    reset,
+    control,
+    formState: { isSubmitting },
+  } = useForm<PaymentFormValues>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: PAYMENT_DEFAULTS,
+  });
 
   useEffect(() => {
     if (open) {
@@ -49,43 +81,36 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
     }
   }, [open, invoiceId]);
 
-  function reset() {
-    setAmount(0);
-    setMethod("cash");
-    setTarget("fifo");
-    setAllocationTarget("principal");
-    setError(null);
-    setOverpaymentPending(null);
-  }
-
   const openInstallments = installments.filter((i) => i.status !== "paid");
   const anyPenaltyDue = installments.some((i) => parseFloat(i.penaltyDue) > 0);
+  const allocationTarget = watch("allocationTarget");
 
-  async function submit(overpaymentChoice?: "change" | "credit") {
-    setSubmitting(true);
-    setError(null);
+  async function doSubmit(values: PaymentFormValues, overpaymentChoice?: "change" | "credit") {
     try {
       await paymentApi.record(invoiceId, {
-        amountTendered: amount,
-        method,
-        targetInstallmentId: target !== "fifo" ? parseInt(target) : undefined,
+        amountTendered: values.amount,
+        method: values.method,
+        targetInstallmentId: values.target !== "fifo" ? parseInt(values.target) : undefined,
         overpaymentChoice,
-        allocationTarget,
+        allocationTarget: values.allocationTarget,
       });
       setOpen(false);
-      reset();
+      reset(PAYMENT_DEFAULTS);
+      setOverpaymentPending(null);
       onRecorded();
-    } catch (err: unknown) {
-      const data = (err as { response?: { data?: { message?: string; code?: string } } })?.response
-        ?.data;
-      if (data?.code === "OVERPAYMENT_CHOICE_REQUIRED") {
-        setOverpaymentPending(amount);
+    } catch (err) {
+      if (getApiErrorCode(err) === "OVERPAYMENT_CHOICE_REQUIRED") {
+        setOverpaymentPending(values.amount);
       } else {
-        setError(data?.message ?? "Erreur lors de l'enregistrement.");
+        toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement."));
       }
-    } finally {
-      setSubmitting(false);
     }
+  }
+
+  async function resolveOverpayment(choice: "change" | "credit") {
+    setResolving(true);
+    await doSubmit(getValues(), choice);
+    setResolving(false);
   }
 
   return (
@@ -93,7 +118,10 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) reset();
+        if (!v) {
+          reset(PAYMENT_DEFAULTS);
+          setOverpaymentPending(null);
+        }
       }}
     >
       <DialogTrigger>
@@ -115,19 +143,23 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => submit("change")}
-                disabled={submitting}
+                onClick={() => resolveOverpayment("change")}
+                disabled={resolving}
               >
                 Rendre la monnaie
               </Button>
-              <Button className="flex-1" onClick={() => submit("credit")} disabled={submitting}>
+              <Button
+                className="flex-1"
+                onClick={() => resolveOverpayment("credit")}
+                disabled={resolving}
+              >
                 Créditer le compte
               </Button>
             </div>
-            {submitting && <Loader2 size={13} className="animate-spin mx-auto" />}
+            {resolving && <Loader2 size={13} className="animate-spin mx-auto" />}
           </div>
         ) : (
-          <>
+          <form onSubmit={handleSubmit((values) => doSubmit(values))}>
             <div className="space-y-3">
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
@@ -135,8 +167,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                 </label>
                 <Input
                   type="number"
-                  value={amount || ""}
-                  onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  {...register("amount", { valueAsNumber: true })}
                   autoFocus
                 />
               </div>
@@ -144,45 +175,56 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                   Méthode
                 </label>
-                <Select
-                  value={method}
-                  onValueChange={(v) => setMethod(v as RecordPaymentInput["method"])}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {METHODS.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        {m.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="method"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {METHODS.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
                   Échéance ciblée (optionnel)
                 </label>
-                <Select value={target} onValueChange={setTarget}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fifo">FIFO automatique (plus ancienne d'abord)</SelectItem>
-                    {openInstallments.map((i) => (
-                      <SelectItem key={i.id} value={String(i.id)}>
-                        Échéance {i.sequence} — reste{" "}
-                        {(parseFloat(i.expectedAmount) - parseFloat(i.paidAmount)).toLocaleString(
-                          "fr-FR",
-                        )}{" "}
-                        XAF
-                        {parseFloat(i.penaltyDue) > 0 &&
-                          ` (+ pénalité ${parseFloat(i.penaltyDue).toLocaleString("fr-FR")} XAF)`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={control}
+                  name="target"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fifo">
+                          FIFO automatique (plus ancienne d'abord)
+                        </SelectItem>
+                        {openInstallments.map((i) => (
+                          <SelectItem key={i.id} value={String(i.id)}>
+                            Échéance {i.sequence} — reste{" "}
+                            {(
+                              parseFloat(i.expectedAmount) - parseFloat(i.paidAmount)
+                            ).toLocaleString("fr-FR")}{" "}
+                            XAF
+                            {parseFloat(i.penaltyDue) > 0 &&
+                              ` (+ pénalité ${parseFloat(i.penaltyDue).toLocaleString("fr-FR")} XAF)`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               {anyPenaltyDue && (
                 <div>
@@ -192,14 +234,14 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                   <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => setAllocationTarget("principal")}
+                      onClick={() => setValue("allocationTarget", "principal")}
                       className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "principal" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
                     >
                       Principal
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAllocationTarget("penalty")}
+                      onClick={() => setValue("allocationTarget", "penalty")}
                       className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "penalty" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
                     >
                       Pénalité
@@ -209,24 +251,23 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                     <p className="flex items-start gap-1.5 text-[10.5px] text-amber-600 mt-1.5">
                       <AlertTriangle size={13} className="mt-0.5 shrink-0" />
                       <span>
-                        Le principal restera dû et l'accumulation de pénalité continuera tant qu'il
-                        n'est pas réglé.
+                        Le principal restera dû et l'accumulation de pénalité continuera tant
+                        qu'il n'est pas réglé.
                       </span>
                     </p>
                   )}
                 </div>
               )}
-              {error && <p className="text-[11px] text-red-600">{error}</p>}
             </div>
             <DialogFooter>
-              <Button variant="secondary" onClick={() => setOpen(false)}>
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Annuler
               </Button>
-              <Button onClick={() => submit()} disabled={submitting || amount <= 0}>
-                {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
               </Button>
             </DialogFooter>
-          </>
+          </form>
         )}
       </DialogContent>
     </Dialog>
