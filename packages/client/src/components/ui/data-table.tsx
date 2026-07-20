@@ -8,6 +8,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { alignClass } from "@/lib/table-meta";
 
 interface DataTableProps<T> {
@@ -22,7 +23,9 @@ interface DataTableProps<T> {
 // Search and select filters stay owned by the parent page (as they already
 // are everywhere today); this component only owns sorting and the shared
 // visual shell. Not paginated — none of the existing tables paginate today,
-// so this stays a straight port rather than adding new behavior.
+// so this stays a straight port rather than adding new behavior. Built on
+// the shadcn Table primitives, with className overrides reproducing the
+// existing hand-rolled look (e.g. PartiesPage).
 export function DataTable<T>({
   columns,
   data,
@@ -47,18 +50,18 @@ export function DataTable<T>({
 
   return (
     <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
+      <Table>
+        <TableHeader className="bg-neutral-50 border-b border-neutral-200">
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <TableRow key={headerGroup.id} className="border-b-0 hover:bg-transparent">
               {headerGroup.headers.map((header) => {
                 const sortable = header.column.getCanSort();
                 const sorted = header.column.getIsSorted();
                 return (
-                  <th
+                  <TableHead
                     key={header.id}
                     onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
-                    className={`px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 ${alignClass(header.column.columnDef.meta?.align)} ${sortable ? "cursor-pointer select-none" : ""}`}
+                    className={`h-auto px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 whitespace-normal ${alignClass(header.column.columnDef.meta?.align)} ${sortable ? "cursor-pointer select-none" : ""}`}
                   >
                     <span className="inline-flex items-center gap-1">
                       {header.isPlaceholder
@@ -73,38 +76,41 @@ export function DataTable<T>({
                           <ChevronsUpDown size={11} className="text-neutral-300" />
                         ))}
                     </span>
-                  </th>
+                  </TableHead>
                 );
               })}
-            </tr>
+            </TableRow>
           ))}
-        </thead>
-        <tbody>
+        </TableHeader>
+        <TableBody>
           {table.getRowModel().rows.map((row) => (
-            <tr
+            <TableRow
               key={row.id}
               onClick={onRowClick ? () => onRowClick(row.original) : undefined}
               className={`border-b border-neutral-100 last:border-0 hover:bg-neutral-50 ${onRowClick ? "cursor-pointer" : ""}`}
             >
               {row.getVisibleCells().map((cell) => (
-                <td
+                <TableCell
                   key={cell.id}
-                  className={`px-4 py-2.5 ${alignClass(cell.column.columnDef.meta?.align)}`}
+                  className={`px-4 py-2.5 whitespace-normal ${alignClass(cell.column.columnDef.meta?.align)}`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
           {data.length === 0 && (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+            <TableRow className="hover:bg-transparent">
+              <TableCell
+                colSpan={columns.length}
+                className="px-4 py-8 text-center text-[12px] text-neutral-500 whitespace-normal"
+              >
                 {emptyMessage}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

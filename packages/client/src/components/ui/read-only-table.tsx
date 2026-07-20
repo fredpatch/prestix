@@ -1,4 +1,5 @@
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from "@tanstack/react-table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { alignClass } from "@/lib/table-meta";
 
 interface ReadOnlyTableProps<T> {
@@ -11,8 +12,10 @@ interface ReadOnlyTableProps<T> {
 
 // Static display table — KPI lists, dashboard/analyse breakdowns. No sort,
 // no filter, no pagination: those tables are read at a glance, not
-// interacted with. Visual output matches the existing hand-rolled
-// KpiTable/CaCompositionTable markup exactly, just generic over columns.
+// interacted with. Built on the shadcn Table primitives; className
+// overrides below reproduce the existing hand-rolled KpiTable/
+// CaCompositionTable look exactly (twMerge resolves the conflicting
+// defaults, e.g. shadcn's h-10 px-2 → our px-4 py-2).
 export function ReadOnlyTable<T>({
   columns,
   data,
@@ -35,45 +38,48 @@ export function ReadOnlyTable<T>({
           <p className="text-[11.5px] font-semibold text-neutral-800">{title}</p>
         </div>
       )}
-      <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
+      <Table>
+        <TableHeader className="bg-neutral-50 border-b border-neutral-200">
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <TableRow key={headerGroup.id} className="border-b-0 hover:bg-transparent">
               {headerGroup.headers.map((header) => (
-                <th
+                <TableHead
                   key={header.id}
-                  className={`px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 ${alignClass(header.column.columnDef.meta?.align)}`}
+                  className={`h-auto px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 whitespace-normal ${alignClass(header.column.columnDef.meta?.align)}`}
                 >
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
+                </TableHead>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </thead>
-        <tbody>
+        </TableHeader>
+        <TableBody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
+            <TableRow key={row.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
               {row.getVisibleCells().map((cell) => (
-                <td
+                <TableCell
                   key={cell.id}
-                  className={`px-4 py-2 text-[12px] text-neutral-800 ${alignClass(cell.column.columnDef.meta?.align)}`}
+                  className={`px-4 py-2 text-[12px] text-neutral-800 whitespace-normal ${alignClass(cell.column.columnDef.meta?.align)}`}
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
           {rows.length === 0 && (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
+            <TableRow className="hover:bg-transparent">
+              <TableCell
+                colSpan={columns.length}
+                className="px-4 py-6 text-center text-[11.5px] text-neutral-500 whitespace-normal"
+              >
                 {emptyMessage}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
