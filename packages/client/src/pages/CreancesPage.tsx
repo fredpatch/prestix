@@ -1,42 +1,28 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { creanceApi, type CreanceRow } from "@/lib/creance.api";
 import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { queryKeys } from "@/lib/query-keys";
-import { getApiErrorMessage } from "@/lib/api-error";
+import { useCreances } from "@/hooks/queries/useCreances";
+import { useAccrueCreancesMutation } from "@/hooks/mutations/useAccrueCreances";
 
 export default function CreancesPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [onlyOverdue, setOnlyOverdue] = useState(searchParams.get("overdue") !== "false");
-  const [accruing, setAccruing] = useState(false);
   const [accrueResult, setAccrueResult] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: queryKeys.creances({ onlyOverdue }),
-    queryFn: () => creanceApi.list(onlyOverdue).then((r) => r.data),
-  });
+  const { data: rows = [], isLoading } = useCreances({ onlyOverdue });
+  const accrueMutation = useAccrueCreancesMutation();
 
   const canAccrueNow = user && user.role === "super_admin";
 
-  async function handleAccrueNow() {
-    setAccruing(true);
+  function handleAccrueNow() {
     setAccrueResult(null);
-    try {
-      const res = await creanceApi.accrueNow();
-      setAccrueResult(`${res.data.inserted} pénalité(s) accumulée(s).`);
-      queryClient.invalidateQueries({ queryKey: ["creances"] });
-    } catch (err: unknown) {
-      setAccrueResult(getApiErrorMessage(err, "Erreur lors du déclenchement."));
-    } finally {
-      setAccruing(false);
-    }
+    accrueMutation.mutate(undefined, {
+      onSuccess: (data) => setAccrueResult(`${data.inserted} pénalité(s) accumulée(s).`),
+    });
   }
 
   const totalPrincipal = rows.reduce((sum, r) => sum + parseFloat(r.principalDue), 0);
@@ -65,8 +51,12 @@ export default function CreancesPage() {
 
       {canAccrueNow && (
         <div className="flex items-center gap-3 mb-4">
-          <Button size="sm" variant="outline" onClick={handleAccrueNow} disabled={accruing}>
-            {accruing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+          <Button size="sm" variant="outline" onClick={handleAccrueNow} disabled={accrueMutation.isPending}>
+            {accrueMutation.isPending ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <RefreshCw size={13} />
+            )}
             Déclencher l'accumulation maintenant
           </Button>
           {accrueResult && <span className="text-[11.5px] text-neutral-500">{accrueResult}</span>}
