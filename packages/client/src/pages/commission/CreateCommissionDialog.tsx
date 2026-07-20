@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogTrigger,
@@ -18,6 +22,7 @@ import { commissionApi, type CommissionDetails } from "@/lib/commission.api";
 import { PartySelect } from "@/pages/documents/PartySelect";
 import { QuickAddPartyDialog } from "@/pages/party/components/QuickAddPartyDialog";
 import { CommissionDynamicFields } from "@/components/customs/CommissionDynamicFields";
+import { getApiErrorMessage } from "@/lib/api-error";
 import type { Party } from "@/lib/party.api";
 
 interface CreateCommissionDialogProps {
@@ -28,18 +33,39 @@ function todayISO(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+const commissionFormSchema = z.object({
+  date: z.string().min(1, "Date requise."),
+  commissionAmount: z
+    .number({ invalid_type_error: "Montant requis." })
+    .positive("Le montant doit être supérieur à 0."),
+  note: z.string().optional(),
+});
+
+type CommissionFormValues = z.infer<typeof commissionFormSchema>;
+
+function commissionDefaults(): CommissionFormValues {
+  return { date: todayISO(), commissionAmount: 0, note: "" };
+}
+
 export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProps) {
   const [open, setOpen] = useState(false);
   const [types, setTypes] = useState<CommissionType[]>([]);
   const [selectedTypeCode, setSelectedTypeCode] = useState<string>("");
   const [client, setClient] = useState<Party | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
-  const [date, setDate] = useState(todayISO());
-  const [amount, setAmount] = useState(0);
   const [details, setDetails] = useState<CommissionDetails>({});
-  const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    control,
+    formState: { isSubmitting },
+  } = useForm<CommissionFormValues>({
+    resolver: zodResolver(commissionFormSchema),
+    defaultValues: commissionDefaults(),
+  });
 
   // Only ACTIVE types are offered — matches the catalog's whole point
   // (super_admin can seed a type and flip it live/inactive without a code
@@ -52,51 +78,44 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
 
   const selectedType = types.find((t) => t.code === selectedTypeCode);
 
-  function reset() {
+  function resetAll() {
     setSelectedTypeCode("");
     setClient(null);
     setReferrer(null);
-    setDate(todayISO());
-    setAmount(0);
     setDetails({});
-    setNote("");
-    setError(null);
+    reset(commissionDefaults());
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
+  async function onSubmit(values: CommissionFormValues) {
     try {
       await commissionApi.create({
         type: selectedTypeCode,
         clientPartyId: client?.id,
         referrerPartyId: referrer?.id,
-        date,
-        commissionAmount: amount,
+        date: values.date,
+        commissionAmount: values.commissionAmount,
         details,
-        note: note || undefined,
+        note: values.note || undefined,
       });
+      toast.success("Commission enregistrée.");
       setOpen(false);
-      reset();
+      resetAll();
       onCreated();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'enregistrement.",
-      );
-    } finally {
-      setSubmitting(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement."));
     }
   }
 
-  const canSubmit = selectedTypeCode && date && amount > 0;
+  const dateVal = watch("date");
+  const amountVal = watch("commissionAmount");
+  const canSubmit = Boolean(selectedTypeCode) && Boolean(dateVal) && amountVal > 0;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) reset();
+        if (!v) resetAll();
       }}
     >
       <DialogTrigger>
@@ -109,7 +128,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
           <DialogTitle>Nouvelle commission</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label>Type</Label>
             <Select
@@ -135,15 +154,15 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Date</Label>
-              <DatePicker value={date} onChange={setDate} />
+              <Controller
+                control={control}
+                name="date"
+                render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
+              />
             </div>
             <div>
               <Label>Montant de la commission</Label>
-              <Input
-                type="number"
-                value={amount || ""}
-                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              />
+              <Input type="number" {...register("commissionAmount", { valueAsNumber: true })} />
             </div>
           </div>
 
@@ -197,25 +216,22 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
           <div>
             <Label>Note (optionnel)</Label>
             <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
+              {...register("note")}
               rows={2}
               placeholder="Précision libre — nature de la transaction, destination, contexte..."
               className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
             />
           </div>
 
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
-        </div>
-
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => setOpen(false)}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !canSubmit}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !canSubmit}>
+              {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
