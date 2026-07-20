@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
-import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { commissionCatalogApi } from "@/lib/commission-catalog.api";
 import { partyApi, type Party } from "@/lib/party.api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/App";
@@ -9,57 +10,59 @@ import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { CreateCommissionDialog } from "./commission/CreateCommissionDialog";
 import { RequestCommissionEditDialog } from "./commission/RequestCommissionEditDialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function CommissionsPage() {
   const { user } = useAuth();
-  const [commissions, setCommissions] = useState<CommissionTransaction[]>([]);
-  const [types, setTypes] = useState<CommissionType[]>([]);
-  const [parties, setParties] = useState<Record<number, Party>>({});
   const [typeFilter, setTypeFilter] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   usePageHeader({ title: "Commissions" });
 
   const canDelete = user && ["admin", "super_admin"].includes(user.role);
 
-  // All types (active + inactive) so the filter can still find historical
-  // rows recorded under a since-disabled type — soft-disable never hides
-  // the transactions themselves (spec: "transactions retain type").
-  useEffect(() => {
-    commissionCatalogApi.list().then((res) => setTypes(res.data));
-  }, []);
+  const { data: types = [] } = useQuery({
+    queryKey: queryKeys.commissionTypes(),
+    queryFn: () => commissionCatalogApi.list().then((r) => r.data),
+  });
 
-  function load() {
-    setLoading(true);
-    commissionApi.list(typeFilter ? { type: typeFilter } : {}).then((res) => {
-      setCommissions(res.data);
-      setLoading(false);
+  const { data: commissions = [], isLoading } = useQuery({
+    queryKey: queryKeys.commissions({ type: typeFilter }),
+    queryFn: () => commissionApi.list(typeFilter ? { type: typeFilter } : {}).then((r) => r.data),
+  });
 
-      // Fetch only the parties actually referenced (client + référent), not
-      // the whole table — cheap, and gives a direct visual check that a
-      // référent selected in the entry form actually saved correctly.
+  // Party lookup: fetch only the party IDs actually referenced, not the
+  // whole table. Keyed off the commission IDs so it refetches when the
+  // commission list changes.
+  const { data: parties = {} } = useQuery<Record<number, Party>>({
+    queryKey: ["commission-parties", commissions.map((c) => c.id)],
+    queryFn: async () => {
       const partyIds = [
         ...new Set(
-          res.data.flatMap((c) => [c.clientPartyId, c.referrerPartyId]).filter((id): id is number => !!id),
+          commissions.flatMap((c) => [c.clientPartyId, c.referrerPartyId]).filter((id): id is number => !!id),
         ),
       ];
-      if (partyIds.length > 0) {
-        Promise.all(partyIds.map((id) => partyApi.getById(id))).then((results) => {
-          setParties(Object.fromEntries(results.map((r) => [r.data.id, r.data])));
-        });
-      }
-    });
+      if (partyIds.length === 0) return {};
+      const results = await Promise.all(partyIds.map((id) => partyApi.getById(id)));
+      return Object.fromEntries(results.map((r) => [r.data.id, r.data]));
+    },
+    enabled: commissions.length > 0,
+  });
+
+  function typeLabel(code: string): string {
+    return types.find((t) => t.code === code)?.label ?? code;
   }
 
-  useEffect(load, [typeFilter]);
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: ["commissions"] });
+  }
 
   async function handleDelete(id: number) {
     await commissionApi.softDelete(id);
-    load();
+    handleReload();
   }
 
   const total = commissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
-  const typeLabel = (code: string) => types.find((t) => t.code === code)?.label ?? code;
 
   return (
     <div>
@@ -69,7 +72,7 @@ export default function CommissionsPage() {
             {commissions.length} commission{commissions.length !== 1 ? "s" : ""} · {total.toLocaleString("fr-FR")} XAF
           </p>
         </div>
-        <CreateCommissionDialog onCreated={load} />
+        <CreateCommissionDialog onCreated={handleReload} />
       </div>
 
       <div className="mb-4">
@@ -88,7 +91,7 @@ export default function CommissionsPage() {
         </Select>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
       ) : (
         <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
@@ -142,7 +145,7 @@ export default function CommissionsPage() {
                         Modif. en attente
                       </span>
                     ) : (
-                      <RequestCommissionEditDialog commission={c} onRequested={load} />
+                      <RequestCommissionEditDialog commission={c} onRequested={handleReload} />
                     )}
                   </td>
                   {canDelete && (

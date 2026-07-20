@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, KeyRound, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,37 +12,37 @@ import { EditUserDialog } from "./users/components/dialogs/EditUserDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { getApiErrorMessage } from "@/lib/api-error";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  usePageHeader({ title: "Utilisateurs" });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "">("");
   const [editing, setEditing] = useState<User | null>(null);
   const [actionId, setActionId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(() => {
-    setLoading(true);
-    usersApi
-      .list({ search: search || undefined, role: (roleFilter || undefined) as Role | undefined })
-      .then((res) => {
-        setUsers(res.data.data);
-        setTotal(res.data.total);
-        setLoading(false);
-      });
-  }, [search, roleFilter]);
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.users({ search, roleFilter }),
+    queryFn: () =>
+      usersApi
+        .list({ search: search || undefined, role: (roleFilter || undefined) as Role | undefined })
+        .then((r) => r.data),
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => {
-    const timeout = setTimeout(load, 250); // debounce search
-    return () => clearTimeout(timeout);
-  }, [load]);
+  const users = data?.data ?? [];
+  const total = data?.total ?? 0;
+
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+  }
 
   async function handleToggleActivation(u: User) {
     setActionId(u.id);
     try {
       await usersApi.toggleActivation(u.id, !u.active);
-      load();
+      handleReload();
     } catch (err: unknown) {
       toast.error(getApiErrorMessage(err, "Action impossible."));
     } finally {
@@ -59,8 +60,6 @@ export default function UsersPage() {
     }
   }
 
-  usePageHeader({ title: "Utilisateurs" });
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -69,7 +68,7 @@ export default function UsersPage() {
             {total} compte{total !== 1 ? "s" : ""}
           </p>
         </div>
-        <CreateUserDialog onCreated={load} />
+        <CreateUserDialog onCreated={handleReload} />
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -96,7 +95,7 @@ export default function UsersPage() {
         </Select>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
       ) : (
         <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
@@ -182,7 +181,7 @@ export default function UsersPage() {
         </div>
       )}
 
-      <EditUserDialog targetUser={editing} onClose={() => setEditing(null)} onUpdated={load} />
+      <EditUserDialog targetUser={editing} onClose={() => setEditing(null)} onUpdated={handleReload} />
     </div>
   );
 }

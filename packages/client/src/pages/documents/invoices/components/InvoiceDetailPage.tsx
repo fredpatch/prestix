@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useParams } from "react-router-dom";
 import { Loader2, Trash2, Plus, FileText, Download, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,7 +48,6 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
-  const [loading, setLoading] = useState(true);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [creatingBL, setCreatingBL] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,28 +67,32 @@ export default function InvoiceDetailPage() {
   const [editDraft, setEditDraft] = useState<LineDraft>({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
   const [savingLine, setSavingLine] = useState(false);
 
-  function load() {
-    setLoading(true);
-    invoiceApi.getById(invoiceId).then((res) => {
-      setInvoice(res.data);
-      setLoading(false);
-      if (res.data.referrerPartyId) {
-        partyApi.getById(res.data.referrerPartyId).then((r) => setReferrer(r.data));
-      }
+  const queryClient = useQueryClient();
 
-      if (res.data.status === "issued") {
-        deliveryNoteApi
-          .getByInvoice(invoiceId)
-          .then((r) => setDeliveryNote(r.data))
-          .catch(() => setDeliveryNote(null));
-        paymentApi.listInstallments(invoiceId).then((r) => setInstallments(r.data));
-      } else {
-        setInstallments([]);
-      }
-    });
+  const { data: invoiceData, isLoading } = useQuery({
+    queryKey: queryKeys.invoice(invoiceId),
+    queryFn: () => invoiceApi.getById(invoiceId).then((r) => r.data),
+  });
+
+  // Keep invoice/referrer/deliveryNote/installments in local state synced
+  // from the query result — these have sub-fetches that depend on invoice
+  // fields, easier to keep that side-effect logic intact than refactor it.
+  if (invoiceData && invoiceData !== invoice) {
+    setInvoice(invoiceData);
+    if (invoiceData.referrerPartyId) {
+      partyApi.getById(invoiceData.referrerPartyId).then((r) => setReferrer(r.data));
+    }
+    if (invoiceData.status === "issued") {
+      deliveryNoteApi.getByInvoice(invoiceId).then((r) => setDeliveryNote(r.data)).catch(() => setDeliveryNote(null));
+      paymentApi.listInstallments(invoiceId).then((r) => setInstallments(r.data));
+    } else {
+      setInstallments([]);
+    }
   }
 
-  useEffect(load, [invoiceId]);
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.invoice(invoiceId) });
+  }
 
   async function handleAddLine() {
     setAddingLine(true);
@@ -104,7 +109,7 @@ export default function InvoiceDetailPage() {
       setNewQty(1);
       setNewPrice(0);
       setNewDiscount(0);
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -119,7 +124,7 @@ export default function InvoiceDetailPage() {
     setError(null);
     try {
       await invoiceApi.removeLine(invoiceId, lineId);
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -140,7 +145,7 @@ export default function InvoiceDetailPage() {
     try {
       await invoiceApi.updateLine(invoiceId, lineId, editDraft);
       setEditingLineId(null);
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -167,7 +172,7 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  if (loading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   const isDraft = invoice.status === "draft";
   // A promoted invoice sits in status:'draft' too until issued, but its lines
@@ -200,11 +205,11 @@ export default function InvoiceDetailPage() {
             <IssueInvoiceDialog
               invoiceId={invoice.id}
               totalAmount={parseFloat(invoice.totalAmount)}
-              onIssued={load}
+              onIssued={handleReload}
             />
           )}
           {isIssued && !isFullyPaid && (
-            <RecordPaymentDialog invoiceId={invoice.id} onRecorded={load} />
+            <RecordPaymentDialog invoiceId={invoice.id} onRecorded={handleReload} />
           )}
           {isIssued && !deliveryNote && (
             <Button size="sm" variant="outline" onClick={handleCreateBL} disabled={creatingBL}>
@@ -219,7 +224,7 @@ export default function InvoiceDetailPage() {
               </a>
             </Button>
           )}
-          {canCancel && <CancelInvoiceDialog invoiceId={invoice.id} onCancelled={load} />}
+          {canCancel && <CancelInvoiceDialog invoiceId={invoice.id} onCancelled={handleReload} />}
         </div>
       </div>
 
@@ -230,7 +235,7 @@ export default function InvoiceDetailPage() {
           Pour un changement, créez un nouveau proforma.
         </p>
       )}
-      {isIssued && <PaymentPlanCard installments={installments} onChanged={load} />}
+      {isIssued && <PaymentPlanCard installments={installments} onChanged={handleReload} />}
 
       {deliveryNote && (
         <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 mb-4 text-[12px] text-emerald-800">

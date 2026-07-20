@@ -1,4 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Power, Pencil, Download } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -23,63 +25,72 @@ export default function PartyDetailPage() {
   const { user } = useAuth();
 
   const [editing, setEditing] = useState(false);
-  const [party, setParty] = useState<Party | null>(null);
-  const [creditBalance, setCreditBalance] = useState<number | null>(null);
-  const [creditLots, setCreditLots] = useState<CreditLot[]>([]);
-  const [creances, setCreances] = useState<CreanceRow[]>([]);
-  const [history, setHistory] = useState<PartyHistory | null>(null);
-  const [savingsAccount, setSavingsAccount] = useState<SavingsAccount | null>(null);
-  const [savingsTransactions, setSavingsTransactions] = useState<SavingsTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: party, isLoading } = useQuery({
+    queryKey: queryKeys.party(partyId),
+    queryFn: () => partyApi.getById(partyId).then((r) => r.data),
+  });
+
+  const { data: creditBalanceData } = useQuery({
+    queryKey: queryKeys.credits(partyId),
+    queryFn: () => creditApi.getBalance(partyId).then((r) => r.data),
+  });
+  const creditBalance = creditBalanceData?.balance ?? null;
+
+  const { data: creditLots = [] } = useQuery({
+    queryKey: queryKeys.creditLots(partyId),
+    queryFn: () => creditApi.listLots(partyId).then((r) => r.data),
+  });
+
+  const { data: history = null } = useQuery({
+    queryKey: queryKeys.partyHistory(partyId),
+    queryFn: () => partyApi.getHistory(partyId).then((r) => r.data),
+  });
+
+  const { data: creances = [] } = useQuery({
+    queryKey: queryKeys.creances({ partyId }),
+    queryFn: () => creanceApi.list(false, partyId).then((r) => r.data),
+  });
+
+  // Separate from the main queries — a party without a savings account is the
+  // normal case (404), not an error the page should block on.
+  const { data: savingsAccount = null } = useQuery({
+    queryKey: queryKeys.savings(partyId),
+    queryFn: () => savingsApi.getAccountByParty(partyId).then((r) => r.data).catch(() => null),
+  });
+
+  const { data: savingsTransactions = [] } = useQuery({
+    queryKey: ["savings-transactions", savingsAccount?.id],
+    queryFn: () => savingsApi.listTransactions(savingsAccount!.id).then((r) => r.data),
+    enabled: !!savingsAccount?.id,
+  });
+
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.party(partyId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.credits(partyId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.creditLots(partyId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.partyHistory(partyId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.creances({ partyId }) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.savings(partyId) });
+    queryClient.invalidateQueries({ queryKey: ["savings-transactions", savingsAccount?.id] });
+  }
 
   usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties" });
-
-  const load = useCallback(() => {
-    setLoading(true);
-    Promise.all([
-      partyApi.getById(partyId),
-      creditApi.getBalance(partyId),
-      creditApi.listLots(partyId),
-      partyApi.getHistory(partyId),
-      creanceApi.list(false, partyId),
-    ]).then(([partyRes, balanceRes, lotsRes, historyRes, creancesRes]) => {
-      setParty(partyRes.data);
-      setCreditBalance(balanceRes.data.balance);
-      setCreditLots(lotsRes.data);
-      setHistory(historyRes.data);
-      setCreances(creancesRes.data);
-      setLoading(false);
-    });
-
-    // Separate from the Promise.all above — a party without a savings account
-    // is the normal case (404), not an error the page should block on.
-    savingsApi
-      .getAccountByParty(partyId)
-      .then((res) => {
-        setSavingsAccount(res.data);
-        savingsApi.listTransactions(res.data.id).then((txRes) => setSavingsTransactions(txRes.data));
-      })
-      .catch(() => {
-        setSavingsAccount(null);
-        setSavingsTransactions([]);
-      });
-  }, [partyId]);
-
-  useEffect(load, [load]);
 
   async function handleToggleActivation() {
     if (!party) return;
     setActionLoading(true);
     try {
       await partyApi.toggleActivation(party.id, !party.active);
-      load();
+      handleReload();
     } finally {
       setActionLoading(false);
     }
   }
 
-  if (loading || !party) {
+  if (isLoading || !party) {
     return <Loader2 className="animate-spin text-neutral-400" size={18} />;
   }
 
@@ -202,7 +213,7 @@ export default function PartyDetailPage() {
 
       {savingsAccount && (
         <div className="flex justify-end mb-4">
-          <SavingsTransactionDialog account={savingsAccount} onRecorded={load} />
+          <SavingsTransactionDialog account={savingsAccount} onRecorded={handleReload} />
         </div>
       )}
 
@@ -279,7 +290,7 @@ export default function PartyDetailPage() {
               <p className="text-[12px] text-neutral-500">
                 Aucun compte épargne pour cette partie.
               </p>
-              {canManage && <SubscribeButton partyId={partyId} onSubscribed={load} />}
+              {canManage && <SubscribeButton partyId={partyId} onSubscribed={handleReload} />}
             </div>
           ) : savingsTransactions.length === 0 ? (
             <p className="text-[12px] text-neutral-500 py-4">Aucun mouvement pour ce compte.</p>
@@ -316,7 +327,7 @@ export default function PartyDetailPage() {
                       </a>
                     )}
                     {canReverse && !t.reversalOfTransactionId && (
-                      <ReverseSavingsTransactionDialog transactionId={t.id} onReversed={load} />
+                      <ReverseSavingsTransactionDialog transactionId={t.id} onReversed={handleReload} />
                     )}
                   </div>
                 </div>
@@ -329,7 +340,7 @@ export default function PartyDetailPage() {
       <EditPartyDialog
         party={editing ? party : null}
         onClose={() => setEditing(false)}
-        onUpdated={load}
+        onUpdated={handleReload}
       />
     </div>
   );

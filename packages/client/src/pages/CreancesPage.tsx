@@ -1,29 +1,27 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, RefreshCw } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { creanceApi, type CreanceRow } from "@/lib/creance.api";
 import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { queryKeys } from "@/lib/query-keys";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 export default function CreancesPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [rows, setRows] = useState<CreanceRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [onlyOverdue, setOnlyOverdue] = useState(searchParams.get("overdue") !== "false");
   const [accruing, setAccruing] = useState(false);
   const [accrueResult, setAccrueResult] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  function load() {
-    setLoading(true);
-    creanceApi.list(onlyOverdue).then((res) => {
-      setRows(res.data);
-      setLoading(false);
-    });
-  }
-
-  useEffect(load, [onlyOverdue]);
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: queryKeys.creances({ onlyOverdue }),
+    queryFn: () => creanceApi.list(onlyOverdue).then((r) => r.data),
+  });
 
   const canAccrueNow = user && user.role === "super_admin";
 
@@ -33,12 +31,9 @@ export default function CreancesPage() {
     try {
       const res = await creanceApi.accrueNow();
       setAccrueResult(`${res.data.inserted} pénalité(s) accumulée(s).`);
-      load();
+      queryClient.invalidateQueries({ queryKey: ["creances"] });
     } catch (err: unknown) {
-      setAccrueResult(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors du déclenchement.",
-      );
+      setAccrueResult(getApiErrorMessage(err, "Erreur lors du déclenchement."));
     } finally {
       setAccruing(false);
     }
@@ -97,7 +92,7 @@ export default function CreancesPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
       ) : (
         <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">

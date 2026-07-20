@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2, Check, X } from "lucide-react";
-import { commissionApi, type CommissionEditRequest, type CommissionTransaction } from "@/lib/commission.api";
-import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
+import { commissionCatalogApi } from "@/lib/commission-catalog.api";
 import { usersApi, type User } from "@/lib/users.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { queryKeys } from "@/lib/query-keys";
 
 const FIELD_LABELS: Record<string, string> = {
   date: "Date",
@@ -25,44 +27,51 @@ function formatValue(key: string, value: unknown): string {
 }
 
 export default function CommissionEditQueuePage() {
-  const [requests, setRequests] = useState<CommissionEditRequest[]>([]);
-  const [transactions, setTransactions] = useState<Record<number, CommissionTransaction>>({});
-  const [users, setUsers] = useState<Record<number, User>>({});
-  const [types, setTypes] = useState<CommissionType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   usePageHeader({ title: "Demandes de modification" });
 
-  function load() {
-    setLoading(true);
-    commissionApi.listEditRequests("pending").then(async (res) => {
-      setRequests(res.data);
+  const { data: requests = [], isLoading: loadingRequests } = useQuery({
+    queryKey: queryKeys.commissionEditRequests(),
+    queryFn: () => commissionApi.listEditRequests("pending").then((r) => r.data),
+  });
 
-      // Pull in whatever context the review UI needs to show something
-      // meaningful instead of raw IDs — the underlying transaction (for
-      // "before" values), the requesting agent's name, and type labels.
-      const [allCommissions, allUsers, allTypes] = await Promise.all([
-        commissionApi.list({ includeInactive: true }),
-        usersApi.list({}),
-        commissionCatalogApi.list(),
-      ]);
-      setTransactions(Object.fromEntries(allCommissions.data.map((c) => [c.id, c])));
-      setUsers(Object.fromEntries(allUsers.data.data.map((u: User) => [u.id, u])));
-      setTypes(allTypes.data);
-      setLoading(false);
-    });
+  const { data: transactionList = [] } = useQuery({
+    queryKey: ["commission-all"],
+    queryFn: () => commissionApi.list({ includeInactive: true }).then((r) => r.data),
+  });
+  const transactions: Record<number, CommissionTransaction> = Object.fromEntries(
+    transactionList.map((c) => [c.id, c]),
+  );
+
+  const { data: userList } = useQuery({
+    queryKey: queryKeys.users(),
+    queryFn: () => usersApi.list({}).then((r) => r.data),
+  });
+  const users: Record<number, User> = Object.fromEntries(
+    (userList?.data ?? []).map((u: User) => [u.id, u]),
+  );
+
+  const { data: types = [] } = useQuery({
+    queryKey: queryKeys.commissionTypes(),
+    queryFn: () => commissionCatalogApi.list().then((r) => r.data),
+  });
+
+  const isLoading = loadingRequests;
+
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: ["commission-edit-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["commissions"] });
   }
-
-  useEffect(load, []);
 
   async function handleApprove(requestId: number) {
     setBusyId(requestId);
     try {
       await commissionApi.approveEditRequest(requestId);
-      load();
+      handleReload();
     } finally {
       setBusyId(null);
     }
@@ -74,13 +83,13 @@ export default function CommissionEditQueuePage() {
       await commissionApi.rejectEditRequest(requestId, rejectNote || undefined);
       setRejectingId(null);
       setRejectNote("");
-      load();
+      handleReload();
     } finally {
       setBusyId(null);
     }
   }
 
-  if (loading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   return (
     <div>

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowRightCircle, Download, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -37,7 +39,6 @@ export default function ProformaDetailPage() {
   const navigate = useNavigate();
   const [proforma, setProforma] = useState<Proforma | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
-  const [loading, setLoading] = useState(true);
   const [promoting, setPromoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,20 +49,27 @@ export default function ProformaDetailPage() {
   const [adding, setAdding] = useState(false);
   const [newLine, setNewLine] = useState<LineDraft>({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
 
-  usePageHeader({ title: proforma?.number ?? "Proforma", backTo: "/proformas" });
+  const queryClient = useQueryClient();
 
-  function load() {
-    proformaApi.getById(parseInt(id!)).then((res) => {
-      setProforma(res.data);
-      setLoading(false);
+  const { data: proformaData, isLoading } = useQuery({
+    queryKey: queryKeys.proforma(parseInt(id!)),
+    queryFn: () => proformaApi.getById(parseInt(id!)).then((r) => r.data),
+    enabled: !!id,
+  });
 
-      if (res.data.referrerPartyId) {
-        partyApi.getById(res.data.referrerPartyId).then((r) => setReferrer(r.data));
-      }
-    });
+  if (proformaData && proformaData !== proforma) {
+    setProforma(proformaData);
+    if (proformaData.referrerPartyId) {
+      partyApi.getById(proformaData.referrerPartyId).then((r) => setReferrer(r.data));
+    }
   }
 
-  useEffect(load, [id]);
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.proforma(parseInt(id!)) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.invoices() });
+  }
+
+  usePageHeader({ title: proforma?.number ?? "Proforma", backTo: "/proformas" });
 
   async function handlePromote() {
     if (!proforma) return;
@@ -87,7 +95,7 @@ export default function ProformaDetailPage() {
       await proformaApi.addLine(proforma.id, { lineType: "shop", ...newLine });
       setAdding(false);
       setNewLine({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -111,7 +119,7 @@ export default function ProformaDetailPage() {
     try {
       await proformaApi.updateLine(proforma.id, lineId, editDraft);
       setEditingLineId(null);
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -127,7 +135,7 @@ export default function ProformaDetailPage() {
     setError(null);
     try {
       await proformaApi.removeLine(proforma.id, lineId);
-      load();
+      handleReload();
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -136,7 +144,7 @@ export default function ProformaDetailPage() {
     }
   }
 
-  if (loading || !proforma) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading || !proforma) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   const total = proforma.lines.reduce((sum, l) => sum + parseFloat(l.lineTotal), 0);
   const canPromote = proforma.status === "draft"; // expired/cancelled blocked server-side too

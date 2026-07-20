@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { reportingApi, type EmployeeActivityDetail } from "@/lib/reporting.api";
+import { useQuery } from "@tanstack/react-query";
+import { reportingApi } from "@/lib/reporting.api";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 
 function fmt(n: number): string {
@@ -76,24 +76,21 @@ function SectionTable({ title, columns, rows, emptyLabel }: SectionTableProps) {
 export default function EmployeeActivityDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
   const [searchParams] = useSearchParams();
-  const [detail, setDetail] = useState<EmployeeActivityDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const from = searchParams.get("from") ?? new Date().toISOString().split("T")[0];
+  const to = searchParams.get("to") ?? new Date().toISOString().split("T")[0];
+  const basis = (searchParams.get("basis") as "accrual" | "cash") ?? "accrual";
 
   usePageHeader({ title: "Détail employé", backTo: "/dashboard" });
 
-  useEffect(() => {
-    const from = searchParams.get("from") ?? new Date().toISOString().split("T")[0];
-    const to = searchParams.get("to") ?? new Date().toISOString().split("T")[0];
-    const basis = (searchParams.get("basis") as "accrual" | "cash") ?? "accrual";
+  const { data: detail, isLoading } = useQuery({
+    queryKey: ["employee-detail", agentId, from, to, basis],
+    queryFn: () =>
+      reportingApi.getEmployeeActivityDetail(parseInt(agentId!), { from, to, basis }).then((r) => r.data),
+    enabled: !!agentId,
+  });
 
-    setLoading(true);
-    reportingApi.getEmployeeActivityDetail(parseInt(agentId!), { from, to, basis }).then((res) => {
-      setDetail(res.data);
-      setLoading(false);
-    });
-  }, [agentId, searchParams]);
-
-  if (loading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   return (
     <div>
