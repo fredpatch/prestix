@@ -9,8 +9,13 @@ import {
   getCreancesByParty,
   getAccrualVsCashComparison,
   getOpenEngagements,
+  getCaTrend,
+  getServiceTrend,
+  getCommissionTypeTrend,
+  getRecentSales,
 } from "./reporting.service.js";
 import type { DateRangeParams } from "./reporting.types.js";
+import { formatChartBucket } from "./reporting-chart.service.js";
 
 export type ReportModule = "global" | "employes" | "clients_referents" | "services" | "creances";
 export const ALL_REPORT_MODULES: ReportModule[] = ["global", "employes", "clients_referents", "services", "creances"];
@@ -46,6 +51,53 @@ function addKpiSheet(
   }
 }
 
+function addTrendSheet(
+  workbook: ExcelJS.Workbook,
+  name: string,
+  rows: Record<string, string | number>[],
+  seriesLabels: string[],
+): void {
+  const sheet = workbook.addWorksheet(name);
+  const maxBySeries = new Map(
+    seriesLabels.map((label) => [
+      label,
+      Math.max(1, ...rows.map((row) => Number(row[label] ?? 0))),
+    ]),
+  );
+  const visualRows = rows.map((row) => {
+    const withBars: Record<string, string | number> = { ...row };
+    for (const label of seriesLabels) {
+      const value = Number(row[label] ?? 0);
+      const max = maxBySeries.get(label) ?? 1;
+      const barLength = Math.round((value / max) * 24);
+      withBars[`${label} - vue`] = barLength > 0 ? "|".repeat(barLength) : "";
+    }
+    return withBars;
+  });
+
+  sheet.columns = [
+    { header: "Periode", key: "bucket", width: 18 },
+    ...seriesLabels.flatMap((label) => [
+      { header: `${label} (XAF)`, key: label, width: 18 },
+      { header: `${label} - vue`, key: `${label} - vue`, width: 28 },
+    ]),
+  ];
+  styleHeaderRow(sheet.getRow(1));
+
+  for (const row of visualRows) sheet.addRow(row);
+  if (rows.length === 0) sheet.addRow({ bucket: "Aucune donnee pour cette periode" });
+
+  for (let rowNumber = 2; rowNumber <= rows.length + 1; rowNumber += 1) {
+    sheet.getRow(rowNumber).eachCell((cell, col) => {
+      if (col > 1 && col % 2 === 0) cell.numFmt = "#,##0";
+      if (col > 1 && col % 2 === 1) {
+        cell.font = { color: { argb: "FFA77800" } };
+        cell.alignment = { horizontal: "left" };
+      }
+    });
+  }
+}
+
 // One workbook, one sheet per section — mirrors the Analyse page's own tab
 // structure. `modules` lets the caller pick exactly which tabs' data to
 // include (Rapports tab, per Fred's own ask — the export was previously
@@ -63,10 +115,22 @@ export async function generateReportingExcel(
   workbook.created = new Date();
 
   if (modules.includes("global")) {
-    const [caComposition, overdueSummary, epargneSolde] = await Promise.all([
+    const [
+      caComposition,
+      overdueSummary,
+      epargneSolde,
+      caTrend,
+      serviceTrend,
+      commissionTypeTrend,
+      recentSales,
+    ] = await Promise.all([
       getCaComposition(params),
       getOverdueAndUnpaidSummary(),
       getEpargneSoldeNetPeriode(params),
+      getCaTrend(params),
+      getServiceTrend(params),
+      getCommissionTypeTrend(params),
+      getRecentSales(5),
     ]);
 
     const caSheet = workbook.addWorksheet("Composition CA");
@@ -95,6 +159,67 @@ export async function generateReportingExcel(
     summarySheet.addRow({ label: "Épargne — Dépôts période (XAF)", value: epargneSolde.totalDeposits });
     summarySheet.addRow({ label: "Épargne — Retraits période (XAF)", value: epargneSolde.totalWithdrawals });
     summarySheet.addRow({ label: "Épargne — Solde net période (XAF)", value: epargneSolde.netChange });
+    addTrendSheet(
+      workbook,
+      "Graph CA-Gain",
+      caTrend.map((row) => ({
+        bucket: formatChartBucket(row.bucket),
+        "CA brut": row.gross,
+        Gain: row.gain,
+      })),
+      ["CA brut", "Gain"],
+    );
+
+    addTrendSheet(
+      workbook,
+      "Graph Services",
+      serviceTrend.map((row) => ({
+        bucket: formatChartBucket(row.bucket),
+        Billetterie: row.billetterie,
+        PrestiShop: row.prestishop,
+        Commissions: row.commission,
+        Epargne: row.epargne,
+        Penalites: row.penalty,
+      })),
+      ["Billetterie", "PrestiShop", "Commissions", "Epargne", "Penalites"],
+    );
+
+    const commissionLabels = Array.from(
+      new Set(commissionTypeTrend.flatMap((row) => Object.keys(row.series))),
+    );
+    addTrendSheet(
+      workbook,
+      "Graph Commissions",
+      commissionTypeTrend.map((row) => ({
+        bucket: formatChartBucket(row.bucket),
+        ...Object.fromEntries(commissionLabels.map((label) => [label, row.series[label] ?? 0])),
+      })),
+      commissionLabels,
+    );
+
+    const recentSheet = workbook.addWorksheet("Ventes recentes");
+    recentSheet.columns = [
+      { header: "Operation", key: "title", width: 24 },
+      { header: "Partie", key: "partyName", width: 28 },
+      { header: "Agent", key: "agentName", width: 24 },
+      { header: "Type", key: "kind", width: 14 },
+      { header: "Date", key: "date", width: 20 },
+      { header: "Montant (XAF)", key: "amount", width: 18 },
+    ];
+    styleHeaderRow(recentSheet.getRow(1));
+    for (const sale of recentSales) {
+      recentSheet.addRow({
+        title: sale.title,
+        partyName: sale.partyName ?? sale.subtitle ?? "",
+        agentName: sale.agentName ?? "",
+        kind: sale.kind,
+        date: sale.occurredAt,
+        amount: sale.amount,
+      });
+    }
+    if (recentSales.length === 0) recentSheet.addRow({ title: "Aucune vente recente" });
+    recentSheet.getColumn("date").numFmt = "dd/mm/yyyy hh:mm";
+    recentSheet.getColumn("amount").numFmt = "#,##0";
   }
 
   if (modules.includes("clients_referents")) {

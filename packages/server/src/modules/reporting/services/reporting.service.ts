@@ -698,10 +698,7 @@ export async function getRecentSales(limit = 5): Promise<RecentSaleRow[]> {
   ];
   const commissionTypes = [...new Set(commissionRows.map((row) => row.type))];
 
-  const [partyRows, relatedInvoices, userRows, typeRows] = await Promise.all([
-    partyIds.length > 0
-      ? db.select().from(parties).where(inArray(parties.id, partyIds))
-      : Promise.resolve([]),
+  const [relatedInvoices, userRows, typeRows] = await Promise.all([
     invoiceIds.length > 0
       ? db.select().from(invoices).where(inArray(invoices.id, invoiceIds))
       : Promise.resolve([]),
@@ -715,6 +712,13 @@ export async function getRecentSales(limit = 5): Promise<RecentSaleRow[]> {
           .where(inArray(commissionTypeCatalog.code, commissionTypes))
       : Promise.resolve([]),
   ]);
+
+  const relatedInvoicePartyIds = relatedInvoices.map((row) => row.partyId);
+  const allPartyIds = [...new Set([...partyIds, ...relatedInvoicePartyIds])];
+  const partyRows =
+    allPartyIds.length > 0
+      ? await db.select().from(parties).where(inArray(parties.id, allPartyIds))
+      : [];
 
   const partyNameById = new Map(partyRows.map((row) => [row.id, row.fullName]));
   const invoiceById = new Map(relatedInvoices.map((row) => [row.id, row]));

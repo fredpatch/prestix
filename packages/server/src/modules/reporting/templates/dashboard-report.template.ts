@@ -49,6 +49,19 @@ export interface CreancesSection {
   };
 }
 
+export interface DashboardChartsSection {
+  caTrendChart: string;
+  serviceTrendChart: string;
+  commissionTypeChart: string;
+  recentSales: {
+    title: string;
+    subtitle: string;
+    amount: number;
+    kind: "invoice" | "payment" | "commission";
+    occurredAt: Date;
+  }[];
+}
+
 export interface DashboardReportData {
   logoBase64: string;
   from: string; // already formatted, e.g. "15 juin 26"
@@ -61,6 +74,7 @@ export interface DashboardReportData {
   referrers?: KpiSectionRow[];
   services?: ServiceSectionRow[];
   creances?: CreancesSection;
+  dashboard?: DashboardChartsSection;
 }
 
 function fmt(v = 0): string {
@@ -113,6 +127,28 @@ function renderGlobal(g: GlobalSection): string {
         <div class="r-card-sub">Métrique globale, pas un solde client</div>
       </div>
     </div>`;
+}
+
+function renderDashboardCharts(section: DashboardChartsSection): string {
+  const rows = section.recentSales.length
+    ? section.recentSales
+        .map(
+          (sale) =>
+            `<tr><td>${esc(sale.title)}</td><td>${esc(sale.subtitle)}</td><td>${esc(sale.kind)}</td><td>${new Intl.DateTimeFormat("fr-FR").format(sale.occurredAt)}</td><td class="r">${fmt(sale.amount)}</td></tr>`,
+        )
+        .join("")
+    : `<tr><td colspan="5" class="r-empty">Aucune vente recente.</td></tr>`;
+
+  return `
+    ${sectionTitle("Evolution du tableau de bord")}
+    <div class="r-chart">${section.caTrendChart}</div>
+    <div class="r-chart">${section.serviceTrendChart}</div>
+    <div class="r-chart">${section.commissionTypeChart}</div>
+    ${sectionTitle("Ventes recentes")}
+    <table class="r-table">
+      <thead><tr><th>Operation</th><th>Partie</th><th>Type</th><th>Date</th><th class="r">Montant (XAF)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderKpiTable(title: string, rows: KpiSectionRow[]): string {
@@ -195,6 +231,7 @@ function renderCreances(c: CreancesSection): string {
 export function renderDashboardReportHtml(data: DashboardReportData): string {
   const sections: string[] = [];
   if (data.global) sections.push(renderGlobal(data.global));
+  if (data.dashboard) sections.push(renderDashboardCharts(data.dashboard));
   if (data.clients) sections.push(renderKpiTable("Clients", data.clients));
   if (data.referrers) sections.push(renderKpiTable("Référents", data.referrers));
   if (data.employes) sections.push(renderKpiTable("Employés", data.employes));
@@ -236,6 +273,8 @@ export function renderDashboardReportHtml(data: DashboardReportData): string {
   .r-card-value.warn { color: #b03a2e; }
   .r-card-value.good { color: #1a7a4c; }
   .r-card-sub { font-size: 9.5px; color: #999; margin-top: 2px; }
+  .r-chart { border: 1px solid #e5e5e5; border-radius: 4px; margin: 10px 0 14px; padding: 8px; page-break-inside: avoid; }
+  .r-chart svg { display: block; width: 100%; height: auto; }
   .r-footer { padding-top: 28px; margin-top: 28px; border-top: 1px solid #eee; text-align: center; font-size: 9.5px; color: #a77800; line-height: 1.8; }
 </style>
 </head>
