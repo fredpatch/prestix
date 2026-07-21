@@ -12,6 +12,9 @@ import { useCommissionTypes } from "@/hooks/queries/useCommissionTypes";
 import { useCommissions } from "@/hooks/queries/useCommissions";
 import { useCommissionParties } from "@/hooks/queries/useCommissionParties";
 import { useDeleteCommissionMutation } from "@/hooks/mutations/useDeleteCommission";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CommissionTransaction } from "@/lib/commission.api";
 
 export default function CommissionsPage() {
   const { user } = useAuth();
@@ -44,6 +47,96 @@ export default function CommissionsPage() {
 
   const total = commissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
 
+  const columns: ColumnDef<CommissionTransaction, any>[] = [
+    {
+      accessorKey: "type",
+      header: "Type",
+      cell: ({ row }) => <span className="text-[12px] text-neutral-800">{typeLabel(row.original.type)}</span>,
+    },
+    {
+      accessorKey: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-[12px] text-neutral-500">
+          {new Date(row.original.date).toLocaleDateString("fr-FR")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "note",
+      header: "Note",
+      cell: ({ row }) => (
+        <span
+          className="text-[12px] text-neutral-500 max-w-[220px] truncate block"
+          title={row.original.note}
+        >
+          {row.original.note || "—"}
+        </span>
+      ),
+    },
+    {
+      id: "client",
+      header: "Client",
+      cell: ({ row }) => (
+        <span className="text-[12px] text-neutral-500">
+          {row.original.clientPartyId ? (parties[row.original.clientPartyId]?.fullName ?? "…") : "—"}
+        </span>
+      ),
+    },
+    {
+      id: "referrer",
+      header: "Référent",
+      cell: ({ row }) => (
+        <span className="text-[12px] text-neutral-500">
+          {row.original.referrerPartyId ? (parties[row.original.referrerPartyId]?.fullName ?? "…") : "—"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "commissionAmount",
+      header: "Montant",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="text-[12px] font-medium text-neutral-800">
+          {parseFloat(row.original.commissionAmount).toLocaleString("fr-FR")}
+        </span>
+      ),
+    },
+    {
+      id: "editRequest",
+      header: "",
+      meta: { align: "right" },
+      cell: ({ row }) =>
+        row.original.pendingEditRequestId ? (
+          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
+            Modif. en attente
+          </span>
+        ) : (
+          <RequestCommissionEditDialog commission={row.original} onRequested={handleReload} />
+        ),
+    },
+    ...(canDelete
+      ? [
+          {
+            id: "actions",
+            header: "",
+            meta: { align: "right" as const },
+            cell: ({ row }: { row: { original: CommissionTransaction } }) => (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(row.original.id)}
+                className="text-red-500 hover:bg-red-50"
+                title="Supprimer"
+              >
+                <Trash2 size={13} />
+              </Button>
+            ),
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -71,89 +164,12 @@ export default function CommissionsPage() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
-      ) : (
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Type
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Date
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Note
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Client
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Référent
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Montant
-                </th>
-                <th className="px-4 py-2.5 w-24"></th>
-                {canDelete && <th className="px-4 py-2.5 w-10"></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {commissions.map((c) => (
-                <tr key={c.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-800">{typeLabel(c.type)}</td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
-                    {new Date(c.date).toLocaleDateString("fr-FR")}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500 max-w-[220px] truncate" title={c.note}>
-                    {c.note || "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
-                    {c.clientPartyId ? (parties[c.clientPartyId]?.fullName ?? "…") : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
-                    {c.referrerPartyId ? (parties[c.referrerPartyId]?.fullName ?? "…") : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] font-medium text-neutral-800 text-right">
-                    {parseFloat(c.commissionAmount).toLocaleString("fr-FR")}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {c.pendingEditRequestId ? (
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
-                        Modif. en attente
-                      </span>
-                    ) : (
-                      <RequestCommissionEditDialog commission={c} onRequested={handleReload} />
-                    )}
-                  </td>
-                  {canDelete && (
-                    <td className="px-4 py-2.5 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(c.id)}
-                        className="text-red-500 hover:bg-red-50"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={13} />
-                      </Button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {commissions.length === 0 && (
-                <tr>
-                  <td colSpan={canDelete ? 8 : 7} className="px-4 py-8 text-center text-[12px] text-neutral-500">
-                    Aucune commission.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={commissions}
+        loading={isLoading}
+        emptyMessage="Aucune commission."
+      />
     </div>
   );
 }

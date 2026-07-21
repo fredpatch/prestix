@@ -15,6 +15,8 @@ import { queryKeys } from "@/lib/query-keys";
 import { useUsers } from "@/hooks/queries/useUsers";
 import { useToggleUserActivationMutation } from "@/hooks/mutations/useToggleUserActivation";
 import { useResetUserOtpMutation } from "@/hooks/mutations/useResetUserOtp";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
 
 export default function UsersPage() {
   usePageHeader({ title: "Utilisateurs" });
@@ -56,6 +58,70 @@ export default function UsersPage() {
     });
   }
 
+  // onClick lives on the Nom cell only (opens the edit dialog) — not a
+  // full-row click, since the Actions column has its own buttons that must
+  // not also trigger the row handler.
+  const columns: ColumnDef<User, any>[] = [
+    {
+      accessorKey: "fullName",
+      header: "Nom",
+      cell: ({ row }) => (
+        <span
+          className="text-[12px] text-neutral-800 cursor-pointer"
+          onClick={() => setEditing(row.original)}
+        >
+          {row.original.fullName}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => <span className="text-[12px] text-neutral-500">{row.original.email}</span>,
+    },
+    {
+      accessorKey: "role",
+      header: "Rôle",
+      cell: ({ row }) => <RolesBadge role={row.original.role} />,
+    },
+    {
+      accessorKey: "active",
+      header: "Statut",
+      cell: ({ row }) => <AccountStatusBadge active={row.original.active} firstLogin={row.original.firstLogin} />,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      meta: { align: "right" },
+      cell: ({ row }) => {
+        const u = row.original;
+        return (
+          <div className="text-right space-x-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Réinitialiser l'OTP"
+              disabled={busyId === u.id}
+              onClick={() => handleResetOTP(u)}
+            >
+              {busyId === u.id ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={13} />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title={u.active ? "Désactiver" : "Activer"}
+              disabled={busyId === u.id}
+              onClick={() => handleToggleActivation(u)}
+              className={u.active ? "text-red-500 hover:bg-red-50" : "text-emerald-600 hover:bg-emerald-50"}
+            >
+              <Power size={13} />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -91,91 +157,12 @@ export default function UsersPage() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
-      ) : (
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Nom
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Email
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Rôle
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Statut
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                >
-                  <td
-                    className="px-4 py-2.5 text-[12px] text-neutral-800 cursor-pointer"
-                    onClick={() => setEditing(u)}
-                  >
-                    {u.fullName}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">{u.email}</td>
-                  <td className="px-4 py-2.5">
-                    <RolesBadge role={u.role} />
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <AccountStatusBadge active={u.active} firstLogin={u.firstLogin} />
-                  </td>
-                  <td className="px-4 py-2.5 text-right space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Réinitialiser l'OTP"
-                      disabled={busyId === u.id}
-                      onClick={() => handleResetOTP(u)}
-                    >
-                      {busyId === u.id ? (
-                        <Loader2 size={13} className="animate-spin" />
-                      ) : (
-                        <KeyRound size={13} />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title={u.active ? "Désactiver" : "Activer"}
-                      disabled={busyId === u.id}
-                      onClick={() => handleToggleActivation(u)}
-                      className={
-                        u.active
-                          ? "text-red-500 hover:bg-red-50"
-                          : "text-emerald-600 hover:bg-emerald-50"
-                      }
-                    >
-                      <Power size={13} />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[12px] text-neutral-500">
-                    Aucun utilisateur trouvé.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={users}
+        loading={isLoading}
+        emptyMessage="Aucun utilisateur trouvé."
+      />
 
       <EditUserDialog targetUser={editing} onClose={() => setEditing(null)} onUpdated={handleReload} />
     </div>

@@ -6,6 +6,74 @@ import { Button } from "@/components/ui/button";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useCreances } from "@/hooks/queries/useCreances";
 import { useAccrueCreancesMutation } from "@/hooks/mutations/useAccrueCreances";
+import { DataTable } from "@/components/ui/data-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CreanceRow } from "@/lib/creance.api";
+
+const columns: ColumnDef<CreanceRow, any>[] = [
+  {
+    id: "invoice",
+    header: "Facture",
+    cell: ({ row }) => (
+      <Link
+        to={`/invoices/${row.original.invoiceId}`}
+        className="text-[12px] font-medium text-brand-gold-dark hover:underline"
+      >
+        {row.original.invoiceNumber ?? `#${row.original.invoiceId}`}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: "partyName",
+    header: "Client",
+    cell: ({ row }) => <span className="text-[12px] text-neutral-800">{row.original.partyName}</span>,
+  },
+  {
+    id: "installment",
+    header: "Échéance",
+    cell: ({ row }) => (
+      <span className="text-[12px] text-neutral-500">
+        #{row.original.sequence} — {new Date(row.original.expectedDate).toLocaleDateString("fr-FR")}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "principalDue",
+    header: "Principal dû",
+    meta: { align: "right" },
+    cell: ({ row }) => (
+      <span className="text-[12px] text-neutral-800">
+        {parseFloat(row.original.principalDue).toLocaleString("fr-FR")}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "penaltyDue",
+    header: "Pénalité due",
+    meta: { align: "right" },
+    cell: ({ row }) => {
+      const penalty = parseFloat(row.original.penaltyDue);
+      return penalty > 0 ? (
+        <span className="text-[12px] text-red-600 font-medium">{penalty.toLocaleString("fr-FR")}</span>
+      ) : (
+        <span className="text-[12px] text-neutral-500">—</span>
+      );
+    },
+  },
+  {
+    accessorKey: "isOverdue",
+    header: "Statut",
+    cell: ({ row }) => (
+      <span
+        className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold ${
+          row.original.isOverdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+        }`}
+      >
+        {row.original.isOverdue ? "En retard" : "Impayée"}
+      </span>
+    ),
+  },
+];
 
 export default function CreancesPage() {
   const { user } = useAuth();
@@ -82,85 +150,12 @@ export default function CreancesPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
-      ) : (
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Facture
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Client
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Échéance
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Principal dû
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Pénalité due
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Statut
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.installmentId}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                >
-                  <td className="px-4 py-2.5">
-                    <Link
-                      to={`/invoices/${r.invoiceId}`}
-                      className="text-[12px] font-medium text-brand-gold-dark hover:underline"
-                    >
-                      {r.invoiceNumber ?? `#${r.invoiceId}`}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-800">{r.partyName}</td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500">
-                    #{r.sequence} — {new Date(r.expectedDate).toLocaleDateString("fr-FR")}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-800 text-right">
-                    {parseFloat(r.principalDue).toLocaleString("fr-FR")}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-right">
-                    {parseFloat(r.penaltyDue) > 0 ? (
-                      <span className="text-red-600 font-medium">
-                        {parseFloat(r.penaltyDue).toLocaleString("fr-FR")}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold ${
-                        r.isOverdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {r.isOverdue ? "En retard" : "Impayée"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-[12px] text-neutral-500">
-                    Aucune créance.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        emptyMessage="Aucune créance."
+      />
     </div>
   );
 }

@@ -1,7 +1,10 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useEmployeeActivityDetail } from "@/hooks/queries/useEmployeeActivityDetail";
+import { ReadOnlyTable } from "@/components/ui/read-only-table";
+import type { EmployeeActivityDetail } from "@/lib/reporting.api";
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
@@ -22,55 +25,64 @@ const METHOD_LABELS: Record<string, string> = {
 const STOCK_TYPE_LABELS: Record<string, string> = { IN: "Entrée", OUT: "Sortie", ADJUST: "Ajustement" };
 const SAVINGS_NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
 
-interface SectionTableProps {
-  title: string;
-  columns: string[];
-  rows: (string | number)[][];
-  emptyLabel: string;
-}
+type InvoiceRow = EmployeeActivityDetail["invoices"][number];
+type PaymentRow = EmployeeActivityDetail["payments"][number];
+type CommissionRow = EmployeeActivityDetail["commissions"][number];
+type StockMovementRow = EmployeeActivityDetail["stockMovements"][number];
+type SavingsRow = EmployeeActivityDetail["savingsTransactions"][number];
 
-function SectionTable({ title, columns, rows, emptyLabel }: SectionTableProps) {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-4">
-      <div className="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between">
-        <p className="text-[11.5px] font-semibold text-neutral-800">{title}</p>
-        <p className="text-[10.5px] text-neutral-500">{rows.length} ligne{rows.length !== 1 ? "s" : ""}</p>
-      </div>
-      {rows.length === 0 ? (
-        <p className="px-4 py-6 text-center text-[11.5px] text-neutral-500">{emptyLabel}</p>
-      ) : (
-        <table className="w-full text-left">
-          <thead className="bg-neutral-50 border-b border-neutral-200">
-            <tr>
-              {columns.map((c, i) => (
-                <th
-                  key={c}
-                  className={`px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 ${i === columns.length - 1 ? "text-right" : ""}`}
-                >
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className="border-b border-neutral-100 last:border-0">
-                {row.map((cell, j) => (
-                  <td
-                    key={j}
-                    className={`px-4 py-2 text-[12px] ${j === row.length - 1 ? "text-right font-medium text-neutral-800" : "text-neutral-700"}`}
-                  >
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
+const invoiceColumns: ColumnDef<InvoiceRow, any>[] = [
+  { id: "invoice", header: "Facture", cell: ({ row }) => row.original.number ?? `#${row.original.id}` },
+  { accessorKey: "partyName", header: "Client" },
+  { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
+  {
+    id: "amount",
+    header: "Montant (XAF)",
+    meta: { align: "right" },
+    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+  },
+];
+
+const paymentColumns: ColumnDef<PaymentRow, any>[] = [
+  { id: "invoice", header: "Facture", cell: ({ row }) => row.original.invoiceNumber ?? `#${row.original.invoiceId}` },
+  { id: "method", header: "Méthode", cell: ({ row }) => METHOD_LABELS[row.original.method] ?? row.original.method },
+  { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
+  {
+    id: "amount",
+    header: "Montant (XAF)",
+    meta: { align: "right" },
+    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+  },
+];
+
+const commissionColumns: ColumnDef<CommissionRow, any>[] = [
+  { accessorKey: "typeLabel", header: "Type" },
+  { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
+  {
+    id: "amount",
+    header: "Montant (XAF)",
+    meta: { align: "right" },
+    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+  },
+];
+
+const stockColumns: ColumnDef<StockMovementRow, any>[] = [
+  { accessorKey: "articleName", header: "Article" },
+  { id: "type", header: "Type", cell: ({ row }) => STOCK_TYPE_LABELS[row.original.type] ?? row.original.type },
+  { accessorKey: "quantity", header: "Quantité", meta: { align: "right" } },
+  { id: "date", header: "Date", meta: { align: "right" }, cell: ({ row }) => fmtDate(row.original.date) },
+];
+
+const savingsColumns: ColumnDef<SavingsRow, any>[] = [
+  { id: "nature", header: "Nature", cell: ({ row }) => SAVINGS_NATURE_LABELS[row.original.nature] ?? row.original.nature },
+  { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
+  {
+    id: "amount",
+    header: "Montant (XAF)",
+    meta: { align: "right" },
+    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+  },
+];
 
 export default function EmployeeActivityDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
@@ -96,54 +108,50 @@ export default function EmployeeActivityDetailPage() {
         d'encouragement.
       </p>
 
-      <SectionTable
-        title="Factures émises"
-        columns={["Facture", "Client", "Date", "Montant (XAF)"]}
-        rows={detail.invoices.map((i) => [i.number ?? `#${i.id}`, i.partyName, fmtDate(i.date), fmt(i.amount)])}
-        emptyLabel="Aucune facture émise sur cette période."
-      />
+      <div className="mb-4">
+        <ReadOnlyTable
+          title="Factures émises"
+          columns={invoiceColumns}
+          data={detail.invoices}
+          emptyMessage="Aucune facture émise sur cette période."
+        />
+      </div>
 
-      <SectionTable
-        title="Paiements enregistrés"
-        columns={["Facture", "Méthode", "Date", "Montant (XAF)"]}
-        rows={detail.payments.map((p) => [
-          p.invoiceNumber ?? `#${p.invoiceId}`,
-          METHOD_LABELS[p.method] ?? p.method,
-          fmtDate(p.date),
-          fmt(p.amount),
-        ])}
-        emptyLabel="Aucun paiement enregistré sur cette période."
-      />
+      <div className="mb-4">
+        <ReadOnlyTable
+          title="Paiements enregistrés"
+          columns={paymentColumns}
+          data={detail.payments}
+          emptyMessage="Aucun paiement enregistré sur cette période."
+        />
+      </div>
 
-      <SectionTable
-        title="Commissions enregistrées"
-        columns={["Type", "Date", "Montant (XAF)"]}
-        rows={detail.commissions.map((c) => [c.typeLabel, fmtDate(c.date), fmt(c.amount)])}
-        emptyLabel="Aucune commission enregistrée sur cette période."
-      />
+      <div className="mb-4">
+        <ReadOnlyTable
+          title="Commissions enregistrées"
+          columns={commissionColumns}
+          data={detail.commissions}
+          emptyMessage="Aucune commission enregistrée sur cette période."
+        />
+      </div>
 
-      <SectionTable
-        title="Mouvements de stock"
-        columns={["Article", "Type", "Quantité", "Date"]}
-        rows={detail.stockMovements.map((m) => [
-          m.articleName,
-          STOCK_TYPE_LABELS[m.type] ?? m.type,
-          m.quantity,
-          fmtDate(m.date),
-        ])}
-        emptyLabel="Aucun mouvement de stock sur cette période."
-      />
+      <div className="mb-4">
+        <ReadOnlyTable
+          title="Mouvements de stock"
+          columns={stockColumns}
+          data={detail.stockMovements}
+          emptyMessage="Aucun mouvement de stock sur cette période."
+        />
+      </div>
 
-      <SectionTable
-        title="Mouvements épargne"
-        columns={["Nature", "Date", "Montant (XAF)"]}
-        rows={detail.savingsTransactions.map((s) => [
-          SAVINGS_NATURE_LABELS[s.nature] ?? s.nature,
-          fmtDate(s.date),
-          fmt(s.amount),
-        ])}
-        emptyLabel="Aucun mouvement épargne sur cette période."
-      />
+      <div className="mb-4">
+        <ReadOnlyTable
+          title="Mouvements épargne"
+          columns={savingsColumns}
+          data={detail.savingsTransactions}
+          emptyMessage="Aucun mouvement épargne sur cette période."
+        />
+      </div>
     </div>
   );
 }
