@@ -4,10 +4,7 @@ import type { SendTrackedMailInput } from "@/modules/notifications/services/mail
 
 type EmailAttachment = NonNullable<SendTrackedMailInput["attachments"]>[number];
 
-const ICON_DIR = path.resolve(
-  process.cwd(),
-  "src/modules/documents/email-assets/icons",
-);
+const ICON_DIR = path.resolve(process.cwd(), "email-assets/icons");
 
 // Every CID referenced by htmlShell/infoRow must have a matching file here.
 // Missing files degrade gracefully (row/hero renders without the icon) rather
