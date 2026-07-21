@@ -3,7 +3,7 @@
 - Client: Lucrece BOUTOMBA, agency Le Prestigieux
 - Repo: prestix
 - Stack: PostgreSQL + Drizzle, Node/Express, React/Vite/Tailwind, npm workspaces
-- Current phase: Sprint 10 Dashboard & Reporting (M12) closed; Sprint 11 data migration prep is next
+- Current phase: Sprint 11c UI Hardening closed (11c-1 foundations, 11c-2 contained fixes, 11c-3 RHF+TanStack Table+React Query migration); next up is Sprint 11d (Notifications) or 11e (Journal d'audit), not yet scoped
 - Ports: API 3000, client dev 5173
 - Blockers cleared: EPARGNE_INSCRIPTION_FEE = 5000 XAF, prm = Premium
 - API health endpoint: GET /api/health

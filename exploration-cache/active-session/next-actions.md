@@ -2,12 +2,15 @@
    analysis-section pass. Still needed before beta confidence: full reporting/
    analyse API-runtime smoke across summary, trends, KPIs, exports, employee
    drill-down, creances, and party-history commercial display.
-2. Sprint 11 (data migration) is CANCELLED, not blocked — confirmed with
-   Fred: legacy tripwise-monorepo was dev/test data, nothing real to
-   migrate even with access. Sprint 5's M6 cross-compare gate against legacy
-   Beta data is moot for the same reason. Real next priorities instead,
-   none yet individually scoped: (a) UI hardening & state improvement,
-   (b) notifications, (c) Journal d'audit (full filterable page).
+2. Sprint 11c (UI hardening) is now CLOSED (2026-07-21) — all three phases
+   done: foundations (font/type-scale/React Query/Sonner), contained fixes
+   (toasts/Select/Calendar/composer split), and the architectural migration
+   (React Hook Form extended to all remaining dialogs, generic
+   `DataTable`/`ReadOnlyTable` components, full React Query hooks migration
+   across every page and dialog mutation). Not yet manually smoke-tested in
+   a running app — typecheck-verified only. Two real priorities remain,
+   neither yet individually scoped: (a) notifications (Sprint 11d), (b)
+   Journal d'audit (Sprint 11e, full filterable page).
 3. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing - code mirrors the direct-subscription
    fix but wasn't re-verified with the same rigor.

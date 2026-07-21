@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
-  "lastUpdated": "2026-07-19",
-  "currentSprint": "Sprint 11 Data migration preparation",
+  "lastUpdated": "2026-07-21",
+  "currentSprint": "Sprint 11c UI Hardening — closed (11c-1/11c-2/11c-3); next up: 11d Notifications or 11e Journal d'audit",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -21,6 +21,7 @@
     "sessions/2026-07-16.md",
     "sessions/2026-07-17.md",
     "sessions/2026-07-19.md",
+    "sessions/2026-07-21.md",
     "tasks/backlog.md",
     "tasks/sprint-0.md",
     "technical/brand-reference.md",

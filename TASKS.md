@@ -248,40 +248,44 @@
 - [x] ~~Reconciliation report; historical negative-balance warnings~~ — not needed
 - [x] ~~Dry-run on staging~~ — not needed
 
-## Sprint 11c-1 – UI Hardening: Foundations | scope TBD
+## Sprint 11c-1 – UI Hardening: Foundations ✅ CLOSED (2026-07-20) | scope TBD
 
 > Phase 1 of 3 — nothing else in this initiative works well without these
 > pieces in place first. Confirmed with Fred: font changes from Mulish to
 > Plus Jakarta Sans (Mulish was already the declared/loaded font, not
 > Candara as first assumed — Candara was only ever the CSS fallback).
 
-- [ ] Install `sonner`, `@tanstack/react-query`, `@tanstack/react-table` (none currently installed — confirmed via package.json audit)
-- [ ] Font swap: Mulish → Plus Jakarta Sans
-- [ ] Define a real type scale — replaces ad-hoc arbitrary px values (found `10px`/`10.5px`/`12px` all on one page, no defined scale)
-- [ ] React Query provider + query client setup
-- [ ] Sonner `<Toaster />` + shared API-error-to-toast helper
+- [x] Install `sonner`, `@tanstack/react-query`, `@tanstack/react-table` (none currently installed — confirmed via package.json audit)
+- [x] Font swap: Mulish → Plus Jakarta Sans
+- [x] Define a real type scale — fixed-px tokens `--text-xs` (11px) through `--text-xl` (20px)
+- [x] React Query provider + query client setup — `query-client.ts`, `query-keys.ts` central registry established
+- [x] Sonner `<Toaster />` + shared API-error-to-toast helper — `api-error.ts` (`getApiErrorMessage`, `getApiErrorCode`)
 
-## Sprint 11c-2 – UI Hardening: Contained Fixes | scope TBD
+## Sprint 11c-2 – UI Hardening: Contained Fixes ✅ CLOSED (2026-07-20) | scope TBD
 
 > Phase 2 of 3 — small, self-contained wins, don't require the Phase 3
 > architectural migration to land first.
 
-- [ ] Replace the 2 raw `alert()` calls with Sonner toasts
-- [ ] Convert the 8 files still using native `<select>` to shadcn `<Select>` (6 files already use shadcn)
-- [ ] Add shadcn Calendar component (date pickers currently plain `<input type="date">`)
-- [ ] Split the two largest components (~700 lines each — `InvoiceLineItemsComposer.tsx`, `ProformaLineItemsComposer.tsx`) into logic/helpers/subcomponents
+- [x] Replace the 2 raw `alert()` calls with Sonner toasts
+- [x] Convert the 8 files still using native `<select>` to shadcn `<Select>` — `__all__` sentinel value pattern for the empty-string constraint
+- [x] Add shadcn Calendar component — `DatePicker` wired to commission/payment date inputs
+- [x] Split the two largest components (~700 lines each) into `LineItemsComposer.tsx` (shared generic) + two thin wrappers
 
-## Sprint 11c-3 – UI Hardening: Architectural Migration | scope TBD
+## Sprint 11c-3 – UI Hardening: Architectural Migration ✅ CLOSED (2026-07-21) | scope TBD
 
 > Phase 3 of 3 — the actual big lift. `react-hook-form`/`zod` are already
 > installed and used in 6 files (the larger creation forms); this extends
 > that pattern to the remaining simple dialogs still on plain `useState`.
 
-- [ ] Generic TanStack Table components — read-only (KPI tables) and filterable/manageable (DataTable) variants, migrate existing hand-rolled tables to them
-- [ ] Migrate page-by-page data-fetching from `useState`+`useEffect`+axios to React Query hooks (queries, mutations, query keys)
-- [ ] Extend React Hook Form to remaining simple dialogs not yet using it
-- [ ] Wire API error messages → toast universally as a natural byproduct of React Query's centralized error handling
-- [ ] Scan for and flag any unhandled cases surfaced during the migration
+- [x] Generic TanStack Table components — `ReadOnlyTable` (KPI/display, supports `title` as ReactNode, optional `footer`, `bare` mode for nesting) and `DataTable` (sortable/filterable), both built on shadcn's `Table` primitives — migrated every reachable hand-rolled table to them
+- [x] Migrated data-fetching from `useState`+`useEffect`+axios to React Query — `hooks/queries/` + `hooks/mutations/` convention, one hook per query/mutation, real `useMutation` adopted everywhere (previously only `useQuery` was in use; `defaultOptions.mutations.onError` global toast was dead code until this pass activated it)
+- [x] Extended React Hook Form to the 5 remaining simple create/edit dialogs (`CreateParty`, `EditParty`, `CreateStockArticle`, `RecordPayment`, `CreateCommission`)
+- [x] API error messages → toast universally via the global mutation `onError` default; per-dialog overrides preserved for bespoke branching (overpayment choice, stock-override offer, error-code message maps)
+- [x] Scanned for and fixed unhandled cases surfaced during the migration — `UsersPage` OTP-reset and `CommissionsPage` delete previously had **no error handling at all** (unhandled promise rejections); both now correctly toast on failure as a side effect of adopting `useMutation`
+
+**Deliberately out of scope, staying hand-rolled:** `InvoiceDetailPage`/`ProformaDetailPage` line-items tables (inline row-editing state doesn't map cleanly onto `DataTable`) and `CommissionEditQueuePage`'s per-request comparison grid (a 3-column diff, not a record list). `SettingsPage` (sub-component-local loading pattern) and `BootstrapPage` (one-time wizard) were never brought onto the hooks pattern — neither needs cross-component cache sharing.
+
+**Correction during this sprint:** an earlier session's handoff/memory claimed "11 pages migrated to React Query." Audited against the actual repo — only 8 were, and 3 dialogs described as "migrated in sandbox" had never actually been committed (sandbox containers are ephemeral; that work was silently lost between sessions). All were redone and verified in this sprint.
 
 ## Sprint 11d – Notifications | scope TBD
 

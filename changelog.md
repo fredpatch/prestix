@@ -181,3 +181,36 @@
 - `npm run db:seed` in `packages/server`: FAIL (exit 1)
 - `docker compose up -d postgres api`: blocked (Docker daemon unavailable)
 - `npm run format` from repo root: PASS
+
+## Sprint 11c-1 UI Hardening: Foundations (2026-07-20)
+
+- Installed `sonner`, `@tanstack/react-query`, `@tanstack/react-table`.
+- Swapped the client font from Mulish to Plus Jakarta Sans; removed Geist.
+- Replaced ad-hoc arbitrary px values with a fixed-px type scale (`--text-xs` 11px through `--text-xl` 20px).
+- Wired `QueryClientProvider` in `main.tsx`; added `query-client.ts` (staleTime/retry defaults, centralized mutation error → toast) and `query-keys.ts` as the single registry for every cache key used in the app.
+- Added `<Toaster />` and `api-error.ts` (`getApiErrorMessage`, `getApiErrorCode`) as the shared error-surfacing pattern.
+
+## Sprint 11c-2 UI Hardening: Contained Fixes (2026-07-20)
+
+- Replaced both raw `alert()` calls with Sonner toasts.
+- Converted all 8 remaining native `<select>` elements to shadcn `<Select>`, using a `__all__` sentinel value where Radix/shadcn's Select doesn't support an empty-string option value.
+- Added shadcn Calendar + a `DatePicker` wrapper, replacing plain `<input type="date">` on commission and payment forms.
+- Split the two ~700-line line-items composer components into a shared generic `LineItemsComposer.tsx` plus two thin per-document wrappers.
+
+## Sprint 11c-3 UI Hardening: React Hook Form + Table Components (2026-07-20/21)
+
+- Extended React Hook Form + zod to the 5 remaining simple create/edit dialogs: `CreatePartyDialog`, `EditPartyDialog` (shared `partySchema`/`partyToValues` in `party-schema.ts`), `CreateStockArticleDialog`, `RecordPaymentDialog` (overpayment-choice branching preserved), `CreateCommissionDialog` (party pickers and dynamic fields stay local state, only scalar fields go through RHF).
+- Added `ReadOnlyTable` (static KPI/display) and `DataTable` (sortable/filterable) generic table components on top of TanStack Table; both later rebuilt on shadcn's `Table` primitives once that component was added to the project. `ReadOnlyTable` gained `title: ReactNode` support, an optional `footer` slot (shadcn `TableFooter`), and a `bare` mode for tables nested inside a caller's own custom card.
+- Added `lib/table-meta.ts` — a shared `ColumnDef` module augmentation (`meta.align`) used by both table components; loosely typed (`ColumnDef<T, any>`) by design for fast adoption across ~15 existing hand-rolled tables.
+
+## Sprint 11c-3 UI Hardening: React Query Migration (2026-07-21)
+
+- Established the `hooks/queries/` + `hooks/mutations/` convention — one hook per query or mutation, colocated by type rather than inline in pages, matching the folder structure requested for maintainability.
+- Migrated every reachable page's data-fetching from `useState`+`useEffect`+axios to React Query hooks: `PartyDetailPage`, `InvoiceDetailPage`, `ProformaDetailPage`, `CommissionEditQueuePage`, `CommissionsPage`, `CreancesPage`, `UsersPage`, `EmployeeActivityDetailPage`, `PartiesPage`, `InvoicesPage`, `ProformasPage`, `StockArticlesPage`, `DashboardPage`, and all 6 `analyse/*Tab.tsx` files (`RapportsTab` has no data-fetching, skipped).
+- Adopted real `useMutation` throughout — previously the app used `useQuery` exclusively; every "mutation" was a plain async call with manual `queryClient.invalidateQueries()`, and `query-client.ts`'s centralized `mutations.onError` toast was dead code. Converted ~15 dialog mutations (party, stock, commission, invoice, payment, savings, user CRUD/actions) onto `useMutation`, activating that default toast app-wide. Bespoke error branching (overpayment choice, manager-only stock-override offer, savings error-code message map) preserved via hook-level `onError` overrides, which replace rather than stack with the global default.
+- Fixed two latent bugs surfaced by the migration: `UsersPage`'s OTP-reset and `CommissionsPage`'s delete previously had no error handling at all (unhandled promise rejections on failure); both now correctly toast.
+- Migrated every genuine list/detail table to `DataTable`/`ReadOnlyTable`: `CreancesPage`, `UsersPage`, `CommissionsPage`, `PartiesPage`, `InvoicesPage`, `ProformasPage`, `StockArticlesPage`, `EmployeeActivityDetailPage` (5 sections), `KpiTable`, `EmployeeKpiTable`, `CaCompositionTable`, `CreancesEngagementsTab`'s créances-by-party table. `KpiTable`/`EmployeeKpiTable`/`CaCompositionTable` kept their existing external props — internals-only swap, zero changes needed at their call sites.
+- Deliberately left hand-rolled: `InvoiceDetailPage`/`ProformaDetailPage` line-items tables (inline row-editing state), `CommissionEditQueuePage`'s per-request comparison grid (not a record list), `SettingsPage` (sub-component-local loading pattern), `BootstrapPage` (one-time wizard).
+- Retired `pages/dashboard/useDashboardData.ts` — its 5 fetches were already covered by hooks created for the `analyse` tabs (shared `useCaComposition`, `useDashboardSummary`, `useClientKpis`, `useApporteurKpis`, `useEmployeeKpis`); added one new `useRecentActivity` hook and moved `from`/`to`/`basis` state directly into `DashboardPage`.
+- Corrected a stale memory/handoff claim of "11 pages migrated to React Query" — audited against the actual repo and found only 8 were, with 3 dialogs described as "migrated in sandbox" never actually committed (sandbox containers don't persist between sessions). All redone and verified this pass.
+- Validation: `git apply --check` + `npm install` + `npx tsc --noEmit` clean for every diff in this migration, applied incrementally across 16 batches.
