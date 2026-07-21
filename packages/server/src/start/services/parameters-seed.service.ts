@@ -100,6 +100,14 @@ const DEFAULTS = [
     module: "MAIL",
     description: "Display name used by generated emails when templates need it",
   },
+  {
+    key: "mail_owner_reminder_cc_enabled",
+    value: "true",
+    type: "boolean" as const,
+    module: "MAIL",
+    description:
+      "When enabled, overdue-invoice reminder emails (manual or automatic) are also sent to every active admin/super_admin as an internal notice",
+  },
 ] satisfies (typeof settings.$inferInsert)[];
 
 // Idempotent — never overwrites a value an admin already changed

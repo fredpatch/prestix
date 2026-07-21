@@ -10,6 +10,7 @@ import { convertExpiredCreditLots } from "@/modules/savings/services/savings-con
 import { broadcastNotification } from "@/modules/notifications/services/notification.service.js";
 import { sendTrackedMail } from "@/modules/notifications/services/mail-outbox.service.js";
 import { getBoolValue } from "@/modules/settings/services/settings.service.js";
+import { sendInvoiceReminderEmail } from "@/modules/documents/services/document-email.service.js";
 
 function dateOnly(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -141,6 +142,82 @@ async function notifyUpcomingInstallments(): Promise<number> {
   return rows.length;
 }
 
+// Scenario #6 — automatic overdue reminder. Fires the client+owner reminder
+// email (scenario #7's sendInvoiceReminderEmail, reused) once per calendar
+// day per invoice, for any issued invoice with at least one unpaid/partial
+// installment past its expectedDate. Distinct from notifyUpcomingInstallments
+// (which fires BEFORE the due date) and from penalty accrual (which is a
+// separate daily job on its own money-critical schedule) — this is purely
+// the reminder-email side of "this invoice is late."
+async function notifyOverdueInstallments(): Promise<number> {
+  const shouldSendMail = await getBoolValue("mail_automatic_reminders_enabled", false);
+  if (!shouldSendMail) return 0;
+
+  const today = new Date();
+  const rows = await db
+    .select({ invoice: invoices })
+    .from(installments)
+    .innerJoin(invoices, eq(installments.invoiceId, invoices.id))
+    .where(
+      and(
+        eq(invoices.status, "issued"),
+        inArray(installments.status, ["unpaid", "partial"]),
+        lte(installments.expectedDate, dateOnly(today)),
+      ),
+    );
+
+  // One reminder per invoice per day, even if several installments are
+  // overdue simultaneously — dedupe on invoice id, not installment id.
+  const seenInvoiceIds = new Set<number>();
+  let sent = 0;
+
+  for (const { invoice } of rows) {
+    if (invoice.paymentStatus === "paid") continue; // defensive; query already excludes fully-settled invoices in practice
+    if (seenInvoiceIds.has(invoice.id)) continue;
+    seenInvoiceIds.add(invoice.id);
+
+    const to = snapshotEmail(invoice.partySnapshot);
+    if (!to) continue;
+
+    const dedupeSourceId = `${invoice.id}:${dateOnly(today)}`;
+    const existingReminder = await db
+      .select({ id: mailOutbox.id })
+      .from(mailOutbox)
+      .where(
+        and(
+          eq(mailOutbox.templateKey, "invoice_overdue_reminder"),
+          eq(mailOutbox.sourceType, "invoices"),
+          eq(mailOutbox.sourceId, dedupeSourceId),
+        ),
+      )
+      .limit(1);
+    if (existingReminder.length > 0) continue;
+
+    const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : today;
+    const daysOverdue = Math.max(
+      0,
+      Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)),
+    );
+
+    try {
+      await sendInvoiceReminderEmail({
+        id: invoice.id,
+        requestedByUserId: invoice.createdBy,
+        trigger: "automatic",
+        daysOverdue,
+      });
+      sent += 1;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "UNKNOWN_ERROR";
+      if (message !== "RECIPIENT_EMAIL_REQUIRED") {
+        console.warn("[cron] overdue reminder failed for invoice", invoice.id, err);
+      }
+    }
+  }
+
+  return sent;
+}
+
 // M4: proforma 48h expiry — runs every 15 minutes, flips overdue drafts to `expired`.
 // No auto-cancel, just status — matches spec exactly.
 export function registerJobs(): void {
@@ -259,6 +336,17 @@ export function registerJobs(): void {
       if (count > 0) console.log(`[cron] ${count} installment reminder(s) queued`);
     } catch (err) {
       console.error("[cron] installment reminder failed:", err);
+    }
+
+    // Scenario #6 — overdue reminder, same daily slot right after the
+    // due-soon reminder. Independent try/catch so a failure here never
+    // blocks the due-soon reminder above (order matters: due-soon runs
+    // first since it's the pre-existing behavior).
+    try {
+      const overdueCount = await notifyOverdueInstallments();
+      if (overdueCount > 0) console.log(`[cron] ${overdueCount} overdue reminder(s) sent`);
+    } catch (err) {
+      console.error("[cron] overdue reminder job failed:", err);
     }
   });
 }

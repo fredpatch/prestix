@@ -13,6 +13,7 @@ router.get("/", requireAgent, invoiceController.list);
 router.get("/:id", requireAgent, invoiceController.getById);
 router.get("/:id/pdf", requireAgent, invoicePdfController.download);
 router.post("/:id/email", requireAgent, documentEmailController.sendInvoice);
+router.post("/:id/send-reminder", requireAgent, documentEmailController.sendInvoiceReminder);
 router.post("/", requireAgent, invoiceController.createDraft);
 router.post("/from-proforma/:proformaId", requireAgent, invoiceController.promoteFromProforma);
 router.post("/:id/lines", requireAgent, invoiceController.addLine);

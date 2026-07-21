@@ -74,7 +74,14 @@ async function deriveInstallmentStatus(
 // M5: "one atomic transaction" for the whole payment event — a single cash
 // handover may span multiple échéances (FIFO), each gets its own payment row,
 // but they all commit together or not at all.
-export async function recordPayment(params: RecordPaymentParams): Promise<PaymentView[]> {
+//
+// Return shape extended (Pass 4, scenario #2) to expose becamePaid — whether
+// THIS call is what tipped the invoice to fully paid — so the controller can
+// fire the "invoice paid" email without a second query. Only caller today is
+// payment.controller.ts#record, so widening this return type is safe.
+export async function recordPayment(
+  params: RecordPaymentParams,
+): Promise<{ payments: PaymentView[]; becamePaid: boolean }> {
   if (params.amountTendered <= 0) throw new Error("INVALID_AMOUNT");
 
   const isEpargnePayment = params.method === "epargne";
@@ -230,9 +237,18 @@ export async function recordPayment(params: RecordPaymentParams): Promise<Paymen
     const paymentStatus = allPaid ? "paid" : anyProgress ? "partial" : "unpaid";
     await tx.update(invoices).set({ paymentStatus }).where(eq(invoices.id, params.invoiceId));
 
+    // becamePaid: this call is the one that tipped the invoice from
+    // not-paid to paid — the trigger condition for the "invoice paid" email
+    // (scenario #2, full-payment only per scope). Comparing against the
+    // pre-transaction snapshot (not just "paymentStatus === paid") avoids
+    // re-firing the email on any later, unrelated write against an invoice
+    // that was already fully settled.
+    const becamePaid = invoice.paymentStatus !== "paid" && paymentStatus === "paid";
+
     return {
       inserted,
       overpaidToCredit: remaining > 0.01 && params.overpaymentChoice === "credit" ? remaining : 0,
+      becamePaid,
     };
     },
     isEpargnePayment ? { isolationLevel: "serializable" } : undefined,
@@ -262,7 +278,10 @@ export async function recordPayment(params: RecordPaymentParams): Promise<Paymen
     },
   });
 
-  return createdRows.inserted.map(toPaymentView);
+  return {
+    payments: createdRows.inserted.map(toPaymentView),
+    becamePaid: createdRows.becamePaid,
+  };
 }
 
 export async function listPaymentsByInvoice(invoiceId: number): Promise<PaymentView[]> {

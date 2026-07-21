@@ -1,9 +1,20 @@
-import fs from "node:fs";
-import path from "node:path";
+import { and, eq, gte } from "drizzle-orm";
+import { db } from "@/db/index.js";
+import { roleLevel, users } from "@/db/schema.js";
 import { logAudit } from "@/modules/auth/services/auth.service.js";
 import { sendTrackedMail } from "@/modules/notifications/services/mail-outbox.service.js";
 import type { SendTrackedMailResult } from "@/modules/notifications/services/mail-outbox.types.js";
-import { getStringValue } from "@/modules/settings/services/settings.service.js";
+import { getBoolValue } from "@/modules/settings/services/settings.service.js";
+import {
+  emailIconAttachments,
+  emailShell,
+  escapeHtml,
+  fmtDateLong,
+  money,
+  statusPill,
+  warningCallout,
+  type InfoRow,
+} from "./email-shell.js";
 import { generateDeliveryNotePdf } from "./delivery-note-pdf.service.js";
 import { getByInvoiceId } from "./delivery-note.service.js";
 import { generateInvoicePdf } from "./invoice-pdf.service.js";
@@ -12,16 +23,6 @@ import { generateProformaPdf } from "./proforma-pdf.service.js";
 import { getProformaById } from "./proforma.service.js";
 
 type DocumentKind = "invoice" | "proforma" | "delivery_note";
-type EmailAttachment = NonNullable<Parameters<typeof sendTrackedMail>[0]["attachments"]>[number];
-
-const EMAIL_ASSET_DIR = path.resolve(
-  process.cwd(),
-  "src/modules/documents/email-assets",
-);
-const HEADER_ASSET = path.join(EMAIL_ASSET_DIR, "prestigieux-email-header.png");
-const FOOTER_ASSET = path.join(EMAIL_ASSET_DIR, "prestigieux-email-footer.png");
-const HEADER_CID = "prestigieux-email-header";
-const FOOTER_CID = "prestigieux-email-footer";
 
 interface SendDocumentEmailParams {
   id: number;
@@ -40,125 +41,6 @@ function partyName(snapshot: unknown): string {
   return (snapshot as { fullName?: string } | undefined)?.fullName ?? "client";
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function money(value: string | number): string {
-  return `${new Intl.NumberFormat("fr-FR").format(Number(value))} XAF`;
-}
-
-function fmtDateLong(value?: Date | string): string {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function statusPill(label: string): string {
-  return `<span style="display:inline-block;background:#b88305;color:#ffffff;border-radius:999px;padding:6px 14px;font-weight:700;font-size:13px;">${escapeHtml(label)}</span>`;
-}
-
-function summaryRows(rows: Array<{ label: string; value: string; highlight?: boolean }>): string {
-  return rows
-    .map(
-      (row) => `
-        <tr>
-          <td style="border-bottom:1px dashed #dde3ec;padding:13px 18px;color:#111827;font-weight:700;width:42%;font-size:14px;">${escapeHtml(row.label)}</td>
-          <td style="border-bottom:1px dashed #dde3ec;padding:13px 18px;color:${row.highlight ? "#b88305" : "#111827"};font-weight:${row.highlight ? "800" : "500"};font-size:14px;">${row.value}</td>
-        </tr>
-      `,
-    )
-    .join("");
-}
-
-function emailAssetAttachments(): EmailAttachment[] {
-  const attachments: EmailAttachment[] = [];
-  if (fs.existsSync(HEADER_ASSET)) {
-    attachments.push({
-      filename: "prestigieux-email-header.png",
-      path: HEADER_ASSET,
-      cid: HEADER_CID,
-      contentDisposition: "inline",
-    });
-  }
-  if (fs.existsSync(FOOTER_ASSET)) {
-    attachments.push({
-      filename: "prestigieux-email-footer.png",
-      path: FOOTER_ASSET,
-      cid: FOOTER_CID,
-      contentDisposition: "inline",
-    });
-  }
-  return attachments;
-}
-
-function headerMarkup(): string {
-  if (fs.existsSync(HEADER_ASSET)) {
-    return `<img src="cid:${HEADER_CID}" width="640" alt="Le Prestigieux - Une autre idee du voyage" style="display:block;width:100%;max-width:640px;height:auto;border:0;" />`;
-  }
-  return `
-    <div style="height:120px;background:#e8f4ff;text-align:center;border-bottom:4px solid #c58b12;">
-      <div style="padding-top:34px;font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:800;letter-spacing:2.5px;color:#111827;">LE PRESTIGIEUX</div>
-      <div style="margin-top:4px;font-size:12px;letter-spacing:9px;color:#111827;">Une autre idee du voyage</div>
-    </div>
-  `;
-}
-
-function footerMarkup(senderName: string): string {
-  if (fs.existsSync(FOOTER_ASSET)) {
-    return `<img src="cid:${FOOTER_CID}" width="640" alt="${escapeHtml(senderName)} - contact agence" style="display:block;width:100%;max-width:640px;height:auto;border:0;" />`;
-  }
-  return `
-    <div style="border-top:1px solid #ecd9af;background:#fff8eb;padding:20px 32px 24px;text-align:center;color:#334155;font-size:14px;">
-      <div style="font-weight:800;color:#111827;">${escapeHtml(senderName)}</div>
-      <div style="margin-top:8px;">+241 04 13 13 47 / 02 36 33 79</div>
-      <a href="mailto:leprestigieuxv@gmail.com" style="color:#075be8;text-decoration:underline;">leprestigieuxv@gmail.com</a>
-    </div>
-  `;
-}
-
-function htmlShell(params: {
-  title: string;
-  sectionLabel: string;
-  intro: string;
-  summaryRows: Array<{ label: string; value: string; highlight?: boolean }>;
-  footerNote?: string;
-  senderName: string;
-}): string {
-  return `
-    <div style="margin:0;padding:32px;background:#f3f8ff;font-family:Arial,sans-serif;color:#111827;line-height:1.55;">
-      <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #cfe0f5;border-radius:12px;overflow:hidden;box-shadow:0 18px 42px rgba(15,23,42,0.12);">
-        ${headerMarkup()}
-        <div style="height:0;text-align:center;">
-          <span style="display:inline-block;min-width:150px;background:#c58b12;color:#ffffff;border-radius:0 0 18px 18px;padding:8px 20px 10px;font-size:14px;font-weight:800;letter-spacing:.4px;position:relative;top:-1px;">${escapeHtml(params.sectionLabel)}</span>
-        </div>
-        <div style="padding:58px 42px 34px;">
-          <h1 style="margin:0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:32px;line-height:1.18;color:#0f172a;">${escapeHtml(params.title)}</h1>
-          <div style="margin:24px auto 28px;width:200px;border-top:2px solid #d0a13a;"></div>
-          <p style="margin:0 0 8px;font-size:16px;color:#111827;">Bonjour,</p>
-          <p style="margin:0 0 24px;color:#415169;font-size:15px;">${escapeHtml(params.intro)}</p>
-          <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border:1px solid #dde3ec;border-radius:12px;border-collapse:separate;border-spacing:0;overflow:hidden;background:#ffffff;">
-            ${summaryRows(params.summaryRows)}
-          </table>
-          <div style="margin-top:22px;border:1px solid #bfdbfe;background:#eaf4ff;border-radius:10px;padding:15px 18px;color:#075be8;font-weight:700;">
-            PDF du document en piece jointe
-          </div>
-          <p style="margin:26px 0 0;text-align:center;color:#111827;font-size:16px;">${escapeHtml(params.footerNote ?? "Merci de votre confiance.")}</p>
-        </div>
-        ${footerMarkup(params.senderName)}
-      </div>
-    </div>
-  `;
-}
-
 function documentMetadata(kind: DocumentKind, id: number, number?: string, trigger = "manual") {
   return { kind, documentId: id, documentNumber: number, trigger };
 }
@@ -172,6 +54,20 @@ async function auditDocumentEmail(kind: DocumentKind, id: number, userId: number
   });
 }
 
+// Every admin/super_admin's live email, active accounts only — the "app
+// owner" recipient set for scenario #7 (manual/automatic reminder cc). Same
+// role-gating pattern as notification.service.ts's listRecipients, but we
+// need actual addresses here rather than user ids for an outbound email.
+// Gated by mail_owner_reminder_cc_enabled so the behavior can be switched
+// off without a deploy.
+async function listOwnerEmails(): Promise<string[]> {
+  const ccEnabled = await getBoolValue("mail_owner_reminder_cc_enabled", true);
+  if (!ccEnabled) return [];
+  const rows = await db.select({ email: users.email, role: users.role }).from(users).where(eq(users.active, true));
+  const admins = rows.filter((r) => roleLevel[r.role] >= roleLevel.admin);
+  return [...new Set(admins.map((r) => r.email.trim()).filter(Boolean))];
+}
+
 export async function sendInvoiceEmail(
   params: SendDocumentEmailParams,
 ): Promise<SendTrackedMailResult> {
@@ -180,10 +76,29 @@ export async function sendInvoiceEmail(
 
   const to = recipientEmail(invoice.partySnapshot, params.to);
   const buyer = partyName(invoice.partySnapshot);
-  const buyerHtml = escapeHtml(buyer);
   const number = invoice.number ?? `facture-${invoice.id}`;
-  const senderName = await getStringValue("mail_sender_name", "PrestiX");
   const pdf = await generateInvoicePdf(invoice.id, params.requestedByUserId);
+
+  const rows: InfoRow[] = [
+    { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
+    { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
+    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)) },
+    { icon: "calendar-due-navy", label: "Échéance", value: escapeHtml(fmtDateLong(invoice.dueDate)), emphasis: "gold" },
+    { icon: "coin-navy", label: "Montant total", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
+    { icon: "info-circle-navy", label: "Statut", value: statusPill(invoice.paymentStatus === "paid" ? "Payée" : "À payer") },
+  ];
+
+  const html = emailShell({
+    tone: "blue",
+    heroIcon: "hero-receipt",
+    bannerHeadline: "Votre facture est disponible",
+    bodyGreetingName: buyer,
+    bodyIntro: "Nous vous remercions pour votre confiance. Veuillez trouver ci-joint votre facture, ainsi qu'un récapitulatif des informations essentielles ci-dessous.",
+    rows,
+    attachmentLabel: "Facture PDF en pièce jointe",
+    ctaLabel: "Télécharger la facture",
+    closingHtml: "Merci de votre confiance.",
+  });
 
   const result = await sendTrackedMail({
     to,
@@ -192,22 +107,9 @@ export async function sendInvoiceEmail(
       `Bonjour ${buyer},\n\n` +
       `Veuillez trouver en piece jointe votre facture ${number} d'un montant de ${money(invoice.totalAmount)}.\n\n` +
       "Merci pour votre confiance.\nPrestiX",
-    html: htmlShell({
-      title: "Votre facture est disponible",
-      sectionLabel: "FACTURATION",
-      intro: `Nous vous prions de trouver en piece jointe la facture relative a votre reservation pour ${buyer}.`,
-      summaryRows: [
-        { label: "Facture", value: escapeHtml(number), highlight: true },
-        { label: "Client", value: buyerHtml },
-        { label: "Date d'emission", value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)) },
-        { label: "Echeance", value: escapeHtml(fmtDateLong(invoice.dueDate)), highlight: true },
-        { label: "Montant total", value: escapeHtml(money(invoice.totalAmount)), highlight: true },
-        { label: "Statut", value: statusPill(invoice.paymentStatus === "paid" ? "Payee" : "A payer") },
-      ],
-      senderName,
-    }),
+    html,
     attachments: [
-      ...emailAssetAttachments(),
+      ...emailIconAttachments(),
       { filename: `${number}.pdf`, content: pdf, contentType: "application/pdf" },
     ],
     templateKey: "invoice_pdf",
@@ -220,6 +122,161 @@ export async function sendInvoiceEmail(
   return result;
 }
 
+// Scenario #2 — invoice reaches paymentStatus "paid" (full payment only, per
+// scope decision). Called from payment.controller.ts right after
+// recordPayment() reports becamePaid=true, same fire-and-forget non-blocking
+// pattern as the other auto-send hooks.
+export async function sendInvoicePaidEmail(
+  params: SendDocumentEmailParams,
+): Promise<SendTrackedMailResult> {
+  const invoice = await getInvoiceById(params.id);
+  if (invoice.paymentStatus !== "paid") throw new Error("INVOICE_NOT_FULLY_PAID");
+
+  const to = recipientEmail(invoice.partySnapshot, params.to);
+  const buyer = partyName(invoice.partySnapshot);
+  const number = invoice.number ?? `facture-${invoice.id}`;
+
+  const rows: InfoRow[] = [
+    { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
+    { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
+    { icon: "coin-navy", label: "Montant réglé", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
+    { icon: "calendar-event-navy", label: "Date de règlement", value: escapeHtml(fmtDateLong(new Date())) },
+    { icon: "info-circle-navy", label: "Statut", value: statusPill("Payée intégralement") },
+  ];
+
+  const html = emailShell({
+    tone: "green",
+    heroIcon: "hero-circle-check",
+    bannerHeadline: "Paiement reçu, merci !",
+    bodyGreetingName: buyer,
+    bodyIntro: "Nous confirmons la réception de votre règlement. Cette facture est désormais soldée intégralement — aucune action supplémentaire n'est requise de votre part.",
+    rows,
+    closingHtml: "Merci pour votre confiance renouvelée.",
+  });
+
+  const result = await sendTrackedMail({
+    to,
+    subject: `PrestiX - Facture ${number} soldée`,
+    text:
+      `Bonjour ${buyer},\n\n` +
+      `Nous confirmons la reception de votre reglement pour la facture ${number}, ` +
+      `d'un montant total de ${money(invoice.totalAmount)}. Cette facture est desormais soldee.\n\n` +
+      "Merci pour votre confiance.\nPrestiX",
+    html,
+    attachments: emailIconAttachments(),
+    templateKey: "invoice_paid",
+    sourceType: "invoices",
+    sourceId: String(invoice.id),
+    metadata: documentMetadata("invoice", invoice.id, invoice.number, params.trigger),
+  });
+
+  if (result.success) await auditDocumentEmail("invoice", invoice.id, params.requestedByUserId);
+  return result;
+}
+
+// Scenario #6/#7 — reminder for an overdue invoice, sent to the client AND
+// every admin/super_admin ("app owner"), used both by the manual "send
+// reminder" controller route and by the automatic overdue cron. Always
+// fans out as two separate tracked sends (client + each owner) so outbox
+// history and delivery failures stay attributable per recipient.
+export async function sendInvoiceReminderEmail(
+  params: SendDocumentEmailParams & { daysOverdue: number },
+): Promise<{ client: SendTrackedMailResult; owners: SendTrackedMailResult[] }> {
+  const invoice = await getInvoiceById(params.id);
+  if (invoice.status !== "issued") throw new Error("INVOICE_NOT_ISSUED");
+  if (invoice.paymentStatus === "paid") throw new Error("INVOICE_ALREADY_PAID");
+
+  const to = recipientEmail(invoice.partySnapshot, params.to);
+  const buyer = partyName(invoice.partySnapshot);
+  const number = invoice.number ?? `facture-${invoice.id}`;
+  const dueDateLabel = fmtDateLong(invoice.dueDate);
+  const daysLabel = `${dueDateLabel} — il y a ${params.daysOverdue} jour${params.daysOverdue > 1 ? "s" : ""}`;
+
+  const rows: InfoRow[] = [
+    { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
+    { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
+    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)) },
+    { icon: "calendar-due-navy", label: "Échéance dépassée", value: escapeHtml(daysLabel), emphasis: "red" },
+    { icon: "coin-navy", label: "Montant dû", value: escapeHtml(money(invoice.totalAmount)), emphasis: "red" },
+    { icon: "info-circle-navy", label: "Statut", value: statusPill("En retard", "red") },
+  ];
+
+  const callout = warningCallout(
+    "clock-exclamation-navy",
+    "Des pénalités de retard s'appliquent chaque semaine tant que la facture reste impayée, conformément à nos conditions de vente.",
+  );
+
+  const clientHtml = emailShell({
+    tone: "red",
+    heroIcon: "hero-alert-triangle",
+    bannerHeadline: "Facture en retard de paiement",
+    bodyGreetingName: buyer,
+    bodyIntro: "Notre système indique que le paiement de la facture ci-dessous n'a pas été reçu à la date d'échéance prévue. Merci de régulariser la situation dans les meilleurs délais.",
+    rows,
+    calloutHtml: callout,
+    attachmentLabel: "Facture PDF en pièce jointe",
+    ctaLabel: "Télécharger la facture",
+    closingHtml: "Une question ou un paiement déjà effectué&nbsp;? <a href=\"mailto:leprestigieuxv@gmail.com\" style=\"color:#1e5fbf;text-decoration:underline;\">Contactez l'agence</a>.",
+  });
+
+  const pdf = await generateInvoicePdf(invoice.id, params.requestedByUserId);
+  const clientAttachments = [
+    ...emailIconAttachments(),
+    { filename: `${number}.pdf`, content: pdf, contentType: "application/pdf" },
+  ];
+
+  const client = await sendTrackedMail({
+    to,
+    subject: `PrestiX - Rappel : facture ${number} en retard`,
+    text:
+      `Bonjour ${buyer},\n\n` +
+      `La facture ${number} d'un montant de ${money(invoice.totalAmount)} est en retard de paiement ` +
+      `depuis le ${dueDateLabel} (${params.daysOverdue} jour(s)). Merci de regulariser au plus vite.\n\n` +
+      "PrestiX",
+    html: clientHtml,
+    attachments: clientAttachments,
+    templateKey: "invoice_overdue_reminder",
+    sourceType: "invoices",
+    sourceId: String(invoice.id),
+    metadata: { ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger), daysOverdue: params.daysOverdue, audience: "client" },
+  });
+
+  if (client.success) await auditDocumentEmail("invoice", invoice.id, params.requestedByUserId);
+
+  // Owner cc — internal notice, no PDF attachment needed (owners have full
+  // app access), lighter payload, distinct templateKey so outbox filtering
+  // can separate client-facing sends from internal ones.
+  const ownerEmails = await listOwnerEmails();
+  const ownerHtml = emailShell({
+    tone: "red",
+    heroIcon: "hero-alert-triangle",
+    bannerHeadline: "Facture client en retard",
+    bodyGreetingName: "équipe",
+    bodyIntro: `La facture <strong>${escapeHtml(number)}</strong> du client <strong>${escapeHtml(buyer)}</strong> est en retard de paiement. Un rappel vient d'être envoyé au client.`,
+    rows,
+    closingHtml: "Notification interne automatique — PrestiX.",
+  });
+
+  const owners: SendTrackedMailResult[] = [];
+  for (const ownerEmail of ownerEmails) {
+    if (ownerEmail === to) continue; // avoid double-send if an admin's email matches the party record
+    const result = await sendTrackedMail({
+      to: ownerEmail,
+      subject: `PrestiX - [Interne] Facture ${number} en retard`,
+      text: `La facture ${number} du client ${buyer} est en retard de ${params.daysOverdue} jour(s). Montant du : ${money(invoice.totalAmount)}.`,
+      html: ownerHtml,
+      attachments: emailIconAttachments(),
+      templateKey: "invoice_overdue_reminder_owner",
+      sourceType: "invoices",
+      sourceId: String(invoice.id),
+      metadata: { ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger), daysOverdue: params.daysOverdue, audience: "owner" },
+    });
+    owners.push(result);
+  }
+
+  return { client, owners };
+}
+
 export async function sendProformaEmail(
   params: SendDocumentEmailParams,
 ): Promise<SendTrackedMailResult> {
@@ -228,10 +285,29 @@ export async function sendProformaEmail(
 
   const to = recipientEmail(proforma.partySnapshot, params.to);
   const buyer = partyName(proforma.partySnapshot);
-  const buyerHtml = escapeHtml(buyer);
   const total = proforma.lines.reduce((sum, line) => sum + Number(line.lineTotal), 0);
-  const senderName = await getStringValue("mail_sender_name", "PrestiX");
   const pdf = await generateProformaPdf(proforma.id, params.requestedByUserId);
+
+  const rows: InfoRow[] = [
+    { icon: "file-invoice-navy", label: "Proforma", value: escapeHtml(proforma.number), emphasis: "blue" },
+    { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
+    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(proforma.createdAt)) },
+    { icon: "calendar-due-navy", label: "Validité", value: escapeHtml(fmtDateLong(proforma.expiresAt)), emphasis: "gold" },
+    { icon: "coin-navy", label: "Montant total", value: escapeHtml(money(total)), emphasis: "gold" },
+    { icon: "info-circle-navy", label: "Statut", value: statusPill("À confirmer") },
+  ];
+
+  const html = emailShell({
+    tone: "blue",
+    heroIcon: "hero-receipt",
+    bannerHeadline: "Votre proforma est disponible",
+    bodyGreetingName: buyer,
+    bodyIntro: "Nous vous prions de trouver ci-joint la proforma préparée pour votre réservation. Elle reste valable jusqu'à la date de validité indiquée ci-dessous.",
+    rows,
+    attachmentLabel: "Proforma PDF en pièce jointe",
+    ctaLabel: "Télécharger la proforma",
+    closingHtml: "Merci de votre confiance.",
+  });
 
   const result = await sendTrackedMail({
     to,
@@ -240,22 +316,9 @@ export async function sendProformaEmail(
       `Bonjour ${buyer},\n\n` +
       `Veuillez trouver en piece jointe votre proforma ${proforma.number} d'un montant de ${money(total)}.\n\n` +
       "Merci pour votre confiance.\nPrestiX",
-    html: htmlShell({
-      title: "Votre proforma est disponible",
-      sectionLabel: "PROFORMA",
-      intro: `Nous vous prions de trouver en piece jointe la proforma preparee pour ${buyer}.`,
-      summaryRows: [
-        { label: "Proforma", value: escapeHtml(proforma.number), highlight: true },
-        { label: "Client", value: buyerHtml },
-        { label: "Date d'emission", value: escapeHtml(fmtDateLong(proforma.createdAt)) },
-        { label: "Validite", value: escapeHtml(fmtDateLong(proforma.expiresAt)), highlight: true },
-        { label: "Montant total", value: escapeHtml(money(total)), highlight: true },
-        { label: "Statut", value: statusPill("A confirmer") },
-      ],
-      senderName,
-    }),
+    html,
     attachments: [
-      ...emailAssetAttachments(),
+      ...emailIconAttachments(),
       { filename: `${proforma.number}.pdf`, content: pdf, contentType: "application/pdf" },
     ],
     templateKey: "proforma_pdf",
@@ -277,11 +340,30 @@ export async function sendDeliveryNoteEmail(
   const invoice = await getInvoiceById(params.id);
   const to = recipientEmail(invoice.partySnapshot, params.to);
   const buyer = partyName(invoice.partySnapshot);
-  const buyerHtml = escapeHtml(buyer);
   const number = deliveryNote.number ?? `BL-${deliveryNote.id}`;
   const invoiceNumber = invoice.number ?? String(invoice.id);
-  const senderName = await getStringValue("mail_sender_name", "PrestiX");
   const pdf = await generateDeliveryNotePdf(invoice.id, params.requestedByUserId);
+
+  const rows: InfoRow[] = [
+    { icon: "file-invoice-navy", label: "Bon de livraison", value: escapeHtml(number), emphasis: "blue" },
+    { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
+    { icon: "file-invoice-navy", label: "Facture liée", value: escapeHtml(invoiceNumber), emphasis: "gold" },
+    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(deliveryNote.issuedAt)) },
+    { icon: "coin-navy", label: "Montant facture", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
+    { icon: "info-circle-navy", label: "Statut", value: statusPill("Document joint") },
+  ];
+
+  const html = emailShell({
+    tone: "blue",
+    heroIcon: "hero-receipt",
+    bannerHeadline: "Votre bon de livraison est disponible",
+    bodyGreetingName: buyer,
+    bodyIntro: "Nous vous prions de trouver ci-joint le bon de livraison préparé pour votre réservation, rattaché à la facture référencée ci-dessous.",
+    rows,
+    attachmentLabel: "Bon de livraison PDF en pièce jointe",
+    ctaLabel: "Télécharger le document",
+    closingHtml: "Merci de votre confiance.",
+  });
 
   const result = await sendTrackedMail({
     to,
@@ -289,22 +371,9 @@ export async function sendDeliveryNoteEmail(
     text:
       `Bonjour ${buyer},\n\n` +
       `Veuillez trouver en piece jointe votre bon de livraison ${number}, rattache a la facture ${invoiceNumber}.\n\nPrestiX`,
-    html: htmlShell({
-      title: "Votre bon de livraison est disponible",
-      sectionLabel: "BON DE LIVRAISON",
-      intro: `Nous vous prions de trouver en piece jointe le bon de livraison prepare pour ${buyer}.`,
-      summaryRows: [
-        { label: "Bon de livraison", value: escapeHtml(number), highlight: true },
-        { label: "Client", value: buyerHtml },
-        { label: "Facture liee", value: escapeHtml(invoiceNumber), highlight: true },
-        { label: "Date d'emission", value: escapeHtml(fmtDateLong(deliveryNote.issuedAt)) },
-        { label: "Montant facture", value: escapeHtml(money(invoice.totalAmount)), highlight: true },
-        { label: "Statut", value: statusPill("Document joint") },
-      ],
-      senderName,
-    }),
+    html,
     attachments: [
-      ...emailAssetAttachments(),
+      ...emailIconAttachments(),
       { filename: `${number}.pdf`, content: pdf, contentType: "application/pdf" },
     ],
     templateKey: "delivery_note_pdf",

@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import * as paymentService from "../services/payment.service.js";
+import { getBoolValue } from "@/modules/settings/services/settings.service.js";
+import { sendInvoicePaidEmail } from "../services/document-email.service.js";
 
 function handleError(res: Response, error: unknown): void {
   const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -22,6 +24,27 @@ function handleError(res: Response, error: unknown): void {
   res.status(code).json({ message, code: message });
 }
 
+// Scenario #2 auto-send — fire-and-forget, same shape as the invoice/proforma/
+// delivery-note queueAutomatic*Email helpers: settings-gated, response already
+// sent, errors caught and logged rather than surfaced to the request.
+async function queueInvoicePaidEmail(invoiceId: number, userId: number): Promise<void> {
+  try {
+    const enabled = await getBoolValue("mail_document_auto_send_enabled", false);
+    if (!enabled) return;
+    const result = await sendInvoicePaidEmail({
+      id: invoiceId,
+      requestedByUserId: userId,
+      trigger: "automatic",
+    });
+    if (!result.success) {
+      console.warn("[payment:paid-email]", result.errorMessage ?? "MAIL_SEND_FAILED");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    if (message !== "RECIPIENT_EMAIL_REQUIRED") console.warn("[payment:paid-email]", error);
+  }
+}
+
 export async function record(req: Request, res: Response): Promise<void> {
   try {
     const invoiceId = parseInt(req.params.invoiceId);
@@ -32,7 +55,7 @@ export async function record(req: Request, res: Response): Promise<void> {
       res.status(400).json({ message: "amountTendered et method sont requis." });
       return;
     }
-    const rows = await paymentService.recordPayment({
+    const { payments, becamePaid } = await paymentService.recordPayment({
       invoiceId,
       amountTendered,
       method,
@@ -41,7 +64,8 @@ export async function record(req: Request, res: Response): Promise<void> {
       agentId: req.user!.userId,
       allocationTarget,
     });
-    res.status(201).json(rows);
+    res.status(201).json(payments);
+    if (becamePaid) void queueInvoicePaidEmail(invoiceId, req.user!.userId);
   } catch (error) {
     handleError(res, error);
   }
