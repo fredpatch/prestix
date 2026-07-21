@@ -54,9 +54,22 @@ export interface EmployeeKpiRow extends KpiRow {
 // rather than just a scoreboard.
 export interface EmployeeActivityDetail {
   invoices: { id: number; number?: string; date: string; amount: number; partyName: string }[];
-  payments: { id: number; invoiceId: number; invoiceNumber?: string; date: string; amount: number; method: string }[];
+  payments: {
+    id: number;
+    invoiceId: number;
+    invoiceNumber?: string;
+    date: string;
+    amount: number;
+    method: string;
+  }[];
   commissions: { id: number; type: string; typeLabel: string; date: string; amount: number }[];
-  stockMovements: { id: number; articleName: string; type: string; quantity: number; date: string }[];
+  stockMovements: {
+    id: number;
+    articleName: string;
+    type: string;
+    quantity: number;
+    date: string;
+  }[];
   savingsTransactions: { id: number; nature: string; amount: number; date: string }[];
 }
 
@@ -84,6 +97,23 @@ export interface ActivityRow {
   actorName?: string; // undefined for system-originated rows (e.g. auto-conversion cron)
   metadata?: Record<string, unknown>;
   createdAt: Date;
+}
+
+export interface RecentSaleRow {
+  id: string;
+  kind: "invoice" | "payment" | "commission";
+  title: string;
+  subtitle?: string;
+  amount: number;
+  partyName?: string;
+  agentName?: string;
+  occurredAt: Date;
+  href?: string;
+}
+
+export interface CommissionTypeTrendRow {
+  bucket: string;
+  series: Record<string, number>;
 }
 
 export interface CreanceByParty {

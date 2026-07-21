@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -39,12 +39,13 @@ import { cn } from "@/lib/utils";
 import { UserKpiCard } from "./users/components/UserKpiCard";
 import { UserGrid } from "./users/components/UserGrid";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 function employeeDetailUrl(userId: number): string {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const to = now.toISOString().split("T")[0];
-  return `/reporting/employees/${userId}?from=${from}&to=${to}&basis=accrual`;
+  return `/reporting/employees/${userId}?from=${from}&to=${to}&basis=accrual&source=users`;
 }
 
 export default function UsersPage() {
@@ -53,6 +54,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<Role | "">("");
   const [editing, setEditing] = useState<User | null>(null);
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useUsers({ search, roleFilter });
@@ -62,6 +64,10 @@ export default function UsersPage() {
 
   const users = data?.data ?? [];
   const total = data?.total ?? 0;
+
+  useEffect(() => {
+    if (isMobile) setViewMode("grid");
+  }, [isMobile]);
 
   // Both actions share one "which row is busy" indicator, same as before —
   // only one of the two mutations can be in flight per click, so this is

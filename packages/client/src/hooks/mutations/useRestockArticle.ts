@@ -9,6 +9,7 @@ export function useRestockArticleMutation() {
       stockApi.restock(id, type, quantity).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.stock() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.stockMovements() });
     },
   });
 }

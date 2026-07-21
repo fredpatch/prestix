@@ -18,7 +18,7 @@ function employeeDetailUrl(userId: number): string {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
   const to = now.toISOString().split("T")[0];
-  return `/reporting/employees/${userId}?from=${from}&to=${to}&basis=accrual`;
+  return `/reporting/employees/${userId}?from=${from}&to=${to}&basis=accrual&source=users`;
 }
 
 interface UserGridProps {

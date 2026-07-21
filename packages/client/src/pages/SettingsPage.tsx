@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Save, Plus, ChevronLeft, ChevronRight, Info } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  BadgeCheck,
+  Loader2,
+  Plus,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
+  ToggleLeft,
+  WalletCards,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +21,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { DataTable } from "@/components/ui/data-table";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   Dialog,
   DialogTrigger,
@@ -29,22 +32,20 @@ import {
 import { settingsApi, type Setting } from "@/lib/settings.api";
 import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
-import { usersApi } from "@/lib/users.api";
-import type { AuditLogRow } from "@/lib/audit-log.api";
-import {
-  useAuditLog,
-  useAuditLogActions,
-  useAuditLogEntityTypes,
-} from "@/hooks/queries/useAuditLog";
 import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useAuth } from "@/App";
 import { savingsApi } from "@/lib/savings.api";
 
 const MODULE_LABELS: Record<string, string> = {
+  M1: "Sécurité",
+  M2: "Documents",
+  M3: "Crédits client",
+  M6: "Créances et pénalités",
+  M11: "Épargne voyage",
   auth: "Authentification",
   settings: "Paramètres",
-  party: "Clients & référents",
+  party: "Clients et référents",
   documents: "Documents",
   payments: "Paiements",
   penalties: "Pénalités",
@@ -57,21 +58,142 @@ const MODULE_LABELS: Record<string, string> = {
   papeterie: "Papeterie",
 };
 
+const MODULE_DESCRIPTIONS: Record<string, string> = {
+  M1: "Règles appliquées à la connexion, aux OTP et au verrouillage des comptes.",
+  M2: "Valeurs par défaut utilisées lors de la création des documents commerciaux.",
+  M3: "Comportement des crédits client lorsqu'ils arrivent en fin de période de décision.",
+  M6: "Montants et délais utilisés pour calculer les pénalités de créances.",
+  M11: "Paramètres d'inscription et conversion vers l'épargne voyage.",
+};
+
+const SETTING_COPY: Record<
+  string,
+  {
+    label: string;
+    helper: string;
+    unit?: string;
+    impact: "critical" | "warning" | "normal";
+    options?: { value: string; label: string; detail: string }[];
+  }
+> = {
+  penalty_amount_xaf: {
+    label: "Montant de pénalité hebdomadaire",
+    helper: "Ajouté à chaque échéance en retard pour chaque semaine complète dépassée.",
+    unit: "XAF",
+    impact: "critical",
+  },
+  penalty_grace_days: {
+    label: "Délai avant pénalité",
+    helper: "Nombre de jours accordés après une échéance manquée avant le calcul des pénalités.",
+    unit: "jours",
+    impact: "critical",
+  },
+  credit_decision_period_days: {
+    label: "Période de décision crédit",
+    helper: "Durée pendant laquelle le client peut choisir quoi faire d'un lot de crédit.",
+    unit: "jours",
+    impact: "warning",
+  },
+  credit_underfee_policy: {
+    label: "Crédit inférieur aux frais d'inscription",
+    helper: "Décide du traitement des petits crédits expirés avant conversion vers l'épargne.",
+    impact: "critical",
+    options: [
+      {
+        value: "HOLD_AND_NOTIFY",
+        label: "Mettre en attente et notifier",
+        detail: "Le crédit reste bloqué pour revue manuelle.",
+      },
+      {
+        value: "CONVERT_ANYWAY",
+        label: "Convertir malgré tout",
+        detail: "Le crédit est converti même s'il ne couvre pas les frais.",
+      },
+    ],
+  },
+  epargne_inscription_fee: {
+    label: "Frais d'inscription épargne",
+    helper: "Montant prélevé lors de l'inscription à l'épargne voyage.",
+    unit: "XAF",
+    impact: "critical",
+  },
+  default_currency: {
+    label: "Devise par défaut",
+    helper: "Devise proposée dans les documents et calculs financiers.",
+    impact: "warning",
+  },
+  default_due_date_offset_days: {
+    label: "Échéance par défaut des factures",
+    helper: "Nombre de jours ajoutés à la date d'émission en mode paiement complet.",
+    unit: "jours",
+    impact: "warning",
+  },
+  otp_expiration_minutes: {
+    label: "Validité du code OTP",
+    helper: "Durée pendant laquelle un code de vérification reste utilisable.",
+    unit: "minutes",
+    impact: "normal",
+  },
+  lockout_max_attempts: {
+    label: "Tentatives de connexion autorisées",
+    helper: "Nombre d'échecs de connexion avant verrouillage temporaire du compte.",
+    unit: "tentatives",
+    impact: "warning",
+  },
+  lockout_duration_minutes: {
+    label: "Durée du verrouillage",
+    helper: "Temps d'attente imposé après dépassement du nombre de tentatives autorisées.",
+    unit: "minutes",
+    impact: "warning",
+  },
+};
+
+const IMPACT_STYLES = {
+  critical: {
+    label: "Impact élevé",
+    className: "border-red-200 bg-red-50 text-red-700",
+    cardClassName:
+      "border-red-200 bg-[repeating-linear-gradient(135deg,#fef2f2_0,#fef2f2_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-red-300",
+    icon: AlertTriangle,
+  },
+  warning: {
+    label: "Impact moyen",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+    cardClassName:
+      "border-amber-200 bg-[repeating-linear-gradient(135deg,#fffbeb_0,#fffbeb_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-amber-300",
+    icon: SlidersHorizontal,
+  },
+  normal: {
+    label: "Impact faible",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    cardClassName:
+      "border-emerald-200 bg-[repeating-linear-gradient(135deg,#ecfdf5_0,#ecfdf5_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-emerald-300",
+    icon: ShieldCheck,
+  },
+};
+
 export default function SettingsPage() {
   usePageHeader({ title: "Paramètres" });
 
   return (
-    <div>
-      <p className="text-neutral-500 text-sm mb-6">
-        Paramètres financiers, visibilité des modules et catalogue de commissions.
-      </p>
+    <div className="space-y-5">
+      <div className="border border-neutral-200 bg-white px-4 py-4">
+        <p className="text-[11px] font-semibold uppercase text-brand-gold-dark">Administration</p>
+        <h2 className="mt-1 text-lg font-semibold text-neutral-950">Règles de fonctionnement</h2>
+        <p className="mt-1 max-w-3xl text-sm text-neutral-500">
+          Ajustez les paramètres financiers, la visibilité des modules et le catalogue des
+          commissions. Les actions sensibles sont signalées avant modification.
+        </p>
+      </div>
 
       <Tabs defaultValue="financial">
         <TabsList>
-          <TabsTrigger value="financial">Paramètres financiers</TabsTrigger>
+          <TabsTrigger value="financial">Règles financières</TabsTrigger>
           <TabsTrigger value="modules">Modules</TabsTrigger>
           <TabsTrigger value="catalog">Catalogue commissions</TabsTrigger>
-          <TabsTrigger value="audit">Journal d'audit</TabsTrigger>
         </TabsList>
 
         <TabsContent value="financial">
@@ -83,15 +205,10 @@ export default function SettingsPage() {
         <TabsContent value="catalog">
           <CatalogTab />
         </TabsContent>
-        <TabsContent value="audit">
-          <AuditLogTab />
-        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-// ── Financial params ─────────────────────────────────────────────────────
 
 function FinancialSettingsTab() {
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -117,56 +234,72 @@ function FinancialSettingsTab() {
     }
   }
 
-  if (loading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  const grouped = useMemo(
+    () =>
+      settings.reduce<Record<string, Setting[]>>((acc, setting) => {
+        (acc[setting.module] ??= []).push(setting);
+        return acc;
+      }, {}),
+    [settings],
+  );
 
-  const grouped = settings.reduce<Record<string, Setting[]>>((acc, s) => {
-    (acc[s.module] ??= []).push(s);
-    return acc;
-  }, {});
+  const dirtyCount = settings.filter((setting) => drafts[setting.key] !== setting.value).length;
+  const criticalCount = settings.filter(
+    (setting) => (SETTING_COPY[setting.key]?.impact ?? "normal") === "critical",
+  ).length;
+  const financialModules = Object.keys(grouped).length;
+
+  if (loading) return <LoadingLine label="Chargement des paramètres..." />;
 
   return (
-    <div className="space-y-6">
-      {Object.entries(grouped).map(([module, items]) => (
-        <div key={module}>
-          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">
-            {MODULE_LABELS[module] ?? module}
-          </h3>
-          <div className="space-y-2">
-            {items.map((s) => {
-              const dirty = drafts[s.key] !== s.value;
-              return (
-                <div
-                  key={s.key}
-                  className="flex items-center gap-3 bg-white border border-neutral-200 rounded-lg px-4 py-2.5"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium text-neutral-800">{s.key}</p>
-                    {s.description && (
-                      <p className="text-[10.5px] text-neutral-500 truncate">{s.description}</p>
-                    )}
-                  </div>
-                  <Input
-                    value={drafts[s.key] ?? ""}
-                    onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: e.target.value }))}
-                    className="w-40 h-8 text-sm"
-                  />
-                  <Button
-                    size="sm"
-                    variant={dirty ? "default" : "secondary"}
-                    disabled={!dirty || saving === s.key}
-                    onClick={() => handleSave(s.key)}
-                  >
-                    {saving === s.key ? (
-                      <Loader2 size={13} className="animate-spin" />
-                    ) : (
-                      <Save size={13} />
-                    )}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        <SettingsKpi icon={WalletCards} label="Paramètres actifs" value={String(settings.length)} />
+        <SettingsKpi
+          icon={AlertTriangle}
+          label="Réglages sensibles"
+          value={String(criticalCount)}
+          tone="danger"
+        />
+        <SettingsKpi icon={BadgeCheck} label="Modules concernés" value={String(financialModules)} />
+      </div>
+
+      {dirtyCount > 0 && (
+        <div className="border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {dirtyCount} modification{dirtyCount > 1 ? "s" : ""} en attente d'enregistrement.
         </div>
+      )}
+
+      {Object.entries(grouped).map(([module, items]) => (
+        <section key={module} className="border border-neutral-200 bg-white">
+          <div className="grid gap-2 border-b border-neutral-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-950">
+                {MODULE_LABELS[module] ?? module}
+              </h3>
+              <p className="mt-1 text-xs text-neutral-500">
+                {MODULE_DESCRIPTIONS[module] ?? "Paramètres opérationnels du module."}
+              </p>
+            </div>
+            <span className="text-xs text-neutral-500">
+              {items.length} option{items.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((setting) => (
+              <SettingControl
+                key={setting.key}
+                setting={setting}
+                value={drafts[setting.key] ?? ""}
+                dirty={drafts[setting.key] !== setting.value}
+                saving={saving === setting.key}
+                onChange={(value) => setDrafts((current) => ({ ...current, [setting.key]: value }))}
+                onSave={() => handleSave(setting.key)}
+              />
+            ))}
+          </div>
+        </section>
       ))}
 
       <CreditConversionTool />
@@ -174,9 +307,103 @@ function FinancialSettingsTab() {
   );
 }
 
-// Manual trigger for the M11 auto-conversion cron — same pattern as Sprint 5's
-// penalty accrual manual trigger: a legitimate standing admin feature (force
-// a check after fixing a settings mistake), not just a test hook.
+function SettingControl({
+  setting,
+  value,
+  dirty,
+  saving,
+  onChange,
+  onSave,
+}: {
+  setting: Setting;
+  value: string;
+  dirty: boolean;
+  saving: boolean;
+  onChange: (value: string) => void;
+  onSave: () => void;
+}) {
+  const copy = SETTING_COPY[setting.key] ?? {
+    label: humanizeKey(setting.key),
+    helper: setting.description ?? "Paramètre système.",
+    impact: "normal" as const,
+  };
+  const impact = IMPACT_STYLES[copy.impact];
+  const ImpactIcon = impact.icon;
+
+  return (
+    <div className={`flex min-h-full flex-col border bg-white p-3 ${impact.cardClassName}`}>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-neutral-900">{copy.label}</p>
+          <span
+            className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] ${impact.className}`}
+          >
+            <ImpactIcon size={12} />
+            {impact.label}
+          </span>
+        </div>
+        <p className="mt-1 text-xs leading-5 text-neutral-500">{copy.helper}</p>
+        <p className="mt-1 text-[11px] text-neutral-400">Clé technique: {setting.key}</p>
+      </div>
+
+      <div className={`my-3 border-t border-dashed ${impact.ruleClassName}`} />
+
+      <div className="mt-auto space-y-3">
+        {setting.type === "boolean" ? (
+          <div className="flex items-center justify-between border border-neutral-200 bg-white px-3 py-2">
+            <span className="text-xs text-neutral-600">
+              {value === "true" ? "Activé" : "Désactivé"}
+            </span>
+            <Switch
+              checked={value === "true"}
+              onCheckedChange={(checked) => onChange(String(checked))}
+            />
+          </div>
+        ) : copy.options ? (
+          <Select value={value} onValueChange={onChange}>
+            <SelectTrigger className="h-10 bg-white">
+              <SelectValue placeholder="Choisir une règle" />
+            </SelectTrigger>
+            <SelectContent>
+              {copy.options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Input
+              type={setting.type === "integer" ? "number" : "text"}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+              className="h-10 bg-white"
+            />
+            {copy.unit && <span className="w-20 text-xs text-neutral-500">{copy.unit}</span>}
+          </div>
+        )}
+        {copy.options && (
+          <p className="mt-1 text-[11px] text-neutral-500">
+            {copy.options.find((option) => option.value === value)?.detail}
+          </p>
+        )}
+
+        <Button
+          size="sm"
+          variant={dirty ? "default" : "secondary"}
+          disabled={!dirty || saving}
+          onClick={onSave}
+          className="w-full"
+        >
+          {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+          Enregistrer
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CreditConversionTool() {
   const { user } = useAuth();
   const [running, setRunning] = useState(false);
@@ -203,30 +430,28 @@ function CreditConversionTool() {
   }
 
   return (
-    <div>
-      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">
-        Outils
-      </h3>
-      <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between">
+    <section className="border border-red-200 bg-red-50">
+      <div className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <div>
-          <p className="text-[12px] font-medium text-neutral-800">
-            Conversion crédit expiré → épargne
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-red-700" />
+            <h3 className="text-sm font-semibold text-red-900">
+              Conversion manuelle des crédits expirés
+            </h3>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-red-700">
+            Lance immédiatement la conversion des crédits dont la fenêtre de décision est expirée.
+            Cette action peut créer de vrais mouvements financiers.
           </p>
-          <p className="text-[10.5px] text-neutral-500">
-            Déclenche manuellement la conversion des lots de crédit dont la fenêtre de décision est
-            expirée (normalement automatique, une fois par jour).
-          </p>
+          {result && <p className="mt-2 text-xs text-red-800">{result}</p>}
         </div>
-        <Button size="sm" variant="outline" onClick={handleTrigger} disabled={running}>
+        <Button size="sm" variant="destructive" onClick={handleTrigger} disabled={running}>
           {running ? <Loader2 size={13} className="animate-spin" /> : "Déclencher"}
         </Button>
       </div>
-      {result && <p className="text-[10.5px] text-neutral-500 mt-1.5">{result}</p>}
-    </div>
+    </section>
   );
 }
-
-// ── Feature flags ─────────────────────────────────────────────────────────
 
 function ModulesTab() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -240,30 +465,73 @@ function ModulesTab() {
   }, []);
 
   async function handleToggle(moduleCode: string, enabled: boolean) {
-    setFlags((prev) => prev.map((f) => (f.moduleCode === moduleCode ? { ...f, enabled } : f)));
+    setFlags((prev) =>
+      prev.map((flag) => (flag.moduleCode === moduleCode ? { ...flag, enabled } : flag)),
+    );
     await featureFlagsApi.toggle(moduleCode, enabled);
   }
 
-  if (loading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (loading) return <LoadingLine label="Chargement des modules..." />;
+
+  const enabledCount = flags.filter((flag) => flag.enabled).length;
 
   return (
-    <div className="space-y-2">
-      {flags.map((f) => (
-        <div
-          key={f.moduleCode}
-          className="flex items-center justify-between bg-white border border-neutral-200 rounded-lg px-4 py-2.5"
-        >
-          <span className="text-[12px] font-medium text-neutral-800">
-            {MODULE_LABELS[f.moduleCode] ?? f.moduleCode}
-          </span>
-          <Switch checked={f.enabled} onCheckedChange={(v) => handleToggle(f.moduleCode, v)} />
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        <SettingsKpi icon={ToggleLeft} label="Modules configurés" value={String(flags.length)} />
+        <SettingsKpi icon={BadgeCheck} label="Modules visibles" value={String(enabledCount)} />
+        <SettingsKpi
+          icon={AlertTriangle}
+          label="Modules masqués"
+          value={String(flags.length - enabledCount)}
+          tone="warning"
+        />
+      </div>
+
+      <section className="border border-neutral-200 bg-white">
+        <div className="border-b border-neutral-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-neutral-950">Visibilité des modules</h3>
+          <p className="mt-1 text-xs text-neutral-500">
+            Désactiver un module le retire de la navigation. Les données existantes ne sont pas
+            supprimées.
+          </p>
         </div>
-      ))}
+        <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
+          {flags.map((flag) => (
+            <div
+              key={flag.moduleCode}
+              className={`flex min-h-full flex-col justify-between border p-3 ${
+                flag.enabled
+                  ? "border-emerald-200 bg-emerald-50/40"
+                  : "border-neutral-200 bg-neutral-50"
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-900">
+                  {MODULE_LABELS[flag.moduleCode] ?? humanizeKey(flag.moduleCode)}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {flag.enabled
+                    ? "Visible dans la navigation des utilisateurs autorisés."
+                    : "Masqué dans la navigation, réactivation possible."}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
+                <span className="text-[11px] font-medium text-neutral-500">
+                  {flag.enabled ? "Visible" : "Masqué"}
+                </span>
+                <Switch
+                  checked={flag.enabled}
+                  onCheckedChange={(value) => handleToggle(flag.moduleCode, value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
-
-// ── Commission catalog ──────────────────────────────────────────────────
 
 function CatalogTab() {
   const [types, setTypes] = useState<CommissionType[]>([]);
@@ -284,7 +552,7 @@ function CatalogTab() {
   useEffect(reload, []);
 
   async function handleToggle(code: string, active: boolean) {
-    setTypes((prev) => prev.map((t) => (t.code === code ? { ...t, active } : t)));
+    setTypes((prev) => prev.map((type) => (type.code === code ? { ...type, active } : type)));
     await commissionCatalogApi.toggleActive(code, active);
   }
 
@@ -307,309 +575,153 @@ function CatalogTab() {
     }
   }
 
-  if (loading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (loading) return <LoadingLine label="Chargement du catalogue..." />;
+
+  const activeCount = types.filter((type) => type.active).length;
 
   return (
-    <div>
-      <div className="flex justify-end mb-3">
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger>
-            <Button size="sm">
-              <Plus size={14} /> Nouveau type
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nouveau type de commission</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
-                  Code
-                </label>
-                <Input
-                  value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
-                  placeholder="ex: partenariat_hotel"
-                />
-              </div>
-              <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
-                  Libellé
-                </label>
-                <Input
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  placeholder="ex: Partenariat Hôtel"
-                />
-              </div>
-              {createError && <p className="text-[11px] text-red-600">{createError}</p>}
-            </div>
-            <DialogFooter>
-              <Button variant="secondary" onClick={() => setDialogOpen(false)}>
-                Annuler
-              </Button>
-              <Button onClick={handleCreate} disabled={creating || !newCode || !newLabel}>
-                {creating ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        <SettingsKpi icon={WalletCards} label="Types de commission" value={String(types.length)} />
+        <SettingsKpi icon={BadgeCheck} label="Types actifs" value={String(activeCount)} />
+        <SettingsKpi
+          icon={AlertTriangle}
+          label="Types désactivés"
+          value={String(types.length - activeCount)}
+          tone="warning"
+        />
       </div>
 
-      <div className="space-y-2">
-        {types.map((t) => (
-          <div
-            key={t.code}
-            className="flex items-center justify-between bg-white border border-neutral-200 rounded-lg px-4 py-2.5"
-          >
-            <div>
-              <p className="text-[12px] font-medium text-neutral-800">{t.label}</p>
-              <p className="text-[10.5px] text-neutral-500">{t.code}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <EditCommissionTypeDialog type={t} onUpdated={reload} />
-              <Switch checked={t.active} onCheckedChange={(v) => handleToggle(t.code, v)} />
-            </div>
+      <section className="border border-neutral-200 bg-white">
+        <div className="grid gap-3 border-b border-neutral-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-950">Catalogue des commissions</h3>
+            <p className="mt-1 text-xs text-neutral-500">
+              Ces types structurent la saisie, les filtres et les graphiques de commissions.
+            </p>
           </div>
-        ))}
-      </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger>
+              <Button size="sm">
+                <Plus size={14} /> Nouveau type
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nouveau type de commission</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-[11.5px] font-medium text-neutral-800">
+                    Code technique
+                  </label>
+                  <Input
+                    value={newCode}
+                    onChange={(event) => setNewCode(event.target.value)}
+                    placeholder="partenariat_hotel"
+                  />
+                  <p className="mt-1 text-[11px] text-neutral-500">
+                    Utilisé par l'API et les rapports. Préférez minuscules, chiffres et tirets bas.
+                  </p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11.5px] font-medium text-neutral-800">
+                    Nom affiché
+                  </label>
+                  <Input
+                    value={newLabel}
+                    onChange={(event) => setNewLabel(event.target.value)}
+                    placeholder="Partenariat hôtel"
+                  />
+                </div>
+                {createError && <p className="text-[11px] text-red-600">{createError}</p>}
+              </div>
+              <DialogFooter>
+                <Button variant="secondary" onClick={() => setDialogOpen(false)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleCreate} disabled={creating || !newCode || !newLabel}>
+                  {creating ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-4">
+          {types.map((type) => (
+            <div
+              key={type.code}
+              className={`flex min-h-full flex-col justify-between border p-3 ${
+                type.active
+                  ? "border-emerald-200 bg-emerald-50/40"
+                  : "border-neutral-200 bg-neutral-50"
+              }`}
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-neutral-900">{type.label}</p>
+                  <span
+                    className={`border px-2 py-0.5 text-[11px] ${type.active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50 text-neutral-500"}`}
+                  >
+                    {type.active ? "Actif" : "Désactivé"}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-neutral-500">Code technique: {type.code}</p>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
+                <EditCommissionTypeDialog type={type} onUpdated={reload} />
+                <Switch
+                  checked={type.active}
+                  onCheckedChange={(value) => handleToggle(type.code, value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
 
-// ── Audit log ────────────────────────────────────────────────────────────
-// Pure display layer over the audit_log table every module already writes
-// to via logAudit() — no new tracking. Backend route is admin+ only
-// (packages/server/src/modules/audit-log), stricter than reporting's
-// agent+ read, since this exposes every action by every user unfiltered.
-
-const PAGE_SIZE = 10;
-
-function humanizeAction(action: string): string {
-  const lower = action.replace(/_/g, " ").toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
-}
-
-function AuditLogTab() {
-  const [userId, setUserId] = useState<number | undefined>(undefined);
-  const [action, setAction] = useState<string | undefined>(undefined);
-  const [entityType, setEntityType] = useState<string | undefined>(undefined);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [page, setPage] = useState(1);
-
-  const filters = { userId, action, entityType, from: from || undefined, to: to || undefined };
-
-  const { data, isLoading } = useAuditLog({ ...filters, page, pageSize: PAGE_SIZE });
-  const { data: actions = [] } = useAuditLogActions();
-  const { data: entityTypes = [] } = useAuditLogEntityTypes();
-
-  // Lightweight lookup for the user filter — not the paginated useUsers()
-  // hook (defaults to 20/page), just names for a dropdown.
-  const { data: userOptions = [] } = useQuery({
-    queryKey: ["users", "audit-log-lookup"],
-    queryFn: () => usersApi.list({ pageSize: 200 }).then((r) => r.data.data),
-  });
-
-  const rows = data?.data ?? [];
-  const total = data?.total ?? 0;
-
-  function resetFilters() {
-    setUserId(undefined);
-    setAction(undefined);
-    setEntityType(undefined);
-    setFrom("");
-    setTo("");
-    setPage(1);
-  }
-
-  // Every filter setter below also resets page to 1 — changing a filter
-  // mid-pagination should never leave the user stranded on a page number
-  // that no longer has that many results.
-  const columns: ColumnDef<AuditLogRow, any>[] = [
-    {
-      accessorKey: "createdAt",
-      header: "Date / heure",
-      cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-600">
-          {format(parseISO(row.original.createdAt), "dd MMM yyyy HH:mm", { locale: fr })}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "actorName",
-      header: "Utilisateur",
-      cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">{row.original.actorName ?? "Système"}</span>
-      ),
-    },
-    {
-      accessorKey: "action",
-      header: "Action",
-      cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800" title={row.original.action}>
-          {humanizeAction(row.original.action)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "entityType",
-      header: "Entité",
-      cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
-          {row.original.entityType}
-          {row.original.entityId ? ` #${row.original.entityId}` : ""}
-        </span>
-      ),
-    },
-    {
-      id: "details",
-      header: "Détails",
-      cell: ({ row }) => {
-        const metadata = row.original.metadata;
-        if (!metadata || Object.keys(metadata).length === 0) {
-          return <span className="text-[12px] text-neutral-300">—</span>;
-        }
-        return (
-          <Popover>
-            <PopoverTrigger type="button" className="text-neutral-400 hover:text-neutral-600">
-              <Info size={14} />
-            </PopoverTrigger>
-            <PopoverContent className="w-72 text-[11px] space-y-1">
-              {Object.entries(metadata).map(([key, value]) => (
-                <div key={key} className="flex justify-between gap-2">
-                  <span className="text-neutral-500">{key}</span>
-                  <span className="text-neutral-800 text-right break-all">{String(value)}</span>
-                </div>
-              ))}
-            </PopoverContent>
-          </Popover>
-        );
-      },
-    },
-  ];
+function SettingsKpi({
+  icon: Icon,
+  label,
+  value,
+  tone = "neutral",
+}: {
+  icon: typeof AlertTriangle;
+  label: string;
+  value: string;
+  tone?: "neutral" | "warning" | "danger";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-red-200 text-red-700"
+      : tone === "warning"
+        ? "border-amber-200 text-amber-700"
+        : "border-neutral-200 text-brand-gold-dark";
 
   return (
-    <div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Select
-          value={userId !== undefined ? String(userId) : "__all__"}
-          onValueChange={(v) => {
-            setUserId(v === "__all__" ? undefined : parseInt(v));
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tous les utilisateurs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Tous les utilisateurs</SelectItem>
-            {userOptions.map((u) => (
-              <SelectItem key={u.id} value={String(u.id)}>
-                {u.fullName}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={action ?? "__all__"}
-          onValueChange={(v) => {
-            setAction(v === "__all__" ? undefined : v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="Toutes les actions" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Toutes les actions</SelectItem>
-            {actions.map((a) => (
-              <SelectItem key={a} value={a}>
-                {humanizeAction(a)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={entityType ?? "__all__"}
-          onValueChange={(v) => {
-            setEntityType(v === "__all__" ? undefined : v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Toutes les entités" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Toutes les entités</SelectItem>
-            {entityTypes.map((e) => (
-              <SelectItem key={e} value={e}>
-                {e}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <DatePicker
-          value={from}
-          onChange={(v) => {
-            setFrom(v);
-            setPage(1);
-          }}
-          placeholder="Depuis"
-          className="w-40"
-        />
-        <DatePicker
-          value={to}
-          onChange={(v) => {
-            setTo(v);
-            setPage(1);
-          }}
-          placeholder="Jusqu'à"
-          className="w-40"
-        />
-
-        <Button variant="secondary" size="sm" onClick={resetFilters}>
-          Réinitialiser
-        </Button>
+    <div className={`border bg-white px-4 py-3 ${toneClass}`}>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium text-neutral-500">{label}</p>
+        <Icon size={16} />
       </div>
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        loading={isLoading}
-        emptyMessage="Aucune entrée trouvée."
-      />
-
-      <div className="flex items-center justify-between mt-3">
-        <p className="text-[11px] text-neutral-500">
-          {total} entrée{total !== 1 ? "s" : ""}
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            <ChevronLeft size={13} />
-          </Button>
-          <span className="text-[11px] text-neutral-500">
-            Page {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
-          </span>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={page * PAGE_SIZE >= total}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            <ChevronRight size={13} />
-          </Button>
-        </div>
-      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-neutral-950">{value}</p>
     </div>
   );
+}
+
+function LoadingLine({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+      <Loader2 size={16} className="animate-spin" />
+      {label}
+    </div>
+  );
+}
+
+function humanizeKey(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

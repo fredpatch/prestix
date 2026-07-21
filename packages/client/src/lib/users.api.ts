@@ -36,6 +36,7 @@ export const usersApi = {
   list: (filters: UserFilters = {}) =>
     api.get<{ data: User[]; total: number }>("/users", { params: filters }),
   stats: () => api.get<UserStats>("/users/stats"),
+  getById: (id: number) => api.get<User>(`/users/${id}`),
   create: (data: { email: string; fullName: string; role: Role }) => api.post<User>("/users", data),
   update: (id: number, data: { email?: string; role?: Role }) =>
     api.patch<User>(`/users/${id}`, data),

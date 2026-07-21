@@ -86,6 +86,23 @@ export interface ActivityRow {
   createdAt: string;
 }
 
+export interface RecentSaleRow {
+  id: string;
+  kind: "invoice" | "payment" | "commission";
+  title: string;
+  subtitle?: string;
+  amount: number;
+  partyName?: string;
+  agentName?: string;
+  occurredAt: string;
+  href?: string;
+}
+
+export interface CommissionTypeTrendRow {
+  bucket: string;
+  series: Record<string, number>;
+}
+
 export interface CreanceByParty {
   partyId: number;
   partyName: string;
@@ -126,6 +143,8 @@ export const reportingApi = {
         penalty: number;
       }[]
     >("/reporting/service-trend", { params }),
+  getCommissionTypeTrend: (params: DateRangeParams) =>
+    api.get<CommissionTypeTrendRow[]>("/reporting/commission-type-trend", { params }),
   getClientKpis: (params: DateRangeParams) =>
     api.get<KpiRow[]>("/reporting/kpis/clients", { params }),
   getApporteurKpis: (params: DateRangeParams) =>
@@ -136,6 +155,8 @@ export const reportingApi = {
     api.get<EmployeeActivityDetail>(`/reporting/employees/${agentId}/detail`, { params }),
   getRecentActivity: (limit = 10) =>
     api.get<ActivityRow[]>("/reporting/recent-activity", { params: { limit } }),
+  getRecentSales: (limit = 5) =>
+    api.get<RecentSaleRow[]>("/reporting/recent-sales", { params: { limit } }),
   exportExcelUrl: (params: DateRangeParams, modules?: string[]) =>
     `/api/reporting/export/excel?from=${params.from}&to=${params.to}&basis=${params.basis}${modules ? `&modules=${modules.join(",")}` : ""}`,
   exportPdfUrl: (params: DateRangeParams, modules?: string[]) =>

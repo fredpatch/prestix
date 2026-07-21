@@ -32,12 +32,17 @@ export const queryKeys = {
   commissionAll: () => ["commission-all"] as const,
   commissionParties: (commissionIds: number[]) => ["commission-parties", commissionIds] as const,
   commissionTypes: () => ["commission-types"] as const,
-  commissionEditRequests: () => ["commission-edit-requests"] as const,
+  commissionEditRequests: (status?: string) =>
+    status
+      ? (["commission-edit-requests", status] as const)
+      : (["commission-edit-requests"] as const),
   stock: (filters?: object) => ["stock", filters ?? {}] as const,
+  stockMovements: (articleIds?: number[]) => ["stock-movements", articleIds ?? []] as const,
 
   // Users
   users: (filters?: { search?: string; roleFilter?: string }) => ["users", filters ?? {}] as const,
   userStats: () => ["users", "stats"] as const,
+  user: (id: number) => ["users", id] as const,
 
   // Reporting
   employeeActivityDetail: (
@@ -58,11 +63,14 @@ export const queryKeys = {
     ["reporting", "ca-trend", params.from, params.to, params.basis] as const,
   serviceTrend: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
     ["reporting", "service-trend", params.from, params.to, params.basis] as const,
+  commissionTypeTrend: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "commission-type-trend", params.from, params.to, params.basis] as const,
   creancesByParty: () => ["reporting", "creances-by-party"] as const,
   accrualVsCash: (params: { from: string; to: string }) =>
     ["reporting", "accrual-vs-cash", params.from, params.to] as const,
   openEngagements: () => ["reporting", "open-engagements"] as const,
   recentActivity: (limit: number) => ["reporting", "recent-activity", limit] as const,
+  recentSales: (limit: number) => ["reporting", "recent-sales", limit] as const,
 
   // Audit log
   auditLog: (filters?: object) => ["audit-log", filters ?? {}] as const,

@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { PartyGrid } from "./party/components/PartyGrid";
 import { PartyKpiCard } from "./party/components/PartyKpiCard";
 import { PartyRoleBadges, PartyStatusBadge } from "./party/components/PartyBadges";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const columns: ColumnDef<Party, any>[] = [
   {
@@ -74,6 +75,7 @@ export default function PartiesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"" | "client" | "referrer">("");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const isMobile = useIsMobile();
 
   // Debounce the search value itself (not the query call) — the standard
   // React Query pattern; queryKey change is what drives the refetch.
@@ -81,6 +83,10 @@ export default function PartiesPage() {
     const timeout = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(timeout);
   }, [search]);
+
+  useEffect(() => {
+    if (isMobile) setViewMode("grid");
+  }, [isMobile]);
 
   const { data, isLoading } = useParties({ search: debouncedSearch, roleFilter });
   const { data: stats, isLoading: statsLoading } = usePartyStats();

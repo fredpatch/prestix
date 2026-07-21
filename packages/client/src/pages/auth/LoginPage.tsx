@@ -4,7 +4,15 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ShieldCheck } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Loader2,
+  Mail,
+  MapPinned,
+  Plane,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 import { authApi } from "@/lib/auth.api";
 import { cn } from "@/lib/utils";
@@ -15,7 +23,6 @@ import { loginSchema, setPasswordSchema } from "./schemas";
 import type { LoginFormData, SetPasswordFormData, Etape } from "./schemas";
 import { slideVariants, slideTx, fadeUp } from "./animations";
 import {
-  GridPattern,
   StepTab,
   ModeTab,
   FormField,
@@ -121,111 +128,219 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-neutral-50 flex items-center justify-center p-4 relative overflow-hidden">
-      <GridPattern />
-
+    <div className="min-h-dvh bg-neutral-50 p-3 sm:p-5">
       <motion.div
-        className="w-full max-w-[370px] relative z-10"
+        className="mx-auto grid min-h-[calc(100dvh-24px)] w-full max-w-[1280px] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm lg:min-h-[calc(100dvh-40px)] lg:grid-cols-[minmax(420px,0.92fr)_minmax(520px,1.08fr)]"
         initial="hidden"
         animate="visible"
         variants={fadeUp}
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <div className="text-center mb-7">
-          <motion.img
-            src="/brand/logo.jpg"
-            alt="Le Prestigieux"
-            className="h-16 w-auto mx-auto mb-3 object-contain"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 320, damping: 22 }}
-          />
-          <h1 className="text-xl font-bold text-brand-gold-dark tracking-tight">PrestiX</h1>
-          <p className="text-neutral-500 text-[11px] mt-0.5 italic leading-relaxed">
-            Une autre idée du voyage
-          </p>
-        </div>
+        <section className="flex min-h-[620px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
+          <div className="w-full max-w-[390px]">
+            <div className="mb-8">
+              <motion.img
+                src="/brand/logo.jpg"
+                alt="Le Prestigieux"
+                className="mb-3 h-14 w-auto object-contain"
+                whileHover={{ scale: 1.03 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+              />
+              <h1 className="text-[24px] font-bold tracking-tight text-neutral-950">PrestiX</h1>
+              <p className="mt-1 text-[12px] italic leading-relaxed text-neutral-500">
+                Une autre idée du voyage
+              </p>
+            </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
-          <div className="h-[3px] bg-gradient-to-r from-brand-gold-dark via-brand-gold-light to-brand-blue" />
+            <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+              <div className="flex border-b border-neutral-200">
+                <StepTab
+                  active={etape === "login"}
+                  completed={etape === "set-password"}
+                  step={1}
+                  label="Connexion"
+                />
+                <div className="w-px bg-neutral-200" />
+                <StepTab
+                  active={etape === "set-password"}
+                  completed={false}
+                  step={2}
+                  label="Mot de passe"
+                />
+              </div>
 
-          <div className="flex border-b border-neutral-200">
-            <StepTab
-              active={etape === "login"}
-              completed={etape === "set-password"}
-              step={1}
-              label="Connexion"
-            />
-            <div className="w-px bg-neutral-200" />
-            <StepTab
-              active={etape === "set-password"}
-              completed={false}
-              step={2}
-              label="Mot de passe"
-            />
+              <div className="overflow-hidden p-6">
+                <AnimatePresence mode="wait" custom={direction} initial={false}>
+                  {etape === "login" && (
+                    <motion.div
+                      key="login"
+                      custom={direction}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={slideTx}
+                    >
+                      <LoginStep
+                        t={t}
+                        loginForm={loginForm}
+                        premiereConnexion={premiereConnexion}
+                        serverError={serverError}
+                        showPassword={showPassword}
+                        emailId={emailId}
+                        otpId={otpId}
+                        passwordId={passwordId}
+                        onToggleMode={toggleMode}
+                        onTogglePassword={() => setShowPassword((v) => !v)}
+                        onSubmit={onLoginSubmit}
+                      />
+                    </motion.div>
+                  )}
+
+                  {etape === "set-password" && (
+                    <motion.div
+                      key="set-password"
+                      custom={direction}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={slideTx}
+                    >
+                      <SetPasswordStep
+                        t={t}
+                        passwordForm={passwordForm}
+                        watchedPassword={watchedPassword}
+                        serverError={serverError}
+                        showNew={showNew}
+                        showConfirm={showConfirm}
+                        newPassId={newPassId}
+                        confirmId={confirmId}
+                        onToggleNew={() => setShowNew((v) => !v)}
+                        onToggleConfirm={() => setShowConfirm((v) => !v)}
+                        onSubmit={onSetPasswordSubmit}
+                        onBack={backToLogin}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <p className="mt-4 text-[10px] uppercase tracking-wide text-neutral-400">
+              Le Prestigieux - Usage interne uniquement
+            </p>
           </div>
+        </section>
 
-          <div className="p-6 overflow-hidden">
-            <AnimatePresence mode="wait" custom={direction} initial={false}>
-              {etape === "login" && (
-                <motion.div
-                  key="login"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={slideTx}
-                >
-                  <LoginStep
-                    t={t}
-                    loginForm={loginForm}
-                    premiereConnexion={premiereConnexion}
-                    serverError={serverError}
-                    showPassword={showPassword}
-                    emailId={emailId}
-                    otpId={otpId}
-                    passwordId={passwordId}
-                    onToggleMode={toggleMode}
-                    onTogglePassword={() => setShowPassword((v) => !v)}
-                    onSubmit={onLoginSubmit}
-                  />
-                </motion.div>
-              )}
-
-              {etape === "set-password" && (
-                <motion.div
-                  key="set-password"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={slideTx}
-                >
-                  <SetPasswordStep
-                    t={t}
-                    passwordForm={passwordForm}
-                    watchedPassword={watchedPassword}
-                    serverError={serverError}
-                    showNew={showNew}
-                    showConfirm={showConfirm}
-                    newPassId={newPassId}
-                    confirmId={confirmId}
-                    onToggleNew={() => setShowNew((v) => !v)}
-                    onToggleConfirm={() => setShowConfirm((v) => !v)}
-                    onSubmit={onSetPasswordSubmit}
-                    onBack={backToLogin}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        <p className="text-center text-neutral-400 text-[10px] mt-4 tracking-wide uppercase">
-          Le Prestigieux - Usage interne uniquement
-        </p>
+        <TravelShowcase />
       </motion.div>
+    </div>
+  );
+}
+
+function TravelShowcase() {
+  return (
+    <section className="hidden bg-neutral-100 p-6 lg:block">
+      <div className="relative flex h-full min-h-[620px] overflow-hidden rounded-[28px] bg-neutral-950 px-10 py-10 text-white">
+        <div className="absolute inset-0 opacity-25">
+          <div className="absolute left-0 top-24 h-px w-full rotate-[-18deg] bg-white" />
+          <div className="absolute right-[-90px] top-20 h-[8px] w-[360px] rotate-[-43deg] bg-brand-gold-light" />
+          <div className="absolute right-[-80px] top-32 h-[4px] w-[320px] rotate-[-43deg] bg-white" />
+          <div className="absolute bottom-28 left-[-80px] h-px w-[520px] rotate-[-24deg] bg-brand-blue" />
+        </div>
+
+        <div className="relative z-10 flex w-full flex-col justify-between">
+          <div>
+            <div className="mb-14 flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+              <Plane size={20} className="text-brand-gold-light" />
+            </div>
+
+            <TravelMapIllustration />
+
+            <div className="mt-8 max-w-[430px]">
+              <p className="text-[11px] font-semibold text-white/70">Le Prestigieux</p>
+              <h2 className="mt-4 text-[30px] font-bold leading-tight tracking-tight">
+                Bienvenue dans votre espace agence
+              </h2>
+              <p className="mt-3 text-[12px] leading-6 text-white/68">
+                Connectez-vous pour gérer les dossiers clients, les factures, les paiements et les
+                opérations de voyage.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative mt-10 max-w-[470px] rounded-[22px] border border-white/10 bg-white/[0.16] p-7 backdrop-blur">
+            <div className="absolute right-[-58px] top-[-1px] h-16 w-24 rounded-bl-[24px] border-b border-l border-white/10 bg-neutral-950" />
+            <h3 className="max-w-[320px] text-[20px] font-bold leading-tight">
+              Gardez la vente, la caisse et le suivi client au même endroit
+            </h3>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <TravelMetric icon={BriefcaseBusiness} label="Dossiers" />
+              <TravelMetric icon={Mail} label="Clients" />
+              <TravelMetric icon={MapPinned} label="Voyages" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TravelMapIllustration() {
+  return (
+    <svg
+      viewBox="0 0 520 230"
+      role="img"
+      aria-label="Illustration abstraite de trajet aérien"
+      className="h-auto w-full max-w-[520px]"
+    >
+      <defs>
+        <linearGradient id="routeGold" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stopColor="#f5e65e" />
+          <stop offset="100%" stopColor="#a77800" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M44 164 C118 78 191 205 270 116 C345 32 390 95 474 42"
+        fill="none"
+        stroke="url(#routeGold)"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <path
+        d="M72 185 C145 144 195 168 248 128 C309 82 381 80 448 61"
+        fill="none"
+        stroke="rgba(255,255,255,0.22)"
+        strokeDasharray="8 11"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+      <g fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.18)" strokeWidth="1">
+        <path d="M80 54 L146 28 L193 78 L151 145 L91 132 Z" />
+        <path d="M254 42 L324 26 L381 77 L353 143 L271 129 Z" />
+        <path d="M162 145 L236 124 L305 164 L252 204 L176 197 Z" />
+      </g>
+      <g fill="#f5e65e">
+        <circle cx="44" cy="164" r="5" />
+        <circle cx="270" cy="116" r="5" />
+        <circle cx="474" cy="42" r="5" />
+      </g>
+      <g transform="translate(302 78) rotate(-18)">
+        <path
+          d="M0 16 L78 0 C85 -1 89 7 84 12 L65 30 L72 55 L60 58 L47 41 L20 58 L10 54 L33 27 L0 24 Z"
+          fill="white"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function TravelMetric({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-neutral-950/35 px-3 py-3">
+      <Icon size={15} className="text-brand-gold-light" />
+      <p className="mt-2 text-[11px] font-semibold text-white/80">{label}</p>
     </div>
   );
 }
@@ -261,7 +376,12 @@ function LoginStep({
 
   return (
     <>
-      <p className="text-[13px] font-semibold text-brand-gold-dark mb-5">{t("auth.title")}</p>
+      <div className="mb-5">
+        <p className="text-[24px] font-bold tracking-tight text-neutral-950">{t("auth.title")}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+          Utilisez votre email professionnel et votre mot de passe.
+        </p>
+      </div>
 
       <form onSubmit={loginForm.handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <FormField id={emailId} label={t("auth.email")} error={errors.email?.message}>
@@ -274,7 +394,7 @@ function LoginStep({
             autoComplete="username"
             spellCheck={false}
             aria-invalid={!!errors.email}
-            className={cn(errorCls(!!errors.email), "text-center")}
+            className={cn(errorCls(!!errors.email), "bg-neutral-50")}
           />
         </FormField>
 
@@ -366,7 +486,7 @@ function LoginStep({
                       errorCls(
                         "password" in errors && !!(errors as { password?: unknown }).password,
                       ),
-                      "pr-10 text-center",
+                      "bg-neutral-50 pr-10",
                     )}
                   />
                   <EyeToggle show={showPassword} onToggle={onTogglePassword} />
@@ -432,9 +552,20 @@ function SetPasswordStep({
 
   return (
     <>
-      <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-3.5 py-3 mb-5">
-        <ShieldCheck size={14} className="text-blue-600 mt-0.5 shrink-0" />
-        <p className="text-blue-800 text-[11px] leading-relaxed">{t("auth.premiereConnexion")}</p>
+      <div className="mb-5">
+        <p className="text-[24px] font-bold tracking-tight text-neutral-950">
+          Définir le mot de passe
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+          Finalisez la première connexion de votre compte.
+        </p>
+      </div>
+
+      <div className="mb-5 flex items-start gap-2.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3.5 py-3">
+        <ShieldCheck size={14} className="mt-0.5 shrink-0 text-brand-gold-dark" />
+        <p className="text-[11px] leading-relaxed text-neutral-700">
+          {t("auth.premiereConnexion")}
+        </p>
       </div>
 
       <form onSubmit={passwordForm.handleSubmit(onSubmit)} className="space-y-4" noValidate>
@@ -452,7 +583,7 @@ function SetPasswordStep({
               autoComplete="new-password"
               autoFocus
               aria-invalid={!!errors.errors.password}
-              className={cn(errorCls(!!errors.errors.password), "pr-10")}
+              className={cn(errorCls(!!errors.errors.password), "bg-neutral-50 pr-10")}
             />
             <EyeToggle show={showNew} onToggle={onToggleNew} />
           </div>
@@ -483,7 +614,7 @@ function SetPasswordStep({
               type={showConfirm ? "text" : "password"}
               autoComplete="new-password"
               aria-invalid={!!errors.errors.confirmation}
-              className={cn(errorCls(!!errors.errors.confirmation), "pr-10")}
+              className={cn(errorCls(!!errors.errors.confirmation), "bg-neutral-50 pr-10")}
             />
             <EyeToggle show={showConfirm} onToggle={onToggleConfirm} />
           </div>

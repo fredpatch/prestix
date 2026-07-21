@@ -1,15 +1,32 @@
 import { useState } from "react";
-import { Loader2, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import {
+  Loader2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  getPaginationRowModel,
   flexRender,
   type ColumnDef,
   type SortingState,
+  type PaginationState,
 } from "@tanstack/react-table";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import { alignClass } from "@/lib/table-meta";
+import { Button } from "@/components/ui/button";
 
 interface DataTableProps<T> {
   columns: ColumnDef<T, any>[];
@@ -17,31 +34,38 @@ interface DataTableProps<T> {
   loading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
+  pageSize?: number;
 }
 
 // Management/list tables — parties, commissions, invoices, users, etc.
 // Search and select filters stay owned by the parent page (as they already
 // are everywhere today); this component only owns sorting and the shared
-// visual shell. Not paginated — none of the existing tables paginate today,
-// so this stays a straight port rather than adding new behavior. Built on
-// the shadcn Table primitives, with className overrides reproducing the
-// existing hand-rolled look (e.g. PartiesPage).
+// visual shell. Pagination defaults to 10 rows so management tables stay
+// scannable as datasets grow. Built on the shadcn Table primitives, with
+// className overrides reproducing the existing hand-rolled look.
 export function DataTable<T>({
   columns,
   data,
   loading = false,
   emptyMessage = "Aucun résultat.",
   onRowClick,
+  pageSize = 10,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize,
+  });
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting, pagination },
     onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   });
 
   if (loading) {
@@ -111,6 +135,40 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
+      {data.length > pageSize && (
+        <div className="flex flex-col gap-2 border-t border-neutral-200 bg-neutral-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[11px] text-neutral-500">
+            {pagination.pageIndex * pagination.pageSize + 1}-
+            {Math.min((pagination.pageIndex + 1) * pagination.pageSize, data.length)} sur{" "}
+            {data.length}
+          </p>
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!table.getCanPreviousPage()}
+              onClick={() => table.previousPage()}
+            >
+              <ChevronLeft size={13} />
+              Précédent
+            </Button>
+            <span className="text-[11px] text-neutral-500">
+              Page {pagination.pageIndex + 1} / {table.getPageCount()}
+            </span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={!table.getCanNextPage()}
+              onClick={() => table.nextPage()}
+            >
+              Suivant
+              <ChevronRight size={13} />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

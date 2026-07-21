@@ -63,18 +63,40 @@ export interface CommissionFilter {
 }
 
 export const commissionApi = {
-  list: (filter: CommissionFilter = {}) => api.get<CommissionTransaction[]>("/commissions", { params: filter }),
+  list: (filter: CommissionFilter = {}) =>
+    api.get<CommissionTransaction[]>("/commissions", { params: filter }),
   create: (data: CreateCommissionInput) => api.post<CommissionTransaction>("/commissions", data),
   softDelete: (id: number) => api.delete<CommissionTransaction>(`/commissions/${id}`),
 
   // Correction workflow — see commission-edit.service.ts server-side for why
   // this exists instead of a plain PATCH.
-  requestEdit: (commissionId: number, reason: string, proposedChanges: CommissionEditProposedChanges) =>
-    api.post<CommissionEditRequest>(`/commissions/${commissionId}/edit-requests`, { reason, proposedChanges }),
+  requestEdit: (
+    commissionId: number,
+    reason: string,
+    proposedChanges: CommissionEditProposedChanges,
+  ) =>
+    api.post<CommissionEditRequest>(`/commissions/${commissionId}/edit-requests`, {
+      reason,
+      proposedChanges,
+    }),
   listEditRequests: (status: "pending" | "approved" | "rejected" = "pending") =>
     api.get<CommissionEditRequest[]>("/commissions/edit-requests", { params: { status } }),
+  listAllEditRequests: async () => {
+    const [pending, approved, rejected] = await Promise.all([
+      commissionApi.listEditRequests("pending"),
+      commissionApi.listEditRequests("approved"),
+      commissionApi.listEditRequests("rejected"),
+    ]);
+    return {
+      data: [...pending.data, ...approved.data, ...rejected.data].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    };
+  },
   approveEditRequest: (requestId: number) =>
     api.post<CommissionEditRequest>(`/commissions/edit-requests/${requestId}/approve`),
   rejectEditRequest: (requestId: number, reviewNote?: string) =>
-    api.post<CommissionEditRequest>(`/commissions/edit-requests/${requestId}/reject`, { reviewNote }),
+    api.post<CommissionEditRequest>(`/commissions/edit-requests/${requestId}/reject`, {
+      reviewNote,
+    }),
 };

@@ -4,10 +4,13 @@ import type { ChartConfiguration } from "chart.js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useEmployeeActivityDetail } from "@/hooks/queries/useEmployeeActivityDetail";
+import { useUser } from "@/hooks/queries/useUser";
 import { ReadOnlyTable } from "@/components/ui/read-only-table";
 import type { EmployeeActivityDetail } from "@/lib/reporting.api";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
 import { UserKpiCard } from "./users/components/UserKpiCard";
+import { EmployeeProfileHeader } from "./users/components/EmployeeProfileHeader";
+import { useAuth } from "@/App";
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
@@ -131,19 +134,33 @@ const savingsColumns: ColumnDef<SavingsRow, any>[] = [
 export default function EmployeeActivityDetailPage() {
   const { agentId } = useParams<{ agentId: string }>();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
+  const numericAgentId = agentId ? parseInt(agentId) : undefined;
   const from = searchParams.get("from") ?? new Date().toISOString().split("T")[0];
   const to = searchParams.get("to") ?? new Date().toISOString().split("T")[0];
   const basis = (searchParams.get("basis") as "accrual" | "cash") ?? "accrual";
+  const fromUsers = searchParams.get("source") === "users";
+  const canReadEmployeeProfile = user ? ["admin", "super_admin"].includes(user.role) : false;
 
-  usePageHeader({ title: "Détail employé", backTo: "/dashboard" });
-
-  const { data: detail, isLoading } = useEmployeeActivityDetail(
-    agentId ? parseInt(agentId) : undefined,
-    { from, to, basis },
+  const { data: employee, isLoading: isEmployeeLoading } = useUser(
+    canReadEmployeeProfile ? numericAgentId : undefined,
   );
 
-  if (isLoading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  usePageHeader({
+    title: employee?.fullName ?? "Détail employé",
+    backTo: fromUsers ? "/users" : "/dashboard",
+  });
+
+  const { data: detail, isLoading } = useEmployeeActivityDetail(numericAgentId, {
+    from,
+    to,
+    basis,
+  });
+
+  if (isLoading || (canReadEmployeeProfile && isEmployeeLoading) || !detail) {
+    return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  }
 
   const invoiceValue = detail.invoices.reduce((sum, row) => sum + row.amount, 0);
   const paymentValue = detail.payments.reduce((sum, row) => sum + row.amount, 0);
@@ -215,10 +232,14 @@ export default function EmployeeActivityDetailPage() {
 
   return (
     <div>
-      <p className="text-neutral-500 text-sm mb-6">
-        Détail des transactions pour la période sélectionnée - utile pour les décisions de prime
-        d'encouragement.
-      </p>
+      {employee ? (
+        <EmployeeProfileHeader employee={employee} />
+      ) : (
+        <p className="mb-6 text-sm text-neutral-500">
+          Détail des transactions pour l'employé #{numericAgentId ?? "-"} sur la période
+          sélectionnée.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 xl:grid-cols-4">
         <UserKpiCard

@@ -34,6 +34,8 @@ import type {
   EpargneSoldeNetPeriode,
   KpiRow,
   OpenEngagements,
+  CommissionTypeTrendRow,
+  RecentSaleRow,
 } from "./reporting.types.js";
 
 // Accrual/cash means something different per bucket — stated explicitly here
@@ -123,7 +125,10 @@ async function getTicketAndShopBuckets(
 
     const ticketDetailRows =
       ticketLineIds.length > 0
-        ? await db.select().from(ticketDetails).where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
+        ? await db
+            .select()
+            .from(ticketDetails)
+            .where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
         : [];
     const shopDetailRows =
       shopLineIds.length > 0
@@ -156,8 +161,20 @@ async function getTicketAndShopBuckets(
   }
 
   return {
-    billetterie: { bucketKey: "billetterie", label: "Billetterie", gross: ticketGross, gain: ticketGain, volume: ticketVolume },
-    prestishop: { bucketKey: "prestishop", label: "PrestiShop", gross: shopGross, gain: shopGain, volume: shopVolume },
+    billetterie: {
+      bucketKey: "billetterie",
+      label: "Billetterie",
+      gross: ticketGross,
+      gain: ticketGain,
+      volume: ticketVolume,
+    },
+    prestishop: {
+      bucketKey: "prestishop",
+      label: "PrestiShop",
+      gross: shopGross,
+      gain: shopGain,
+      volume: shopVolume,
+    },
   };
 }
 
@@ -233,7 +250,13 @@ async function getPenaltyBucket(params: DateRangeParams): Promise<CaCompositionB
     const rows = await db
       .select()
       .from(penalties)
-      .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
+      .where(
+        and(
+          isNull(penalties.voidedAt),
+          gte(penalties.accruedAt, from),
+          lte(penalties.accruedAt, to),
+        ),
+      );
     total = rows.reduce((sum, r) => sum + parseFloat(r.amountXaf), 0);
     volume = rows.length;
   } else {
@@ -268,7 +291,8 @@ function pickBucketGranularity(from: Date, to: Date): "day" | "week" | "month" {
 
 function bucketKeyFor(date: Date, granularity: "day" | "week" | "month"): string {
   if (granularity === "day") return date.toISOString().split("T")[0];
-  if (granularity === "month") return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  if (granularity === "month")
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
   // week — Monday-anchored, per ISO convention
   const d = new Date(date);
   const day = d.getUTCDay() || 7;
@@ -305,17 +329,25 @@ export async function getCaTrend(
   const issuedInvoices = await db
     .select()
     .from(invoices)
-    .where(and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)));
+    .where(
+      and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)),
+    );
   const invoiceIds = issuedInvoices.map((i) => i.id);
   const issuedAtById = new Map(issuedInvoices.map((i) => [i.id, i.issuedAt!]));
 
   if (invoiceIds.length > 0) {
-    const lines = await db.select().from(invoiceLines).where(inArray(invoiceLines.invoiceId, invoiceIds));
+    const lines = await db
+      .select()
+      .from(invoiceLines)
+      .where(inArray(invoiceLines.invoiceId, invoiceIds));
     const ticketLineIds = lines.filter((l) => l.lineType === "ticket").map((l) => l.id);
     const shopLineIds = lines.filter((l) => l.lineType === "shop").map((l) => l.id);
     const ticketDetailRows =
       ticketLineIds.length > 0
-        ? await db.select().from(ticketDetails).where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
+        ? await db
+            .select()
+            .from(ticketDetails)
+            .where(inArray(ticketDetails.invoiceLineId, ticketLineIds))
         : [];
     const shopDetailRows =
       shopLineIds.length > 0
@@ -333,7 +365,11 @@ export async function getCaTrend(
         add(invoiceDate, lineTotal, lineTotal - (td ? parseFloat(td.supplierPrice) : 0));
       } else if (line.lineType === "shop") {
         const sd = shopDetailByLineId.get(line.id);
-        add(invoiceDate, lineTotal, lineTotal - (sd ? parseFloat(sd.supplierPrice) * line.quantity : 0));
+        add(
+          invoiceDate,
+          lineTotal,
+          lineTotal - (sd ? parseFloat(sd.supplierPrice) * line.quantity : 0),
+        );
       }
     }
   }
@@ -368,7 +404,9 @@ export async function getCaTrend(
   const penaltyRows = await db
     .select()
     .from(penalties)
-    .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
+    .where(
+      and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)),
+    );
   for (const p of penaltyRows) {
     const amount = parseFloat(p.amountXaf);
     add(p.accruedAt, amount, amount);
@@ -384,28 +422,50 @@ export async function getCaTrend(
 // top-level categories (not one line per commission sub-type) so the chart
 // stays readable regardless of how many commission types the catalog grows
 // to. Same self-contained-rather-than-refactored reasoning as getCaTrend.
-export async function getServiceTrend(
-  params: DateRangeParams,
-): Promise<{ bucket: string; billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }[]> {
+export async function getServiceTrend(params: DateRangeParams): Promise<
+  {
+    bucket: string;
+    billetterie: number;
+    prestishop: number;
+    commission: number;
+    epargne: number;
+    penalty: number;
+  }[]
+> {
   const from = new Date(params.from);
   const to = endOfDay(params.to);
   const granularity = pickBucketGranularity(from, to);
 
-  const buckets = new Map<string, { billetterie: number; prestishop: number; commission: number; epargne: number; penalty: number }>();
+  const buckets = new Map<
+    string,
+    {
+      billetterie: number;
+      prestishop: number;
+      commission: number;
+      epargne: number;
+      penalty: number;
+    }
+  >();
   function ensure(key: string) {
-    if (!buckets.has(key)) buckets.set(key, { billetterie: 0, prestishop: 0, commission: 0, epargne: 0, penalty: 0 });
+    if (!buckets.has(key))
+      buckets.set(key, { billetterie: 0, prestishop: 0, commission: 0, epargne: 0, penalty: 0 });
     return buckets.get(key)!;
   }
 
   const issuedInvoices = await db
     .select()
     .from(invoices)
-    .where(and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)));
+    .where(
+      and(eq(invoices.status, "issued"), gte(invoices.issuedAt, from), lte(invoices.issuedAt, to)),
+    );
   const invoiceIds = issuedInvoices.map((i) => i.id);
   const issuedAtById = new Map(issuedInvoices.map((i) => [i.id, i.issuedAt!]));
 
   if (invoiceIds.length > 0) {
-    const lines = await db.select().from(invoiceLines).where(inArray(invoiceLines.invoiceId, invoiceIds));
+    const lines = await db
+      .select()
+      .from(invoiceLines)
+      .where(inArray(invoiceLines.invoiceId, invoiceIds));
     for (const line of lines) {
       const invoiceDate = issuedAtById.get(line.invoiceId);
       if (!invoiceDate) continue;
@@ -427,7 +487,9 @@ export async function getServiceTrend(
       ),
     );
   for (const c of commissionRows) {
-    ensure(bucketKeyFor(new Date(c.date), granularity)).commission += parseFloat(c.commissionAmount);
+    ensure(bucketKeyFor(new Date(c.date), granularity)).commission += parseFloat(
+      c.commissionAmount,
+    );
   }
 
   const feeRows = await db
@@ -441,13 +503,52 @@ export async function getServiceTrend(
   const penaltyRows = await db
     .select()
     .from(penalties)
-    .where(and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)));
+    .where(
+      and(isNull(penalties.voidedAt), gte(penalties.accruedAt, from), lte(penalties.accruedAt, to)),
+    );
   for (const p of penaltyRows) {
     ensure(bucketKeyFor(p.accruedAt, granularity)).penalty += parseFloat(p.amountXaf);
   }
 
   return Array.from(buckets.entries())
     .map(([bucket, v]) => ({ bucket, ...v }))
+    .sort((a, b) => a.bucket.localeCompare(b.bucket));
+}
+
+export async function getCommissionTypeTrend(
+  params: DateRangeParams,
+): Promise<CommissionTypeTrendRow[]> {
+  const from = new Date(params.from);
+  const to = endOfDay(params.to);
+  const granularity = pickBucketGranularity(from, to);
+
+  const [commissionRows, typeRows] = await Promise.all([
+    db
+      .select()
+      .from(commissionTransactions)
+      .where(
+        and(
+          eq(commissionTransactions.active, true),
+          gte(commissionTransactions.date, params.from),
+          lte(commissionTransactions.date, params.to),
+        ),
+      ),
+    db.select().from(commissionTypeCatalog),
+  ]);
+
+  const labelByCode = new Map(typeRows.map((row) => [row.code, row.label]));
+  const buckets = new Map<string, Record<string, number>>();
+
+  for (const row of commissionRows) {
+    const bucket = bucketKeyFor(new Date(row.date), granularity);
+    const label = labelByCode.get(row.type) ?? row.type;
+    const current = buckets.get(bucket) ?? {};
+    current[label] = (current[label] ?? 0) + parseFloat(row.commissionAmount);
+    buckets.set(bucket, current);
+  }
+
+  return Array.from(buckets.entries())
+    .map(([bucket, series]) => ({ bucket, series }))
     .sort((a, b) => a.bucket.localeCompare(b.bucket));
 }
 
@@ -469,7 +570,9 @@ export async function getCaComposition(params: DateRangeParams): Promise<CaCompo
 // deposits and withdrawals are excluded from CA entirely). This deliberately
 // includes the fee deposit+withdrawal pairs from Sprint 9 — they net to zero
 // automatically within the same period, exactly as intended.
-export async function getEpargneSoldeNetPeriode(params: DateRangeParams): Promise<EpargneSoldeNetPeriode> {
+export async function getEpargneSoldeNetPeriode(
+  params: DateRangeParams,
+): Promise<EpargneSoldeNetPeriode> {
   const from = new Date(params.from);
   const to = endOfDay(params.to);
 
@@ -521,7 +624,10 @@ const TRANSACTION_ACTIONS = new Set([
 // logAudit() calls that already happen on every meaningful mutation
 // (invoice issued, payment recorded, commission logged, stock movement,
 // épargne movement, etc.).
-export async function getRecentActivity(limit = 10, transactionOnly = true): Promise<ActivityRow[]> {
+export async function getRecentActivity(
+  limit = 10,
+  transactionOnly = true,
+): Promise<ActivityRow[]> {
   // Over-fetch when filtering, since a chunk of the most recent rows may get
   // dropped by the whitelist — without this, a burst of "document printed"
   // rows could leave the dashboard showing fewer than `limit` items even
@@ -536,7 +642,8 @@ export async function getRecentActivity(limit = 10, transactionOnly = true): Pro
   const page = filtered.slice(0, limit);
 
   const userIds = [...new Set(page.map((r) => r.userId).filter((id): id is number => id != null))];
-  const userRows = userIds.length > 0 ? await db.select().from(users).where(inArray(users.id, userIds)) : [];
+  const userRows =
+    userIds.length > 0 ? await db.select().from(users).where(inArray(users.id, userIds)) : [];
   const nameById = new Map(userRows.map((u) => [u.id, u.fullName]));
 
   return page.map((r) => ({
@@ -548,6 +655,114 @@ export async function getRecentActivity(limit = 10, transactionOnly = true): Pro
     metadata: (r.metadata as Record<string, unknown>) ?? undefined,
     createdAt: r.createdAt,
   }));
+}
+
+export async function getRecentSales(limit = 5): Promise<RecentSaleRow[]> {
+  const invoiceRows = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.status, "issued"))
+    .orderBy(desc(invoices.issuedAt))
+    .limit(limit);
+
+  const paymentRows = await db
+    .select()
+    .from(payments)
+    .orderBy(desc(payments.createdAt))
+    .limit(limit);
+
+  const commissionRows = await db
+    .select()
+    .from(commissionTransactions)
+    .where(eq(commissionTransactions.active, true))
+    .orderBy(desc(commissionTransactions.createdAt))
+    .limit(limit);
+
+  const partyIds = [
+    ...new Set([
+      ...invoiceRows.map((row) => row.partyId),
+      ...commissionRows
+        .flatMap((row) => [row.clientPartyId, row.referrerPartyId])
+        .filter((id): id is number => !!id),
+    ]),
+  ];
+  const invoiceIds = [
+    ...new Set([...paymentRows.map((row) => row.invoiceId), ...invoiceRows.map((row) => row.id)]),
+  ];
+  const userIds = [
+    ...new Set([
+      ...invoiceRows.map((row) => row.createdBy),
+      ...paymentRows.map((row) => row.agentId).filter((id): id is number => !!id),
+      ...commissionRows.map((row) => row.agentId).filter((id): id is number => !!id),
+    ]),
+  ];
+  const commissionTypes = [...new Set(commissionRows.map((row) => row.type))];
+
+  const [partyRows, relatedInvoices, userRows, typeRows] = await Promise.all([
+    partyIds.length > 0
+      ? db.select().from(parties).where(inArray(parties.id, partyIds))
+      : Promise.resolve([]),
+    invoiceIds.length > 0
+      ? db.select().from(invoices).where(inArray(invoices.id, invoiceIds))
+      : Promise.resolve([]),
+    userIds.length > 0
+      ? db.select().from(users).where(inArray(users.id, userIds))
+      : Promise.resolve([]),
+    commissionTypes.length > 0
+      ? db
+          .select()
+          .from(commissionTypeCatalog)
+          .where(inArray(commissionTypeCatalog.code, commissionTypes))
+      : Promise.resolve([]),
+  ]);
+
+  const partyNameById = new Map(partyRows.map((row) => [row.id, row.fullName]));
+  const invoiceById = new Map(relatedInvoices.map((row) => [row.id, row]));
+  const userNameById = new Map(userRows.map((row) => [row.id, row.fullName]));
+  const typeLabelByCode = new Map(typeRows.map((row) => [row.code, row.label]));
+
+  const rows: RecentSaleRow[] = [
+    ...invoiceRows.map((row) => ({
+      id: `invoice:${row.id}`,
+      kind: "invoice" as const,
+      title: row.number ?? `Facture #${row.id}`,
+      subtitle: "Facture émise",
+      amount: parseFloat(row.totalAmount),
+      partyName: partyNameById.get(row.partyId),
+      agentName: userNameById.get(row.createdBy),
+      occurredAt: row.issuedAt ?? row.createdAt,
+      href: `/invoices/${row.id}`,
+    })),
+    ...paymentRows.map((row) => {
+      const invoice = invoiceById.get(row.invoiceId);
+      return {
+        id: `payment:${row.id}`,
+        kind: "payment" as const,
+        title: invoice?.number ?? `Facture #${row.invoiceId}`,
+        subtitle: "Paiement encaissé",
+        amount: parseFloat(row.amountApplied),
+        partyName: invoice ? partyNameById.get(invoice.partyId) : undefined,
+        agentName: row.agentId ? userNameById.get(row.agentId) : undefined,
+        occurredAt: row.createdAt,
+        href: `/invoices/${row.invoiceId}`,
+      };
+    }),
+    ...commissionRows.map((row) => ({
+      id: `commission:${row.id}`,
+      kind: "commission" as const,
+      title: typeLabelByCode.get(row.type) ?? row.type,
+      subtitle: "Commission enregistrée",
+      amount: parseFloat(row.commissionAmount),
+      partyName:
+        (row.clientPartyId ? partyNameById.get(row.clientPartyId) : undefined) ??
+        (row.referrerPartyId ? partyNameById.get(row.referrerPartyId) : undefined),
+      agentName: row.agentId ? userNameById.get(row.agentId) : undefined,
+      occurredAt: new Date(row.date),
+      href: "/commissions",
+    })),
+  ];
+
+  return rows.sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime()).slice(0, limit);
 }
 
 export async function getLowStockCount(): Promise<number> {
@@ -586,7 +801,13 @@ export async function getCreancesByParty(): Promise<CreanceByParty[]> {
   const rows = await getCreances(false);
   const byParty = new Map<
     number,
-    { partyName: string; principalDue: number; penaltyDue: number; overdueCount: number; unpaidCount: number }
+    {
+      partyName: string;
+      principalDue: number;
+      penaltyDue: number;
+      overdueCount: number;
+      unpaidCount: number;
+    }
   >();
 
   for (const r of rows) {
@@ -653,7 +874,12 @@ export async function getOpenEngagements(): Promise<OpenEngagements> {
     const lines = await db
       .select()
       .from(proformaLines)
-      .where(inArray(proformaLines.proformaId, openProformas.map((p) => p.id)));
+      .where(
+        inArray(
+          proformaLines.proformaId,
+          openProformas.map((p) => p.id),
+        ),
+      );
     openProformaValue = lines.reduce((sum, l) => sum + parseFloat(l.lineTotal), 0);
   }
 
@@ -666,12 +892,13 @@ export async function getOpenEngagements(): Promise<OpenEngagements> {
 }
 
 export async function getDashboardSummary(params: DateRangeParams): Promise<DashboardSummary> {
-  const [caComposition, overdueAndUnpaid, lowStockCount, epargneSoldeNetPeriode] = await Promise.all([
-    getCaComposition(params),
-    getOverdueAndUnpaidSummary(),
-    getLowStockCount(),
-    getEpargneSoldeNetPeriode(params),
-  ]);
+  const [caComposition, overdueAndUnpaid, lowStockCount, epargneSoldeNetPeriode] =
+    await Promise.all([
+      getCaComposition(params),
+      getOverdueAndUnpaidSummary(),
+      getLowStockCount(),
+      getEpargneSoldeNetPeriode(params),
+    ]);
 
   return {
     caComposition,
@@ -704,7 +931,10 @@ export async function getClientKpis(params: DateRangeParams): Promise<KpiRow[]> 
     conditions.push(inArray(invoices.id, qualifyingIds));
   }
 
-  const rows = await db.select().from(invoices).where(and(...conditions));
+  const rows = await db
+    .select()
+    .from(invoices)
+    .where(and(...conditions));
 
   const byParty = new Map<number, { volume: number; value: number }>();
   for (const inv of rows) {
@@ -766,9 +996,14 @@ export async function getApporteurKpis(params: DateRangeParams): Promise<KpiRow[
   return resolvePartyNames(byParty);
 }
 
-async function resolvePartyNames(byParty: Map<number, { volume: number; value: number }>): Promise<KpiRow[]> {
+async function resolvePartyNames(
+  byParty: Map<number, { volume: number; value: number }>,
+): Promise<KpiRow[]> {
   if (byParty.size === 0) return [];
-  const partyRows = await db.select().from(parties).where(inArray(parties.id, [...byParty.keys()]));
+  const partyRows = await db
+    .select()
+    .from(parties)
+    .where(inArray(parties.id, [...byParty.keys()]));
   const nameById = new Map(partyRows.map((p) => [p.id, p.fullName]));
 
   return Array.from(byParty.entries())
@@ -887,7 +1122,10 @@ export async function getEmployeKpis(params: DateRangeParams): Promise<EmployeeK
   }
 
   if (byAgent.size === 0) return [];
-  const agentRows = await db.select().from(users).where(inArray(users.id, [...byAgent.keys()]));
+  const agentRows = await db
+    .select()
+    .from(users)
+    .where(inArray(users.id, [...byAgent.keys()]));
   const nameById = new Map(agentRows.map((u) => [u.id, u.fullName]));
 
   return Array.from(byAgent.entries())
@@ -921,7 +1159,13 @@ export async function getEmployeeActivityDetail(
   const agentPayments = await db
     .select()
     .from(payments)
-    .where(and(eq(payments.agentId, agentId), gte(payments.createdAt, from), lte(payments.createdAt, to)));
+    .where(
+      and(
+        eq(payments.agentId, agentId),
+        gte(payments.createdAt, from),
+        lte(payments.createdAt, to),
+      ),
+    );
   const paymentInvoiceIds = [...new Set(agentPayments.map((p) => p.invoiceId))];
   const paymentInvoices =
     paymentInvoiceIds.length > 0
@@ -947,10 +1191,17 @@ export async function getEmployeeActivityDetail(
     .select()
     .from(stockMovements)
     .where(
-      and(eq(stockMovements.agentId, agentId), gte(stockMovements.createdAt, from), lte(stockMovements.createdAt, to)),
+      and(
+        eq(stockMovements.agentId, agentId),
+        gte(stockMovements.createdAt, from),
+        lte(stockMovements.createdAt, to),
+      ),
     );
   const articleIds = [...new Set(agentStockMovements.map((m) => m.articleId))];
-  const articles = articleIds.length > 0 ? await db.select().from(stockArticles).where(inArray(stockArticles.id, articleIds)) : [];
+  const articles =
+    articleIds.length > 0
+      ? await db.select().from(stockArticles).where(inArray(stockArticles.id, articleIds))
+      : [];
   const articleNameById = new Map(articles.map((a) => [a.id, a.name]));
 
   const agentSavingsTransactions = await db
@@ -967,7 +1218,9 @@ export async function getEmployeeActivityDetail(
 
   const invoicePartyIds = [...new Set(agentInvoices.map((i) => i.partyId))];
   const invoiceParties =
-    invoicePartyIds.length > 0 ? await db.select().from(parties).where(inArray(parties.id, invoicePartyIds)) : [];
+    invoicePartyIds.length > 0
+      ? await db.select().from(parties).where(inArray(parties.id, invoicePartyIds))
+      : [];
   const partyNameById = new Map(invoiceParties.map((p) => [p.id, p.fullName]));
 
   return {

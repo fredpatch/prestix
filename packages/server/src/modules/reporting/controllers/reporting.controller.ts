@@ -5,7 +5,9 @@ import { generateDashboardReportPdf } from "../services/reporting-pdf.service.js
 import type { DateRangeParams } from "../services/reporting.types.js";
 
 function parseDateRange(req: Request): DateRangeParams {
-  const from = (req.query.from as string) ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const from =
+    (req.query.from as string) ??
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
   const to = (req.query.to as string) ?? new Date().toISOString().split("T")[0];
   const basis = (req.query.basis as string) === "cash" ? "cash" : "accrual";
   return { from, to, basis };
@@ -83,6 +85,16 @@ export async function getServiceTrend(req: Request, res: Response): Promise<void
   }
 }
 
+export async function getCommissionTypeTrend(req: Request, res: Response): Promise<void> {
+  try {
+    const params = parseDateRange(req);
+    res.json(await reportingService.getCommissionTypeTrend(params));
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
 export async function getClientKpis(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
@@ -127,13 +139,18 @@ export async function getEmployeeActivityDetail(req: Request, res: Response): Pr
 export async function exportExcel(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
-    const modules = req.query.modules ? ((req.query.modules as string).split(",") as ReportModule[]) : undefined;
+    const modules = req.query.modules
+      ? ((req.query.modules as string).split(",") as ReportModule[])
+      : undefined;
     const buffer = await generateReportingExcel(params, modules);
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
-    res.setHeader("Content-Disposition", `attachment; filename="rapport-${params.from}-${params.to}.xlsx"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="rapport-${params.from}-${params.to}.xlsx"`,
+    );
     res.send(buffer);
   } catch (error) {
     console.error("[reporting-export]", error);
@@ -153,13 +170,28 @@ export async function getRecentActivity(req: Request, res: Response): Promise<vo
   }
 }
 
+export async function getRecentSales(req: Request, res: Response): Promise<void> {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+    res.json(await reportingService.getRecentSales(limit));
+  } catch (error) {
+    console.error("[reporting]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
 export async function exportPdf(req: Request, res: Response): Promise<void> {
   try {
     const params = parseDateRange(req);
-    const modules = req.query.modules ? ((req.query.modules as string).split(",") as ReportModule[]) : undefined;
+    const modules = req.query.modules
+      ? ((req.query.modules as string).split(",") as ReportModule[])
+      : undefined;
     const pdf = await generateDashboardReportPdf(params, modules);
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="rapport-${params.from}-${params.to}.pdf"`);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="rapport-${params.from}-${params.to}.pdf"`,
+    );
     res.send(pdf);
   } catch (error) {
     console.error("[reporting-pdf]", error);
