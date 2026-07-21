@@ -61,4 +61,5 @@ export const queryKeys = {
   accrualVsCash: (params: { from: string; to: string }) =>
     ["reporting", "accrual-vs-cash", params.from, params.to] as const,
   openEngagements: () => ["reporting", "open-engagements"] as const,
+  recentActivity: (limit: number) => ["reporting", "recent-activity", limit] as const,
 } as const;

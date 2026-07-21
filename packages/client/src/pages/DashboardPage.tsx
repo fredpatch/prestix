@@ -1,31 +1,36 @@
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { useDashboardData } from "./dashboard/useDashboardData";
+import { PRESETS } from "./dashboard/date-presets";
 import { DashboardFilterBar } from "./dashboard/DashboardFilterBar";
 import { SummaryCards } from "./dashboard/SummaryCards";
 import { CaCompositionTable } from "./dashboard/CaCompositionTable";
 import { KpiTable } from "./dashboard/KpiTable";
 import { EmployeeKpiTable } from "./dashboard/EmployeeKpiTable";
 import { RecentActivityFeed } from "./dashboard/RecentActivityFeed";
+import { useDashboardSummary } from "@/hooks/queries/useDashboardSummary";
+import { useCaComposition } from "@/hooks/queries/useCaComposition";
+import { useClientKpis } from "@/hooks/queries/useClientKpis";
+import { useApporteurKpis } from "@/hooks/queries/useApporteurKpis";
+import { useEmployeeKpis } from "@/hooks/queries/useEmployeeKpis";
+import { useRecentActivity } from "@/hooks/queries/useRecentActivity";
 
 export default function DashboardPage() {
   usePageHeader({ title: "Tableau de bord" });
 
-  const {
-    from,
-    to,
-    basis,
-    setFrom,
-    setTo,
-    setBasis,
-    summary,
-    composition,
-    clientKpis,
-    apporteurKpis,
-    employeKpis,
-    activity,
-    loading,
-  } = useDashboardData();
+  const [from, setFrom] = useState(PRESETS[0].from);
+  const [to, setTo] = useState(PRESETS[0].to);
+  const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
+  const params = { from, to, basis };
+
+  const { data: summary, isLoading: loadingSummary } = useDashboardSummary(params);
+  const { data: composition, isLoading: loadingComposition } = useCaComposition(params);
+  const { data: clientKpis = [] } = useClientKpis(params);
+  const { data: apporteurKpis = [] } = useApporteurKpis(params);
+  const { data: employeKpis = [] } = useEmployeeKpis(params);
+  const { data: activity = [] } = useRecentActivity(5);
+
+  const loading = loadingSummary || loadingComposition;
 
   return (
     <div>
