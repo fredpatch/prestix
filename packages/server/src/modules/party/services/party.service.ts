@@ -5,6 +5,7 @@ import { logAudit } from "../../auth/services/auth.service.js";
 import type {
   CreatePartyParams,
   PartyFilters,
+  PartyStats,
   PartyView,
   UpdatePartyParams,
 } from "./party.types.js";
@@ -60,6 +61,29 @@ export async function listParties(
   const [{ total }] = await db.select({ total: count() }).from(parties).where(where);
 
   return { data: rows.map(toView), total };
+}
+
+export async function getPartyStats(): Promise<PartyStats> {
+  const [
+    [{ total }],
+    [{ clients }],
+    [{ referrers }],
+    [{ clientAndReferrer }],
+    [{ active }],
+    [{ inactive }],
+  ] = await Promise.all([
+    db.select({ total: count() }).from(parties),
+    db.select({ clients: count() }).from(parties).where(eq(parties.isClient, true)),
+    db.select({ referrers: count() }).from(parties).where(eq(parties.isReferrer, true)),
+    db
+      .select({ clientAndReferrer: count() })
+      .from(parties)
+      .where(and(eq(parties.isClient, true), eq(parties.isReferrer, true))),
+    db.select({ active: count() }).from(parties).where(eq(parties.active, true)),
+    db.select({ inactive: count() }).from(parties).where(eq(parties.active, false)),
+  ]);
+
+  return { total, clients, referrers, clientAndReferrer, active, inactive };
 }
 
 export async function getPartyById(id: number): Promise<PartyView> {

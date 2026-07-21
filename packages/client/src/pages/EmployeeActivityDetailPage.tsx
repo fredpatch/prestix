@@ -1,10 +1,13 @@
 import { useParams, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { BarChart3, Boxes, CircleDollarSign, FileText, Loader2, ReceiptText } from "lucide-react";
+import type { ChartConfiguration } from "chart.js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useEmployeeActivityDetail } from "@/hooks/queries/useEmployeeActivityDetail";
 import { ReadOnlyTable } from "@/components/ui/read-only-table";
 import type { EmployeeActivityDetail } from "@/lib/reporting.api";
+import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { UserKpiCard } from "./users/components/UserKpiCard";
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
@@ -12,6 +15,10 @@ function fmt(n: number): string {
 
 function fmtDate(d: string): string {
   return new Date(d).toLocaleDateString("fr-FR");
+}
+
+function money(n: number): string {
+  return `${fmt(n)} XAF`;
 }
 
 const METHOD_LABELS: Record<string, string> = {
@@ -138,12 +145,136 @@ export default function EmployeeActivityDetailPage() {
 
   if (isLoading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
+  const invoiceValue = detail.invoices.reduce((sum, row) => sum + row.amount, 0);
+  const paymentValue = detail.payments.reduce((sum, row) => sum + row.amount, 0);
+  const commissionValue = detail.commissions.reduce((sum, row) => sum + row.amount, 0);
+  const savingsValue = detail.savingsTransactions.reduce((sum, row) => sum + row.amount, 0);
+  const stockQuantity = detail.stockMovements.reduce((sum, row) => sum + Math.abs(row.quantity), 0);
+  const totalActions =
+    detail.invoices.length +
+    detail.payments.length +
+    detail.commissions.length +
+    detail.stockMovements.length +
+    detail.savingsTransactions.length;
+
+  const activityChart: ChartConfiguration<"doughnut"> = {
+    type: "doughnut",
+    data: {
+      labels: ["Factures", "Paiements", "Commissions", "Stock", "Épargne"],
+      datasets: [
+        {
+          data: [
+            detail.invoices.length,
+            detail.payments.length,
+            detail.commissions.length,
+            detail.stockMovements.length,
+            detail.savingsTransactions.length,
+          ],
+          backgroundColor: [
+            CHART_COLORS.primary,
+            CHART_COLORS.success,
+            CHART_COLORS.warning,
+            CHART_COLORS.muted,
+            CHART_COLORS.danger,
+          ],
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      plugins: { legend: { position: "bottom" } },
+      cutout: "62%",
+    },
+  };
+
+  const valueChart: ChartConfiguration<"bar"> = {
+    type: "bar",
+    data: {
+      labels: ["Factures", "Paiements", "Commissions", "Épargne"],
+      datasets: [
+        {
+          label: "Montant XAF",
+          data: [invoiceValue, paymentValue, commissionValue, savingsValue],
+          backgroundColor: CHART_COLORS.primary,
+          borderRadius: 2,
+        },
+      ],
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (value) => `${Number(value).toLocaleString("fr-FR")}` },
+          grid: { color: CHART_COLORS.grid },
+        },
+      },
+    },
+  };
+
   return (
     <div>
       <p className="text-neutral-500 text-sm mb-6">
         Détail des transactions pour la période sélectionnée - utile pour les décisions de prime
         d'encouragement.
       </p>
+
+      <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 xl:grid-cols-4">
+        <UserKpiCard
+          label="Actions"
+          value={String(totalActions)}
+          detail={`${detail.invoices.length} factures · ${detail.payments.length} paiements`}
+          icon={BarChart3}
+          tone="gold"
+        />
+        <UserKpiCard
+          label="Factures émises"
+          value={money(invoiceValue)}
+          detail={`${detail.invoices.length} document${detail.invoices.length > 1 ? "s" : ""}`}
+          icon={FileText}
+          tone="success"
+        />
+        <UserKpiCard
+          label="Encaissements"
+          value={money(paymentValue)}
+          detail={`${detail.payments.length} paiement${detail.payments.length > 1 ? "s" : ""}`}
+          icon={ReceiptText}
+          tone="neutral"
+        />
+        <UserKpiCard
+          label="Stock"
+          value={String(stockQuantity)}
+          detail={`${detail.stockMovements.length} mouvement${detail.stockMovements.length > 1 ? "s" : ""}`}
+          icon={Boxes}
+          tone="neutral"
+        />
+      </div>
+
+      <div className="grid gap-4 mb-6 lg:grid-cols-[0.85fr_1.15fr]">
+        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between border-b border-neutral-200 pb-2 mb-3">
+            <p className="text-[12px] font-semibold text-neutral-900">Répartition des actions</p>
+            <CircleDollarSign size={15} className="text-neutral-400" />
+          </div>
+          <ChartCanvas
+            config={activityChart}
+            height={260}
+            label="Répartition des actions employé"
+          />
+        </div>
+        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between border-b border-neutral-200 pb-2 mb-3">
+            <p className="text-[12px] font-semibold text-neutral-900">Valeur par activité</p>
+            <BarChart3 size={15} className="text-neutral-400" />
+          </div>
+          <ChartCanvas
+            config={valueChart}
+            height={260}
+            label="Valeur financière par activité employé"
+          />
+        </div>
+      </div>
 
       <div className="mb-4">
         <ReadOnlyTable

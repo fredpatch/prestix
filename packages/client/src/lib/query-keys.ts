@@ -9,6 +9,7 @@ export const queryKeys = {
   // Parties
   parties: (filters?: { search?: string; roleFilter?: string }) =>
     ["parties", filters ?? {}] as const,
+  partyStats: () => ["parties", "stats"] as const,
   party: (id: number) => ["parties", id] as const,
   partyHistory: (id: number) => ["parties", id, "history"] as const,
 
@@ -35,8 +36,8 @@ export const queryKeys = {
   stock: (filters?: object) => ["stock", filters ?? {}] as const,
 
   // Users
-  users: (filters?: { search?: string; roleFilter?: string }) =>
-    ["users", filters ?? {}] as const,
+  users: (filters?: { search?: string; roleFilter?: string }) => ["users", filters ?? {}] as const,
+  userStats: () => ["users", "stats"] as const,
 
   // Reporting
   employeeActivityDetail: (

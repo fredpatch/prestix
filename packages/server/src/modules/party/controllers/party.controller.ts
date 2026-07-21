@@ -29,6 +29,14 @@ export async function list(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function stats(_req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await partyService.getPartyStats());
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
     const party = await partyService.getPartyById(parseInt(req.params.id));

@@ -21,6 +21,15 @@ export interface PartyFilters {
   pageSize?: number;
 }
 
+export interface PartyStats {
+  total: number;
+  clients: number;
+  referrers: number;
+  clientAndReferrer: number;
+  active: number;
+  inactive: number;
+}
+
 export interface CreatePartyParams {
   code?: string;
   fullName: string;

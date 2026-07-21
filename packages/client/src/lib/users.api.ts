@@ -21,9 +21,21 @@ export interface UserFilters {
   pageSize?: number;
 }
 
+export interface UserStats {
+  total: number;
+  active: number;
+  inactive: number;
+  firstLogin: number;
+  agents: number;
+  managers: number;
+  admins: number;
+  superAdmins: number;
+}
+
 export const usersApi = {
   list: (filters: UserFilters = {}) =>
     api.get<{ data: User[]; total: number }>("/users", { params: filters }),
+  stats: () => api.get<UserStats>("/users/stats"),
   create: (data: { email: string; fullName: string; role: Role }) => api.post<User>("/users", data),
   update: (id: number, data: { email?: string; role?: Role }) =>
     api.patch<User>(`/users/${id}`, data),

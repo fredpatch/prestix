@@ -32,6 +32,14 @@ export async function list(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function stats(_req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await usersService.getUserStats());
+  } catch (error) {
+    handleUsersError(res, error);
+  }
+}
+
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
     const id = parseInt(req.params.id);

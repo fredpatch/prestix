@@ -18,7 +18,7 @@ import { partySchema, PARTY_DEFAULTS, type PartyFormValues } from "./party-schem
 import { useCreatePartyMutation } from "@/hooks/mutations/useCreateParty";
 
 interface CreatePartyDialogProps {
-  onCreated: () => void;
+  onCreated?: () => void;
 }
 
 export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
@@ -53,7 +53,7 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
       toast.success("Partie créée.");
       setOpen(false);
       reset(PARTY_DEFAULTS);
-      onCreated();
+      onCreated?.();
     } catch {
       // Error toast already handled by the global mutation default.
     }

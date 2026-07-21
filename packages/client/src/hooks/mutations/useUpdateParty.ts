@@ -9,6 +9,8 @@ export function useUpdatePartyMutation() {
       partyApi.update(id, data).then((r) => r.data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.party(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.parties() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partyStats() });
     },
   });
 }

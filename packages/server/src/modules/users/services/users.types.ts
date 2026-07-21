@@ -21,6 +21,17 @@ export interface UserFilters {
   pageSize?: number;
 }
 
+export interface UserStats {
+  total: number;
+  active: number;
+  inactive: number;
+  firstLogin: number;
+  agents: number;
+  managers: number;
+  admins: number;
+  superAdmins: number;
+}
+
 export interface CreateUserParams {
   email: string;
   fullName: string;

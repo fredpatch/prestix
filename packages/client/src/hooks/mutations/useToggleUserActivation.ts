@@ -9,6 +9,7 @@ export function useToggleUserActivationMutation() {
       usersApi.toggleActivation(id, active).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userStats() });
     },
   });
 }

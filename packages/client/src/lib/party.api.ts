@@ -23,6 +23,15 @@ export interface PartyFilters {
   pageSize?: number;
 }
 
+export interface PartyStats {
+  total: number;
+  clients: number;
+  referrers: number;
+  clientAndReferrer: number;
+  active: number;
+  inactive: number;
+}
+
 export interface CreatePartyData {
   code?: string;
   fullName: string;
@@ -57,6 +66,7 @@ export interface PartyHistory {
 export const partyApi = {
   list: (filters: PartyFilters = {}) =>
     api.get<{ data: Party[]; total: number }>("/parties", { params: filters }),
+  stats: () => api.get<PartyStats>("/parties/stats"),
   getById: (id: number) => api.get<Party>(`/parties/${id}`),
   create: (data: CreatePartyData) => api.post<Party>("/parties", data),
   update: (id: number, data: Partial<CreatePartyData>) => api.patch<Party>(`/parties/${id}`, data),

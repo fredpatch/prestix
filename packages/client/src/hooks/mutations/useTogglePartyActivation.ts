@@ -17,6 +17,8 @@ export function useTogglePartyActivationMutation(partyId: number) {
       queryClient.invalidateQueries({ queryKey: queryKeys.creances({ partyId }) });
       queryClient.invalidateQueries({ queryKey: queryKeys.savings(partyId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.savingsTransactions() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.parties() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.partyStats() });
     },
   });
 }

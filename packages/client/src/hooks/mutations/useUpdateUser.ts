@@ -9,6 +9,7 @@ export function useUpdateUserMutation() {
       usersApi.update(id, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userStats() });
     },
   });
 }

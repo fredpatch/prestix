@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // agent(1)+ — quick-add during commission/document entry needs this available to any agent
 router.get("/", requireAgent, partyController.list);
+router.get("/stats", requireAgent, partyController.stats);
 router.get("/:id", requireAgent, partyController.getById);
 router.post("/", requireAgent, partyController.create);
 router.patch("/:id", requireAgent, partyController.update);

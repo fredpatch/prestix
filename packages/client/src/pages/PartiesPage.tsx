@@ -1,16 +1,34 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import {
+  LayoutGrid,
+  Loader2,
+  Table2,
+  UserCheck,
+  UserRoundCheck,
+  UserRoundX,
+  Users,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { type Party } from "@/lib/party.api";
 import { CreatePartyDialog } from "./party/components/CreatePartyDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { DataTable } from "@/components/ui/data-table";
-import { useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { queryKeys } from "@/lib/query-keys";
 import { useParties } from "@/hooks/queries/useParties";
+import { usePartyStats } from "@/hooks/queries/usePartyStats";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { PartyGrid } from "./party/components/PartyGrid";
+import { PartyKpiCard } from "./party/components/PartyKpiCard";
+import { PartyRoleBadges, PartyStatusBadge } from "./party/components/PartyBadges";
 
 const columns: ColumnDef<Party, any>[] = [
   {
@@ -42,31 +60,12 @@ const columns: ColumnDef<Party, any>[] = [
   {
     id: "role",
     header: "Rôle",
-    cell: ({ row }) => (
-      <div className="text-[11px]">
-        {row.original.isClient && (
-          <span className="inline-block px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 mr-1">
-            Client
-          </span>
-        )}
-        {row.original.isReferrer && (
-          <span className="inline-block px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
-            Référent
-          </span>
-        )}
-      </div>
-    ),
+    cell: ({ row }) => <PartyRoleBadges party={row.original} />,
   },
   {
     accessorKey: "active",
     header: "Statut",
-    cell: ({ row }) => (
-      <span
-        className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold ${row.original.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
-      >
-        {row.original.active ? "Actif" : "Désactivé"}
-      </span>
-    ),
+    cell: ({ row }) => <PartyStatusBadge active={row.original.active} />,
   },
 ];
 
@@ -74,7 +73,7 @@ export default function PartiesPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"" | "client" | "referrer">("");
-  const queryClient = useQueryClient();
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
   // Debounce the search value itself (not the query call) — the standard
   // React Query pattern; queryKey change is what drives the refetch.
@@ -84,53 +83,117 @@ export default function PartiesPage() {
   }, [search]);
 
   const { data, isLoading } = useParties({ search: debouncedSearch, roleFilter });
+  const { data: stats, isLoading: statsLoading } = usePartyStats();
   const parties = data?.data ?? [];
   const total = data?.total ?? 0;
 
   usePageHeader({ title: "Parties" });
 
-  // CreatePartyDialog isn't on a page-specific mutation hook (it's shared
-  // with QuickAddPartyDialog and doesn't know about this page's query key),
-  // so it still needs this explicit invalidate via its onCreated prop.
-  function handleReload() {
-    queryClient.invalidateQueries({ queryKey: queryKeys.parties() });
-  }
-
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-neutral-500 text-sm mt-0.5">
-            {total} partie{total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <CreatePartyDialog onCreated={handleReload} />
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <p className="max-w-2xl text-sm text-neutral-500">
+          Répertoire des clients et référents utilisés dans les documents, commissions, crédits et
+          mouvements d'épargne.
+        </p>
+        <CreatePartyDialog />
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <Input
-          placeholder="Rechercher par nom, email, téléphone, code..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+      <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2 xl:grid-cols-4">
+        <PartyKpiCard
+          label="Total parties"
+          value={statsLoading ? "..." : String(stats?.total ?? 0)}
+          detail={`${stats?.active ?? 0} actives`}
+          icon={Users}
+          tone="gold"
         />
-        <Select
-          value={roleFilter || "__all__"}
-          onValueChange={(v) => setRoleFilter(v === "__all__" ? "" : (v as "client" | "referrer"))}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Tous" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Tous</SelectItem>
-            <SelectItem value="client">Clients</SelectItem>
-            <SelectItem value="referrer">Référents</SelectItem>
-          </SelectContent>
-        </Select>
+        <PartyKpiCard
+          label="Clients"
+          value={statsLoading ? "..." : String(stats?.clients ?? 0)}
+          detail="Peuvent recevoir proformas et factures"
+          icon={UserRoundCheck}
+          tone="success"
+        />
+        <PartyKpiCard
+          label="Référents"
+          value={statsLoading ? "..." : String(stats?.referrers ?? 0)}
+          detail={`${stats?.clientAndReferrer ?? 0} aussi clients`}
+          icon={UserCheck}
+          tone="neutral"
+        />
+        <PartyKpiCard
+          label="Désactivées"
+          value={statsLoading ? "..." : String(stats?.inactive ?? 0)}
+          detail="Masquées des nouveaux flux"
+          icon={UserRoundX}
+          tone={stats?.inactive ? "danger" : "neutral"}
+        />
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+          <Input
+            placeholder="Rechercher par nom, email, téléphone, code..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-md"
+          />
+          <Select
+            value={roleFilter || "__all__"}
+            onValueChange={(v) =>
+              setRoleFilter(v === "__all__" ? "" : (v as "client" | "referrer"))
+            }
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Tous" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Tous</SelectItem>
+              <SelectItem value="client">Clients</SelectItem>
+              <SelectItem value="referrer">Référents</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11.5px] text-neutral-500">
+            {total} résultat{total !== 1 ? "s" : ""}
+          </p>
+          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "h-8 gap-1.5",
+                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+              )}
+            >
+              <Table2 size={13} />
+              Table
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "h-8 gap-1.5",
+                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+              )}
+            >
+              <LayoutGrid size={13} />
+              Grille
+            </Button>
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
         <Loader2 className="animate-spin text-neutral-400" size={18} />
+      ) : viewMode === "grid" ? (
+        <PartyGrid parties={parties} />
       ) : (
         <DataTable columns={columns} data={parties} emptyMessage="Aucune partie trouvée." />
       )}

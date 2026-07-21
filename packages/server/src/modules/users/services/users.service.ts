@@ -5,7 +5,13 @@ import { generateOTP, hashOTP, otpExpiresAt } from "../../../utils/otp.js";
 import { sendOTPEmail } from "../../../utils/mailer.js";
 import { logAudit } from "../../auth/services/auth.service.js";
 import { toUserView } from "./users.helpers.js";
-import type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
+import type {
+  CreateUserParams,
+  UpdateUserParams,
+  UserFilters,
+  UserStats,
+  UserView,
+} from "./users.types.js";
 import { getIntValue } from "../../../modules/settings/services/settings.service.js";
 
 export type { CreateUserParams, UpdateUserParams, UserFilters, UserView } from "./users.types.js";
@@ -50,6 +56,22 @@ export async function listUsers(
   const total = await db.$count(users, where);
 
   return { data: rows.map(toUserView), total };
+}
+
+export async function getUserStats(): Promise<UserStats> {
+  const [total, active, inactive, firstLogin, agents, managers, admins, superAdmins] =
+    await Promise.all([
+      db.$count(users),
+      db.$count(users, eq(users.active, true)),
+      db.$count(users, eq(users.active, false)),
+      db.$count(users, and(eq(users.active, true), eq(users.firstLogin, true))),
+      db.$count(users, eq(users.role, "agent")),
+      db.$count(users, eq(users.role, "manager")),
+      db.$count(users, eq(users.role, "admin")),
+      db.$count(users, eq(users.role, "super_admin")),
+    ]);
+
+  return { total, active, inactive, firstLogin, agents, managers, admins, superAdmins };
 }
 
 export async function getUser(id: number): Promise<UserView> {

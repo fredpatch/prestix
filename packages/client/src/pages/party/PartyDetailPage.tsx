@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { Loader2, Power, Pencil, Download } from "lucide-react";
+import { CreditCard, Download, FileText, Loader2, ReceiptText, Wallet } from "lucide-react";
 import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -20,8 +20,16 @@ import { useCreances } from "@/hooks/queries/useCreances";
 import { usePartySavingsAccount } from "@/hooks/queries/usePartySavingsAccount";
 import { usePartySavingsTransactions } from "@/hooks/queries/usePartySavingsTransactions";
 import { useTogglePartyActivationMutation } from "@/hooks/mutations/useTogglePartyActivation";
+import { PartyProfileHeader } from "./components/PartyProfileHeader";
+import { PartyKpiCard } from "./components/PartyKpiCard";
 
 const NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
+
+function money(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return "—";
+  const numeric = typeof value === "string" ? parseFloat(value) : value;
+  return `${numeric.toLocaleString("fr-FR")} XAF`;
+}
 
 export default function PartyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -72,122 +80,61 @@ export default function PartyDetailPage() {
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
   const canReverse = user && ["admin", "super_admin"].includes(user.role);
   const openLots = creditLots.filter((l) => !l.convertedAt && parseFloat(l.remainingAmount) > 0);
-  const creancesTotal = creances.reduce((sum, c) => sum + parseFloat(c.principalDue) + parseFloat(c.penaltyDue), 0);
+  const creancesTotal = creances.reduce(
+    (sum, c) => sum + parseFloat(c.principalDue) + parseFloat(c.penaltyDue),
+    0,
+  );
   const overdueCount = creances.filter((c) => c.isOverdue).length;
+  const recentCommercial = history?.commercial.data.slice(0, 3) ?? [];
+  const recentSavings = savingsTransactions.slice(0, 3);
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2 mt-1">
-            {party.code && <span className="text-[11px] text-neutral-500">{party.code}</span>}
-            {party.isClient && (
-              <span className="inline-block px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10.5px]">
-                Client
-              </span>
-            )}
-            {party.isReferrer && (
-              <span className="inline-block px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 text-[10.5px]">
-                Référent
-              </span>
-            )}
-            <span
-              className={`inline-block px-1.5 py-0.5 rounded text-[10.5px] font-semibold ${party.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
-            >
-              {party.active ? "Actif" : "Désactivé"}
-            </span>
-          </div>
-          <div className="flex gap-4 mt-2 text-[11.5px] text-neutral-500">
-            {party.phone && <span>Tél : {party.phone}</span>}
-            {party.email && <span>Email : {party.email}</span>}
-            {party.address && <span>{party.address}</span>}
-          </div>
-        </div>
-
-        {canManage && (
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-              <Pencil size={13} /> Modifier
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleActivation}
-              disabled={toggleActivationMutation.isPending}
-              className={
-                party.active
-                  ? "text-red-500 hover:bg-red-50"
-                  : "text-emerald-600 hover:bg-emerald-50"
-              }
-            >
-              {toggleActivationMutation.isPending ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <Power size={13} />
-              )}
-              {party.active ? "Désactiver" : "Activer"}
-            </Button>
-          </div>
-        )}
-      </div>
+      <PartyProfileHeader
+        party={party}
+        canManage={!!canManage}
+        toggling={toggleActivationMutation.isPending}
+        onEdit={() => setEditing(true)}
+        onToggleActivation={handleToggleActivation}
+      />
 
       {/* Three balances — never merged, per M3 spec */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-            Créances (dû à l'agence)
-          </p>
-          {creances.length === 0 ? (
-            <>
-              <p className="text-[18px] font-bold text-neutral-400 mt-1">0 XAF</p>
-              <p className="text-[10px] text-neutral-500">Aucune créance en cours</p>
-            </>
-          ) : (
-            <>
-              <p className="text-[18px] font-bold text-red-600 mt-1">
-                {creancesTotal.toLocaleString("fr-FR")} XAF
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                {creances.length} échéance{creances.length > 1 ? "s" : ""}
-                {overdueCount > 0 && ` · ${overdueCount} en retard`}
-              </p>
-            </>
-          )}
-        </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-            Crédit / Avoir
-          </p>
-          <p className="text-[18px] font-bold text-brand-gold-dark mt-1">
-            {creditBalance?.toLocaleString("fr-FR")} XAF
-          </p>
-          {openLots.length > 0 && (
-            <p className="text-[10px] text-neutral-500">
-              {openLots.length} lot{openLots.length > 1 ? "s" : ""} ouvert
-              {openLots.length > 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-            Épargne voyage
-          </p>
-          {savingsAccount ? (
-            <>
-              <p className="text-[18px] font-bold text-brand-gold-dark mt-1">
-                {parseFloat(savingsAccount.balance).toLocaleString("fr-FR")} XAF
-              </p>
-              <p className="text-[10px] text-neutral-500">
-                {savingsAccount.subscriptionSource === "direct" ? "Souscription directe" : "Conversion crédit"}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-[18px] font-bold text-neutral-400 mt-1">—</p>
-              <p className="text-[10px] text-neutral-400">Aucun compte ouvert</p>
-            </>
-          )}
-        </div>
+      <div className="grid grid-cols-1 gap-3 my-6 md:grid-cols-3">
+        <PartyKpiCard
+          label="Créances dues"
+          value={creances.length === 0 ? "0 XAF" : money(creancesTotal)}
+          detail={
+            creances.length === 0
+              ? "Aucune créance en cours"
+              : `${creances.length} échéance${creances.length > 1 ? "s" : ""}${overdueCount > 0 ? ` · ${overdueCount} en retard` : ""}`
+          }
+          icon={ReceiptText}
+          tone={creancesTotal > 0 ? "danger" : "neutral"}
+        />
+        <PartyKpiCard
+          label="Crédit / Avoir"
+          value={money(creditBalance)}
+          detail={
+            openLots.length > 0
+              ? `${openLots.length} lot${openLots.length > 1 ? "s" : ""} ouvert${openLots.length > 1 ? "s" : ""}`
+              : "Aucun lot ouvert"
+          }
+          icon={CreditCard}
+          tone="gold"
+        />
+        <PartyKpiCard
+          label="Épargne voyage"
+          value={savingsAccount ? money(savingsAccount.balance) : "—"}
+          detail={
+            savingsAccount
+              ? savingsAccount.subscriptionSource === "direct"
+                ? "Souscription directe"
+                : "Conversion crédit"
+              : "Aucun compte ouvert"
+          }
+          icon={Wallet}
+          tone={savingsAccount ? "gold" : "neutral"}
+        />
       </div>
 
       {savingsAccount && (
@@ -196,12 +143,114 @@ export default function PartyDetailPage() {
         </div>
       )}
 
-      <Tabs defaultValue="credit">
+      <Tabs defaultValue="overview">
         <TabsList>
+          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="credit">Lots de crédit</TabsTrigger>
           <TabsTrigger value="commercial">Historique commercial</TabsTrigger>
           <TabsTrigger value="epargne">Historique épargne</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview">
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                <div>
+                  <p className="text-[12px] font-semibold text-neutral-900">
+                    Activité commerciale récente
+                  </p>
+                  <p className="text-[10.5px] text-neutral-500">
+                    Factures et proformas liés à cette partie
+                  </p>
+                </div>
+                <FileText size={15} className="text-neutral-400" />
+              </div>
+              {recentCommercial.length === 0 ? (
+                <p className="px-4 py-6 text-[12px] text-neutral-500">
+                  Aucun document commercial pour cette partie.
+                </p>
+              ) : (
+                <div className="divide-y divide-neutral-100">
+                  {recentCommercial.map((entry) => (
+                    <Link
+                      key={`${entry.docType}-${entry.id}`}
+                      to={
+                        entry.docType === "invoice"
+                          ? `/invoices/${entry.id}`
+                          : `/proformas/${entry.id}`
+                      }
+                      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-medium text-neutral-800">
+                          {entry.docType === "invoice" ? "Facture" : "Proforma"}{" "}
+                          {entry.number ?? `#${entry.id}`}
+                        </p>
+                        <p className="text-[10.5px] text-neutral-500">
+                          {new Date(entry.date).toLocaleDateString("fr-FR")} · {entry.status}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-[12.5px] font-semibold text-neutral-900">
+                        {money(entry.amount)}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                <div>
+                  <p className="text-[12px] font-semibold text-neutral-900">Épargne récente</p>
+                  <p className="text-[10.5px] text-neutral-500">
+                    Derniers mouvements du compte voyage
+                  </p>
+                </div>
+                <Wallet size={15} className="text-neutral-400" />
+              </div>
+              {!savingsAccount ? (
+                <div className="px-4 py-6">
+                  <p className="text-[12px] text-neutral-500">
+                    Aucun compte épargne pour cette partie.
+                  </p>
+                  {canManage && (
+                    <div className="mt-3">
+                      <SubscribeButton partyId={partyId} onSubscribed={handleReload} />
+                    </div>
+                  )}
+                </div>
+              ) : recentSavings.length === 0 ? (
+                <p className="px-4 py-6 text-[12px] text-neutral-500">
+                  Aucun mouvement pour ce compte.
+                </p>
+              ) : (
+                <div className="divide-y divide-neutral-100">
+                  {recentSavings.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-medium text-neutral-800">
+                          {NATURE_LABELS[t.nature]}
+                          {t.receiptNumber && (
+                            <span className="ml-1 text-[10.5px] text-neutral-500">
+                              {t.receiptNumber}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-[10.5px] text-neutral-500">
+                          {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-[12.5px] font-semibold text-neutral-900">
+                        {money(t.totalAmount)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="credit">
           {creditLots.length === 0 ? (
@@ -237,18 +286,23 @@ export default function PartyDetailPage() {
 
         <TabsContent value="commercial">
           {!history || history.commercial.data.length === 0 ? (
-            <p className="text-[12px] text-neutral-500 py-4">Aucun document commercial pour cette partie.</p>
+            <p className="text-[12px] text-neutral-500 py-4">
+              Aucun document commercial pour cette partie.
+            </p>
           ) : (
             <div className="space-y-2 py-2">
               {history.commercial.data.map((entry) => (
                 <Link
                   key={`${entry.docType}-${entry.id}`}
-                  to={entry.docType === "invoice" ? `/invoices/${entry.id}` : `/proformas/${entry.id}`}
+                  to={
+                    entry.docType === "invoice" ? `/invoices/${entry.id}` : `/proformas/${entry.id}`
+                  }
                   className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-brand-gold-dark transition-colors"
                 >
                   <div>
                     <p className="text-[12px] font-medium text-neutral-800">
-                      {entry.docType === "invoice" ? "Facture" : "Proforma"} {entry.number ?? `#${entry.id}`}
+                      {entry.docType === "invoice" ? "Facture" : "Proforma"}{" "}
+                      {entry.number ?? `#${entry.id}`}
                     </p>
                     <p className="text-[10.5px] text-neutral-500">
                       {new Date(entry.date).toLocaleDateString("fr-FR")} · {entry.status}
@@ -282,9 +336,12 @@ export default function PartyDetailPage() {
                 >
                   <div>
                     <p className="text-[12px] font-medium text-neutral-800">
-                      {NATURE_LABELS[t.nature]} — {parseFloat(t.totalAmount).toLocaleString("fr-FR")} XAF
+                      {NATURE_LABELS[t.nature]} —{" "}
+                      {parseFloat(t.totalAmount).toLocaleString("fr-FR")} XAF
                       {t.reversalOfTransactionId && (
-                        <span className="text-[10.5px] text-amber-600 ml-2">(contre-passation)</span>
+                        <span className="text-[10.5px] text-amber-600 ml-2">
+                          (contre-passation)
+                        </span>
                       )}
                     </p>
                     <p className="text-[10.5px] text-neutral-500">
@@ -306,7 +363,10 @@ export default function PartyDetailPage() {
                       </a>
                     )}
                     {canReverse && !t.reversalOfTransactionId && (
-                      <ReverseSavingsTransactionDialog transactionId={t.id} onReversed={handleReload} />
+                      <ReverseSavingsTransactionDialog
+                        transactionId={t.id}
+                        onReversed={handleReload}
+                      />
                     )}
                   </div>
                 </div>

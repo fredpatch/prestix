@@ -9,6 +9,7 @@ const router = Router();
 router.use(authenticate, requireAdmin);
 
 router.get("/", usersController.list);
+router.get("/stats", usersController.stats);
 router.post("/", usersController.create);
 
 router.get("/:id", usersController.getById);
