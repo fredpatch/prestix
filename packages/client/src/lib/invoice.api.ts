@@ -25,6 +25,19 @@ export interface PaymentPlanInput {
   installments?: { expectedDate: string; expectedAmount: number }[];
 }
 
+export interface DocumentEmailResult {
+  success: boolean;
+  outbox: {
+    id: number;
+    status: "pending" | "sent" | "failed";
+    errorMessage?: string;
+  };
+  accepted: string[];
+  rejected: string[];
+  messageId?: string;
+  errorMessage?: string;
+}
+
 export const invoiceApi = {
   list: (partyId?: number) => api.get<Invoice[]>("/invoices", { params: { partyId } }),
   getById: (id: number) => api.get<Invoice>(`/invoices/${id}`),
@@ -51,4 +64,6 @@ export const invoiceApi = {
     }),
   cancel: (invoiceId: number, reason: string) =>
     api.post<Invoice>(`/invoices/${invoiceId}/cancel`, { reason }),
+  sendEmail: (invoiceId: number, to?: string) =>
+    api.post<DocumentEmailResult>(`/invoices/${invoiceId}/email`, { to }, { timeout: 60_000 }),
 };

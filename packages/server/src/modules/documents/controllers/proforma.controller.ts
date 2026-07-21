@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { getBoolValue } from "@/modules/settings/services/settings.service.js";
+import { sendProformaEmail } from "../services/document-email.service.js";
 import * as proformaService from "../services/proforma.service.js";
 
 function handleError(res: Response, error: unknown): void {
@@ -17,6 +19,24 @@ function handleError(res: Response, error: unknown): void {
   const code = status[message] ?? 500;
   if (code === 500) console.error("[proforma]", error);
   res.status(code).json({ message, code: message });
+}
+
+async function queueAutomaticProformaEmail(proformaId: number, userId: number): Promise<void> {
+  try {
+    const enabled = await getBoolValue("mail_document_auto_send_enabled", false);
+    if (!enabled) return;
+    const result = await sendProformaEmail({
+      id: proformaId,
+      requestedByUserId: userId,
+      trigger: "automatic",
+    });
+    if (!result.success) {
+      console.warn("[proforma:auto-email]", result.errorMessage ?? "MAIL_SEND_FAILED");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    if (message !== "RECIPIENT_EMAIL_REQUIRED") console.warn("[proforma:auto-email]", error);
+  }
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
@@ -51,6 +71,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       referrerPartyId,
     });
     res.status(201).json(proforma);
+    void queueAutomaticProformaEmail(proforma.id, req.user!.userId);
   } catch (error) {
     handleError(res, error);
   }

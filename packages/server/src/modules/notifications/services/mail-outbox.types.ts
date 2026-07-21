@@ -1,3 +1,5 @@
+import type { SendMailOptions } from "nodemailer";
+
 export type MailOutboxStatus = "pending" | "sent" | "failed";
 
 export interface MailOutboxView {
@@ -23,6 +25,7 @@ export interface SendTrackedMailInput {
   subject: string;
   text: string;
   html?: string;
+  attachments?: SendMailOptions["attachments"];
   templateKey?: string;
   notificationId?: number;
   sourceType?: string;

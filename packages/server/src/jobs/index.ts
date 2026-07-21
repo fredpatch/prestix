@@ -3,20 +3,44 @@
 import cron from "node-cron";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { db } from "@/db/index.js";
-import { installments, invoices } from "@/db/schema.js";
+import { installments, invoices, mailOutbox } from "@/db/schema.js";
 import { expireOverdueProformas } from "../modules/documents/services/proforma.service.js";
 import { accrueOverduePenalties } from "@/modules/penalties/services/penalty.service.js";
 import { convertExpiredCreditLots } from "@/modules/savings/services/savings-conversion.service.js";
 import { broadcastNotification } from "@/modules/notifications/services/notification.service.js";
+import { sendTrackedMail } from "@/modules/notifications/services/mail-outbox.service.js";
+import { getBoolValue } from "@/modules/settings/services/settings.service.js";
 
 function dateOnly(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function snapshotEmail(snapshot: unknown): string | undefined {
+  return (snapshot as { email?: string } | undefined)?.email?.trim();
+}
+
+function snapshotName(snapshot: unknown): string {
+  return (snapshot as { fullName?: string } | undefined)?.fullName ?? "client";
+}
+
+function formatMoney(value: string | number): string {
+  return `${new Intl.NumberFormat("fr-FR").format(Number(value))} XAF`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 async function notifyUpcomingInstallments(): Promise<number> {
   const today = new Date();
   const inThreeDays = new Date(today);
   inThreeDays.setDate(today.getDate() + 3);
+  const shouldSendMail = await getBoolValue("mail_automatic_reminders_enabled", false);
 
   const rows = await db
     .select({ installment: installments, invoice: invoices })
@@ -67,6 +91,51 @@ async function notifyUpcomingInstallments(): Promise<number> {
       dedupeKey: `installment-due-soon:${installment.id}:${installment.expectedDate}`,
       metadata,
     });
+
+    const to = snapshotEmail(invoice.partySnapshot);
+    if (shouldSendMail && to) {
+      const invoiceNumber = invoice.number ?? `facture #${invoice.id}`;
+      const buyer = snapshotName(invoice.partySnapshot);
+      const reminderSourceId = `${installment.id}:${dateOnly(today)}`;
+      const existingReminder = await db
+        .select({ id: mailOutbox.id })
+        .from(mailOutbox)
+        .where(
+          and(
+            eq(mailOutbox.templateKey, "installment_due_reminder"),
+            eq(mailOutbox.sourceType, "installments"),
+            eq(mailOutbox.sourceId, reminderSourceId),
+          ),
+        )
+        .limit(1);
+
+      if (existingReminder.length > 0) continue;
+
+      await sendTrackedMail({
+        to,
+        subject: `PrestiX - Rappel d'echeance ${invoiceNumber}`,
+        text:
+          `Bonjour ${buyer},\n\n` +
+          `Nous vous rappelons que l'echeance ${installment.sequence} de la ${invoiceNumber} ` +
+          `est prevue le ${installment.expectedDate} pour un montant attendu de ${formatMoney(
+            installment.expectedAmount,
+          )}.\n\nMerci de votre confiance.\nPrestiX`,
+        html:
+          `<p>Bonjour ${escapeHtml(buyer)},</p>` +
+          `<p>Nous vous rappelons que l'echeance <strong>${installment.sequence}</strong> ` +
+          `de la <strong>${escapeHtml(invoiceNumber)}</strong> est prevue le <strong>${installment.expectedDate}</strong>.</p>` +
+          `<p>Montant attendu : <strong>${formatMoney(installment.expectedAmount)}</strong></p>` +
+          "<p>Merci de votre confiance.</p>",
+        templateKey: "installment_due_reminder",
+        sourceType: "installments",
+        sourceId: reminderSourceId,
+        metadata: {
+          ...metadata,
+          automatic: true,
+          reminderDate: dateOnly(today),
+        },
+      });
+    }
   }
 
   return rows.length;
@@ -182,9 +251,8 @@ export function registerJobs(): void {
     }
   });
 
-  // First in-app notification pass: daily due-date reminder. Email and
-  // automatic reminder cadences will plug into this same notification model
-  // later, but for now this only writes in-app rows.
+  // Daily due-date reminder. In-app rows always run; customer email reminders
+  // are guarded by the `mail_automatic_reminders_enabled` setting.
   cron.schedule("0 7 * * *", async () => {
     try {
       const count = await notifyUpcomingInstallments();

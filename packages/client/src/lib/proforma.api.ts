@@ -1,4 +1,5 @@
 import api from "./axios";
+import type { DocumentEmailResult } from "./invoice.api";
 
 export interface TicketDetailsInput {
   travelClass: "economy" | "business" | "first" | "premium";
@@ -92,4 +93,6 @@ export const proformaApi = {
     api.patch<Proforma>(`/proformas/${proformaId}/lines/${lineId}`, patch),
   removeLine: (proformaId: number, lineId: number) =>
     api.delete<Proforma>(`/proformas/${proformaId}/lines/${lineId}`),
+  sendEmail: (proformaId: number, to?: string) =>
+    api.post<DocumentEmailResult>(`/proformas/${proformaId}/email`, { to }, { timeout: 60_000 }),
 };

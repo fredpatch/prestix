@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { type SendMailOptions } from "nodemailer";
 import { getBoolValue } from "@/modules/settings/services/settings.service.js";
 
 export interface MailResult {
@@ -80,6 +80,7 @@ export async function sendMail(params: {
   text: string;
   html?: string;
   replyTo?: string;
+  attachments?: SendMailOptions["attachments"];
 }): Promise<MailResult> {
   const runtimeEnabled = await getBoolValue("mail_enabled", true);
   if (!runtimeEnabled) throw new Error("MAIL_DISABLED_BY_SETTINGS");
@@ -92,6 +93,7 @@ export async function sendMail(params: {
     text: params.text,
     html: params.html,
     replyTo: params.replyTo,
+    attachments: params.attachments,
   })) as {
     messageId?: string;
     accepted?: unknown[];

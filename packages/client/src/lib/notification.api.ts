@@ -67,6 +67,24 @@ export interface MailTestResult {
   errorMessage?: string;
 }
 
+export interface MailOutboxItem {
+  id: number;
+  notificationId?: number;
+  recipient: string;
+  subject: string;
+  templateKey: string;
+  status: "pending" | "sent" | "failed";
+  sourceType?: string;
+  sourceId?: string;
+  messageId?: string;
+  errorMessage?: string;
+  retryCount: number;
+  metadata?: Record<string, unknown>;
+  sentAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const notificationApi = {
   list: (filters: NotificationFilters = {}) =>
     api.get<NotificationListResponse>("/notifications", { params: filters }),
@@ -76,4 +94,6 @@ export const notificationApi = {
   dismiss: (id: number) => api.delete<NotificationItem>(`/notifications/${id}`),
   mailStatus: () => api.get<MailConfigStatus>("/notifications/mail/status"),
   sendTestMail: (to: string) => api.post<MailTestResult>("/notifications/mail/test", { to }),
+  mailOutbox: (limit = 20) =>
+    api.get<MailOutboxItem[]>("/notifications/mail/outbox", { params: { limit } }),
 };

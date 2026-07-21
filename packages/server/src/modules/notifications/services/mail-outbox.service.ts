@@ -59,6 +59,7 @@ export async function sendTrackedMail(
       subject: input.subject,
       text: input.text,
       html: input.html,
+      attachments: input.attachments,
     });
 
     const status = result.accepted.length > 0 ? "sent" : "failed";

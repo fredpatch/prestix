@@ -80,4 +80,5 @@ export const queryKeys = {
   // Notifications
   notifications: (filters?: object) => ["notifications", filters ?? {}] as const,
   notificationUnreadCount: () => ["notifications", "unread-count"] as const,
+  mailOutbox: () => ["notifications", "mail-outbox"] as const,
 } as const;

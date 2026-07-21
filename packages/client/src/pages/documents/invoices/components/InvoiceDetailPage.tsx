@@ -8,6 +8,7 @@ import {
   Download,
   FileText,
   Loader2,
+  Mail,
   Pencil,
   Plus,
   ReceiptText,
@@ -34,6 +35,7 @@ import { useAddInvoiceLineMutation } from "@/hooks/mutations/useAddInvoiceLine";
 import { useRemoveInvoiceLineMutation } from "@/hooks/mutations/useRemoveInvoiceLine";
 import { useUpdateInvoiceLineMutation } from "@/hooks/mutations/useUpdateInvoiceLine";
 import { useCreateDeliveryNoteMutation } from "@/hooks/mutations/useCreateDeliveryNote";
+import { useSendDocumentEmailMutation } from "@/hooks/mutations/useSendDocumentEmail";
 import { cn } from "@/lib/utils";
 import {
   DocumentKpiCard,
@@ -117,6 +119,7 @@ export default function InvoiceDetailPage() {
   const removeLineMutation = useRemoveInvoiceLineMutation(invoiceId);
   const updateLineMutation = useUpdateInvoiceLineMutation(invoiceId);
   const createBLMutation = useCreateDeliveryNoteMutation();
+  const sendEmailMutation = useSendDocumentEmailMutation();
 
   usePageHeader({
     title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
@@ -203,6 +206,16 @@ export default function InvoiceDetailPage() {
     });
   }
 
+  function handleSendInvoiceEmail() {
+    if (!invoice) return;
+    sendEmailMutation.mutate({ kind: "invoice", id: invoice.id });
+  }
+
+  function handleSendDeliveryNoteEmail() {
+    if (!invoice) return;
+    sendEmailMutation.mutate({ kind: "delivery-note", invoiceId: invoice.id });
+  }
+
   if (isLoading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   const isDraft = invoice.status === "draft";
@@ -211,6 +224,7 @@ export default function InvoiceDetailPage() {
   const canCancel = isIssued && user && ["admin", "super_admin"].includes(user.role);
   const canDiscount = user && ["manager", "admin", "super_admin"].includes(user.role);
   const isFullyPaid = invoice.paymentStatus === "paid";
+  const hasRecipientEmail = Boolean(invoice.partySnapshot?.email);
   const totalAmount = parseFloat(invoice.totalAmount);
   const paidAmount = installments.reduce((sum, item) => sum + parseFloat(item.paidAmount), 0);
   const openAmount = Math.max(0, totalAmount - paidAmount);
@@ -264,6 +278,18 @@ export default function InvoiceDetailPage() {
             >
               <Download size={13} /> PDF
             </a>
+          )}
+          {isIssued && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSendInvoiceEmail}
+              disabled={!hasRecipientEmail || sendEmailMutation.isPending}
+              title={hasRecipientEmail ? "Envoyer la facture par email" : "Email client manquant"}
+            >
+              {sendEmailMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+              Email facture
+            </Button>
           )}
           {canCancel && <CancelInvoiceDialog invoiceId={invoice.id} onCancelled={handleReload} />}
         </div>
@@ -321,6 +347,16 @@ export default function InvoiceDetailPage() {
           >
             Voir le PDF
           </a>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSendDeliveryNoteEmail}
+            disabled={!hasRecipientEmail || sendEmailMutation.isPending}
+            title={hasRecipientEmail ? "Envoyer le BL par email" : "Email client manquant"}
+          >
+            {sendEmailMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+            Envoyer le BL
+          </Button>
         </div>
       )}
 

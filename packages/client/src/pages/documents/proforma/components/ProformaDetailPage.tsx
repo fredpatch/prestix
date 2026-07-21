@@ -7,6 +7,7 @@ import {
   Download,
   FileText,
   Loader2,
+  Mail,
   Pencil,
   Plus,
   ReceiptText,
@@ -24,6 +25,7 @@ import { usePromoteProformaMutation } from "@/hooks/mutations/usePromoteProforma
 import { useAddProformaLineMutation } from "@/hooks/mutations/useAddProformaLine";
 import { useUpdateProformaLineMutation } from "@/hooks/mutations/useUpdateProformaLine";
 import { useRemoveProformaLineMutation } from "@/hooks/mutations/useRemoveProformaLine";
+import { useSendDocumentEmailMutation } from "@/hooks/mutations/useSendDocumentEmail";
 import {
   DocumentKpiCard,
   DocumentEmptyState,
@@ -88,6 +90,7 @@ export default function ProformaDetailPage() {
   const addLineMutation = useAddProformaLineMutation(proformaId ?? -1);
   const updateLineMutation = useUpdateProformaLineMutation(proformaId ?? -1);
   const removeLineMutation = useRemoveProformaLineMutation(proformaId ?? -1);
+  const sendEmailMutation = useSendDocumentEmailMutation();
 
   useEffect(() => {
     let cancelled = false;
@@ -144,12 +147,18 @@ export default function ProformaDetailPage() {
     removeLineMutation.mutate(lineId);
   }
 
+  function handleSendEmail() {
+    if (!proforma) return;
+    sendEmailMutation.mutate({ kind: "proforma", id: proforma.id });
+  }
+
   if (isLoading || !proforma) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 
   const total = documentTotal(proforma.lines);
   const canPromote = proforma.status === "draft";
   const canEdit = proforma.status === "draft";
   const savingLine = updateLineMutation.isPending || addLineMutation.isPending;
+  const hasRecipientEmail = Boolean(proforma.partySnapshot?.email);
   const expiresAt = proforma.expiresAt ? new Date(proforma.expiresAt).getTime() : undefined;
   const isExpiredSoon = Boolean(expiresAt && expiresAt - Date.now() <= 3 * 86_400_000 && expiresAt > Date.now());
 
@@ -179,6 +188,16 @@ export default function ProformaDetailPage() {
           >
             <Download size={13} /> PDF
           </a>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSendEmail}
+            disabled={!hasRecipientEmail || sendEmailMutation.isPending || proforma.status !== "draft"}
+            title={hasRecipientEmail ? "Envoyer la proforma par email" : "Email client manquant"}
+          >
+            {sendEmailMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+            Email
+          </Button>
           {canPromote && (
             <Button size="sm" onClick={handlePromote} disabled={promoteMutation.isPending}>
               {promoteMutation.isPending ? (

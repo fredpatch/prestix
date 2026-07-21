@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ElementType } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Archive,
@@ -14,6 +15,7 @@ import {
   Inbox,
   Loader2,
   MailOpen,
+  RefreshCw,
   Search,
   ShieldAlert,
   Sparkles,
@@ -52,11 +54,13 @@ import {
   type NotificationStatusFilter,
 } from "@/lib/notification.api";
 import { useNotifications } from "@/hooks/queries/useNotifications";
+import { useMailOutbox } from "@/hooks/queries/useMailOutbox";
 import {
   useDismissNotificationMutation,
   useMarkAllNotificationsReadMutation,
   useMarkNotificationReadMutation,
 } from "@/hooks/mutations/useNotificationMutations";
+import { queryKeys } from "@/lib/query-keys";
 
 const PAGE_SIZE = 12;
 
@@ -173,7 +177,12 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-5">
-      {user && ["admin", "super_admin"].includes(user.role) && <MailTestPanel />}
+      {user && ["admin", "super_admin"].includes(user.role) && (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,460px)]">
+          <MailTestPanel />
+          <MailOutboxPanel />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <NotificationKpi
@@ -398,6 +407,7 @@ export default function NotificationsPage() {
 }
 
 function MailTestPanel() {
+  const queryClient = useQueryClient();
   const [to, setTo] = useState("");
   const [status, setStatus] = useState<MailConfigStatus | null>(null);
   const [checking, setChecking] = useState(false);
@@ -442,6 +452,7 @@ function MailTestPanel() {
           "Erreur lors de l'envoi du test.",
       );
     } finally {
+      queryClient.invalidateQueries({ queryKey: queryKeys.mailOutbox() });
       setSending(false);
     }
   }
@@ -495,6 +506,81 @@ function MailTestPanel() {
         </div>
       )}
     </section>
+  );
+}
+
+function MailOutboxPanel() {
+  const { data = [], isLoading, isFetching, refetch } = useMailOutbox();
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white">
+      <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-gold-dark">
+            Emails
+          </p>
+          <h2 className="mt-1 text-sm font-semibold text-neutral-950">Historique d'envoi</h2>
+        </div>
+        <Button type="button" variant="secondary" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          {isFetching ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+          Actualiser
+        </Button>
+      </div>
+
+      <div className="divide-y divide-neutral-100">
+        {isLoading ? (
+          <div className="flex items-center gap-2 px-4 py-5 text-[12px] text-neutral-500">
+            <Loader2 size={13} className="animate-spin" />
+            Chargement des emails...
+          </div>
+        ) : data.length === 0 ? (
+          <p className="px-4 py-5 text-[12px] text-neutral-500">Aucun email enregistre.</p>
+        ) : (
+          data.slice(0, 5).map((item) => <MailOutboxRow key={item.id} item={item} />)
+        )}
+      </div>
+    </section>
+  );
+}
+
+function MailOutboxRow({
+  item,
+}: {
+  item: {
+    recipient: string;
+    subject: string;
+    templateKey: string;
+    status: "pending" | "sent" | "failed";
+    createdAt: string;
+    errorMessage?: string;
+  };
+}) {
+  const tone =
+    item.status === "sent"
+      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+      : item.status === "failed"
+        ? "border-red-100 bg-red-50 text-red-700"
+        : "border-amber-100 bg-amber-50 text-amber-700";
+  const label = item.status === "sent" ? "Envoye" : item.status === "failed" ? "Echec" : "En attente";
+
+  return (
+    <div className="grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+      <div className="min-w-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="truncate text-[12px] font-semibold text-neutral-900">{item.subject}</p>
+          <span className={cn("rounded border px-2 py-0.5 text-[10.5px] font-semibold", tone)}>
+            {label}
+          </span>
+        </div>
+        <p className="mt-1 truncate text-[11px] text-neutral-500">
+          {item.recipient} - {item.templateKey}
+        </p>
+        {item.errorMessage && (
+          <p className="mt-1 truncate text-[11px] text-red-600">{item.errorMessage}</p>
+        )}
+      </div>
+      <p className="text-[10.5px] text-neutral-400">{formatDateTime(item.createdAt)}</p>
+    </div>
   );
 }
 

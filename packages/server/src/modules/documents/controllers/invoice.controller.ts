@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
+import { getBoolValue } from "@/modules/settings/services/settings.service.js";
 import * as invoiceService from "../services/invoice.service.js";
 import { roleLevel } from "../../../db/schema.js";
+import { sendInvoiceEmail } from "../services/document-email.service.js";
 
 function handleError(res: Response, error: unknown): void {
   const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
@@ -30,6 +32,24 @@ function handleError(res: Response, error: unknown): void {
   const code = status[message] ?? 500;
   if (code === 500) console.error("[invoice]", error);
   res.status(code).json({ message, code: message });
+}
+
+async function queueAutomaticInvoiceEmail(invoiceId: number, userId: number): Promise<void> {
+  try {
+    const enabled = await getBoolValue("mail_document_auto_send_enabled", false);
+    if (!enabled) return;
+    const result = await sendInvoiceEmail({
+      id: invoiceId,
+      requestedByUserId: userId,
+      trigger: "automatic",
+    });
+    if (!result.success) {
+      console.warn("[invoice:auto-email]", result.errorMessage ?? "MAIL_SEND_FAILED");
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+    if (message !== "RECIPIENT_EMAIL_REQUIRED") console.warn("[invoice:auto-email]", error);
+  }
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
@@ -138,6 +158,7 @@ export async function issue(req: Request, res: Response): Promise<void> {
       allowNegativeStockOverride: wantsNegativeOverride,
     });
     res.json(invoice);
+    void queueAutomaticInvoiceEmail(invoice.id, req.user!.userId);
   } catch (error) {
     handleError(res, error);
   }
