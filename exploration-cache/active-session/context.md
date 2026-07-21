@@ -1,13 +1,15 @@
 ## Where We Left Off
 
-Sprint 11f UI/reporting polish is closed in code. The recent session shipped
-two main clusters:
+Sprint 11d Notifications/mail foundation is implemented in code after the
+Sprint 11f UI/reporting polish close-out. The recent session shipped three
+main clusters:
 
-1. Operational UI/document polish across Party, Users, Login, Commission
-   requests, Commissions, Creances, Stock, Dashboard, Settings, mobile layout,
-   Proformas, Invoices, and document detail workspaces.
-2. Dashboard report export alignment so quick PDF/Excel exports reflect the
-   upgraded dashboard rather than only the older table/card report shape.
+1. In-app notification center: schema/migrations, API, client page, sidebar
+   entry, unread badge, filters, read/archive actions.
+2. System event producers for expired proformas, penalties, credit conversion
+   and holds, upcoming installments, and commission edit request decisions.
+3. SMTP/Gmail-ready mail foundation with admin test/status endpoints, outbox
+   tracking, Settings toggles, and `.env.example` guidance.
 
 Latest pushed commits:
 
@@ -17,14 +19,25 @@ Latest pushed commits:
 
 ## What's In Scope Today
 
-Cache/changelog/TASKS sync for the UI/reporting polish session, then commit
-and push documentation changes.
+Cache/changelog sync for the notification/mail session, then commit and push
+all current changes.
 
 ## State Of The Codebase
 
 Backend routes are mounted for bootstrap, auth, users, settings, Party, Party
 History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments,
-Creances, Stock, Commissions, Savings, Reporting, and Audit Log.
+Creances, Stock, Commissions, Savings, Reporting, Audit Log, and
+Notifications.
+
+Notifications/mail:
+
+- `/api/notifications` supports list/unread count/read/archive operations.
+- `/api/notifications/mail/status`, `/mail/test`, and `/mail/outbox` are
+  admin+ endpoints for SMTP readiness and delivery diagnostics.
+- Mail delivery is guarded both by environment config and the Settings-backed
+  `mail_enabled` toggle.
+- Automatic document sending and reminders are deliberately seeded as
+  disabled toggles until templates, attachments, and retry UX are implemented.
 
 Document UI:
 
@@ -51,10 +64,8 @@ Dashboard/reporting:
 ## Validation Snapshot (2026-07-21)
 
 - `npm run typecheck`: PASS.
-- `npm run build -w packages/server`: PASS after report export changes.
-- `npm run build -w packages/client`: PASS during document UI passes after
-  elevated rerun for the known Vite/esbuild Windows `spawn EPERM`; existing
-  chunk-size warning remains.
+- Root `npm run build`: PASS after elevated rerun for the known Vite/esbuild
+  Windows `spawn EPERM`; existing client chunk-size warning remains.
 
 ## Key Constraints Active Right Now
 
@@ -63,5 +74,4 @@ Dashboard/reporting:
 - Health check is `/api/health`, not `/health`.
 - Sandbox containers used for diff generation/validation are ephemeral;
   nothing persists between chat sessions unless committed and pushed.
-- Git worktree currently has an unrelated formatting-only local change in
-  `packages/client/src/pages/analyse/ClientsReferrersTab.tsx`.
+- New migrations must be applied before notification/mail runtime smoke.

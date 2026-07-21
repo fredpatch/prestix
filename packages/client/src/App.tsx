@@ -25,6 +25,7 @@ import DashboardPage from "./pages/DashboardPage";
 import EmployeeActivityDetailPage from "./pages/EmployeeActivityDetailPage";
 import AnalysePage from "./pages/AnalysePage";
 import AuditLogPage from "./pages/AuditLogPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 interface AuthUser {
   id: number;
@@ -139,6 +140,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/reporting/employees/:agentId" element={<EmployeeActivityDetailPage />} />
             <Route path="/analyse" element={<AnalysePage />} />
             <Route path="/parties" element={<PartiesPage />} />

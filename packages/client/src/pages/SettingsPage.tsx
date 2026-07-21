@@ -43,6 +43,7 @@ const MODULE_LABELS: Record<string, string> = {
   M3: "Crédits client",
   M6: "Créances et pénalités",
   M11: "Épargne voyage",
+  MAIL: "Emails et notifications",
   auth: "Authentification",
   settings: "Paramètres",
   party: "Clients et référents",
@@ -64,6 +65,7 @@ const MODULE_DESCRIPTIONS: Record<string, string> = {
   M3: "Comportement des crédits client lorsqu'ils arrivent en fin de période de décision.",
   M6: "Montants et délais utilisés pour calculer les pénalités de créances.",
   M11: "Paramètres d'inscription et conversion vers l'épargne voyage.",
+  MAIL: "Contrôle des envois email et des futurs rappels automatiques.",
 };
 
 const SETTING_COPY: Record<
@@ -144,6 +146,26 @@ const SETTING_COPY: Record<
     label: "Durée du verrouillage",
     helper: "Temps d'attente imposé après dépassement du nombre de tentatives autorisées.",
     unit: "minutes",
+    impact: "warning",
+  },
+  mail_enabled: {
+    label: "Envoi email activé",
+    helper: "Interrupteur global. Désactive tous les emails sortants sans modifier la configuration SMTP.",
+    impact: "critical",
+  },
+  mail_automatic_reminders_enabled: {
+    label: "Rappels automatiques",
+    helper: "Autorise les futurs envois automatiques pour échéances proches, paiements en retard et relances.",
+    impact: "critical",
+  },
+  mail_document_auto_send_enabled: {
+    label: "Envoi automatique des documents",
+    helper: "Autorise l'envoi email automatique des proformas, factures et bons de livraison à la génération.",
+    impact: "critical",
+  },
+  mail_sender_name: {
+    label: "Nom d'expéditeur",
+    helper: "Nom affiché dans les emails générés par l'application.",
     impact: "warning",
   },
 };

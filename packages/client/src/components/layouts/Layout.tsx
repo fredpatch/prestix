@@ -23,6 +23,7 @@ import {
   History,
   Menu,
   X,
+  Bell,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ import { authApi } from "@/lib/auth.api";
 import api from "@/lib/axios";
 import { useTheme } from "@/lib/theme";
 import { usePageHeaderValue } from "./lib/page-header";
+import { useNotificationUnreadCount } from "@/hooks/queries/useNotifications";
 
 interface NavItem {
   to: string;
@@ -42,6 +44,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard, moduleCode: "dashboard" },
+  { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/analyse", label: "Analyse", icon: BarChart3, moduleCode: "dashboard" },
   { to: "/parties", label: "Parties", icon: Contact, moduleCode: "party" },
   { to: "/proformas", label: "Proformas", icon: FileText, moduleCode: "documents" },
@@ -74,6 +77,7 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [enabledModules, setEnabledModules] = useState<Set<string> | null>(null);
+  const { data: unreadNotifications = 0 } = useNotificationUnreadCount();
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 767px)");
@@ -265,6 +269,21 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
               className="text-muted-foreground hover:text-brand-gold-dark"
             >
               {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/notifications")}
+              title="Notifications"
+              className="relative text-muted-foreground hover:text-brand-gold-dark"
+            >
+              <Bell size={14} />
+              {unreadNotifications > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-[9px] font-bold leading-4 text-white tabular-nums">
+                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                </span>
+              )}
             </Button>
 
             <div className="mx-1 hidden h-5 w-px bg-border sm:block" />

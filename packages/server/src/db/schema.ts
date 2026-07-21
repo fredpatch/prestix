@@ -25,6 +25,28 @@ export const settingTypeEnum = pgEnum("setting_type", ["integer", "boolean", "te
 export const roleEnum = pgEnum("role", ["agent", "manager", "admin", "super_admin"]);
 export const roleLevel = { agent: 1, manager: 2, admin: 3, super_admin: 4 } as const;
 
+export const notificationSeverityEnum = pgEnum("notification_severity", [
+  "info",
+  "success",
+  "warning",
+  "danger",
+]);
+
+export const notificationCategoryEnum = pgEnum("notification_category", [
+  "system",
+  "documents",
+  "finance",
+  "stock",
+  "commission",
+  "savings",
+]);
+
+export const mailDeliveryStatusEnum = pgEnum("mail_delivery_status", [
+  "pending",
+  "sent",
+  "failed",
+]);
+
 export const documentStatusEnum = pgEnum("document_status", [
   "draft",
   "issued",
@@ -99,6 +121,52 @@ export const auditLog = pgTable("audit_log", {
   entityId: varchar("entity_id", { length: 100 }),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+    recipientUserId: integer("recipient_user_id")
+      .notNull()
+      .references(() => users.id),
+    title: varchar("title", { length: 180 }).notNull(),
+    body: text("body").notNull(),
+    category: notificationCategoryEnum("category").notNull().default("system"),
+    severity: notificationSeverityEnum("severity").notNull().default("info"),
+    sourceType: varchar("source_type", { length: 80 }),
+    sourceId: varchar("source_id", { length: 100 }),
+    actionUrl: varchar("action_url", { length: 255 }),
+    dedupeKey: varchar("dedupe_key", { length: 180 }),
+    metadata: jsonb("metadata"),
+    readAt: timestamp("read_at"),
+    dismissedAt: timestamp("dismissed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    recipientDedupeIdx: uniqueIndex("notifications_recipient_dedupe_idx").on(
+      t.recipientUserId,
+      t.dedupeKey,
+    ),
+  }),
+);
+
+export const mailOutbox = pgTable("mail_outbox", {
+  id: serial("id").primaryKey(),
+  notificationId: integer("notification_id").references(() => notifications.id),
+  recipient: varchar("recipient", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  templateKey: varchar("template_key", { length: 80 }).notNull().default("manual"),
+  status: mailDeliveryStatusEnum("status").notNull().default("pending"),
+  sourceType: varchar("source_type", { length: 80 }),
+  sourceId: varchar("source_id", { length: 100 }),
+  messageId: varchar("message_id", { length: 255 }),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").notNull().default(0),
+  metadata: jsonb("metadata"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ─────────────────────────────────────────────────────────────────

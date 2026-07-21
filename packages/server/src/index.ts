@@ -73,6 +73,7 @@ import commissionRoutes from "./modules/commission/routes/commission.routes.js";
 import savingsRoutes from "./modules/savings/routes/savings.routes.js";
 import reportingRoutes from "./modules/reporting/routes/reporting.routes.js";
 import auditLogRoutes from "./modules/audit-log/routes/audit-log.routes.js";
+import notificationRoutes from "./modules/notifications/routes/notification.routes.js";
 import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ app.use("/api/commissions", commissionRoutes);
 app.use("/api/savings", savingsRoutes);
 app.use("/api/reporting", reportingRoutes);
 app.use("/api/audit-log", auditLogRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

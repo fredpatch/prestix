@@ -3,14 +3,23 @@
 - Client: Lucrece BOUTOMBA, agency Le Prestigieux
 - Repo: prestix
 - Stack: PostgreSQL + Drizzle, Node/Express, React/Vite/Tailwind, npm workspaces
-- Current phase: Sprint 11f UI/reporting polish closed in code; next up is Sprint 11d Notifications
+- Current phase: Sprint 11d Notifications/mail foundation implemented; runtime smoke and mail automation pass next
 - Ports: API 3000, client dev 5173
 - Blockers cleared: EPARGNE_INSCRIPTION_FEE = 5000 XAF, prm = Premium
 - API health endpoint: GET /api/health
 - Latest pushed commits:
   - `2c64d26` - invoice/proforma document workspace rework
   - `9ecd434` - dashboard report exports aligned with upgraded dashboard
+- Notifications:
+  - API: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/read-all`, `PATCH /api/notifications/:id/read`, `DELETE /api/notifications/:id`.
+  - Client: `/notifications` page, sidebar entry, and header unread bell.
+  - Event producers: expired proformas, penalty accrual, credit conversion/hold, upcoming installments, commission edit requests.
+- Mail/SMTP foundation:
+  - Env keys: `MAIL_ENABLED`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`; fallback `SMTP_PASSWORD`/`SMTP_FROM`.
+  - Settings keys: `mail_enabled`, `mail_automatic_reminders_enabled`, `mail_document_auto_send_enabled`, `mail_sender_name`.
+  - Admin API: `/api/notifications/mail/status`, `/api/notifications/mail/test`, `/api/notifications/mail/outbox`.
+  - Gmail needs an App Password, not the normal account password.
 - Reporting exports now include dashboard-aligned graph data:
   - PDF: inline SVG charts for CA/gain, service trend, commission-type trend, plus recent sales.
   - Excel: graph-oriented sheets with numeric data and static text-bar visual columns; no ExcelJS conditional-formatting data bars because Excel repaired/removed those.
-- Open: runtime smoke for Sprint 11c/11e/11f UI flows, full reporting/analyse API-runtime smoke, Sprint 9 credit-conversion fee-pair deep check, auto-converted epargne deposit labeling.
+- Open: apply notification/mail migrations + runtime smoke, mail document templates/attachments/reminders/retry UX, runtime smoke for Sprint 11c/11e/11f UI flows, full reporting/analyse API-runtime smoke, Sprint 9 credit-conversion fee-pair deep check, auto-converted epargne deposit labeling.

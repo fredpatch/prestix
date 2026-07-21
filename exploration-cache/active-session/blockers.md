@@ -8,3 +8,7 @@
   opened manually after the export repair. ExcelJS conditional-formatting
   data bars caused Excel to repair the workbook and strip the visual layer, so
   report graph sheets now use safe static text-bar columns instead.
+- Notification/mail first-pass runtime validation needs the two new Drizzle
+  migrations applied and a server restart before smoke testing.
+- Automatic customer email delivery is intentionally deferred until document
+  templates, PDF attachments, retry controls, and reminder rules are built.

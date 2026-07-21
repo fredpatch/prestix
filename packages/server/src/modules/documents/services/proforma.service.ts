@@ -437,11 +437,10 @@ export async function listProformas(partyId?: number): Promise<ProformaView[]> {
 
 // For the expiry cron (node-cron, wired in jobs/index.ts) — M4: "node-cron sets
 // Expirée; no auto-cancel."
-export async function expireOverdueProformas(): Promise<number> {
-  const result = await db
+export async function expireOverdueProformas(): Promise<(typeof proformas.$inferSelect)[]> {
+  return db
     .update(proformas)
     .set({ status: "expired" })
     .where(and(eq(proformas.status, "draft"), lt(proformas.expiresAt, new Date())))
     .returning();
-  return result.length;
 }

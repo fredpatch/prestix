@@ -76,4 +76,8 @@ export const queryKeys = {
   auditLog: (filters?: object) => ["audit-log", filters ?? {}] as const,
   auditLogActions: () => ["audit-log", "actions"] as const,
   auditLogEntityTypes: () => ["audit-log", "entity-types"] as const,
+
+  // Notifications
+  notifications: (filters?: object) => ["notifications", filters ?? {}] as const,
+  notificationUnreadCount: () => ["notifications", "unread-count"] as const,
 } as const;

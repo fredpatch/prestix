@@ -239,3 +239,15 @@
 - Fixed Excel graph export after real Excel repair testing showed ExcelJS `dataBar` conditional formatting corrupted/stripped the graph layer.
 - Fixed `getRecentSales()` party-name resolution for payment rows by resolving related invoice party IDs.
 - Validation: `npm run typecheck` passes; `npm run build -w packages/server` passes; client builds passed during document UI work after elevated reruns for the known Vite/esbuild Windows `spawn EPERM`, with the existing chunk-size warning.
+
+## Sprint 11d Notifications and Mail Foundation (2026-07-21)
+
+- Added in-app notification schema/migrations, backend module, and `/api/notifications` routes for list filtering, unread count, read-one, read-all, and archive actions.
+- Added the client notification center with API wrapper, React Query hooks/mutations, `/notifications` route, sidebar entry, unread header bell, search/status filtering, and inbox-style cards.
+- Added notification producers for expired proformas, penalty accrual summaries, credit auto-conversion/held-for-review events, upcoming invoice installments, and commission edit request submit/approve/reject events.
+- Fixed the notification center `AUTH_REQUIRED` 500 by reading the authenticated JWT `userId` field.
+- Added SMTP/Gmail mail foundation with environment-driven transport config, admin status/test endpoints, and `.env.example` Gmail App Password guidance.
+- Added `mail_outbox` persistence for sent/failed test deliveries, including recipient, subject, template key, source, provider message id, retry count, and error metadata.
+- Added Settings-managed mail controls for enabling mail globally, future automatic reminders, future automatic document sending, and sender name.
+- Fixed SMTP test feedback so successful sends no longer show the French error message in a success-colored toast.
+- Validation: `npm run typecheck` passes; root `npm run build` passes after elevated rerun for the known Windows Vite/esbuild `spawn EPERM`, with the existing client chunk-size warning.

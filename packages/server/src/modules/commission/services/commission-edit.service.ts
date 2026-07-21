@@ -2,6 +2,7 @@ import { db } from "../../../db/index.js";
 import { commissionEditRequests, commissionTransactions } from "../../../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { logAudit } from "../../auth/services/auth.service.js";
+import { broadcastNotification, createNotification } from "../../notifications/services/notification.service.js";
 import type {
   CommissionEditRequestView,
   CreateEditRequestParams,
@@ -78,6 +79,22 @@ export async function createEditRequest(
     metadata: { commissionTransactionId: params.commissionTransactionId, reason: params.reason },
   });
 
+  await broadcastNotification({
+    minRole: "admin",
+    title: `Demande de modification #${inserted.id}`,
+    body: "Une correction de commission attend une décision administrateur.",
+    category: "commission",
+    severity: "warning",
+    sourceType: "commission_edit_requests",
+    sourceId: String(inserted.id),
+    actionUrl: "/commissions/edit-requests",
+    dedupeKey: `commission-edit-requested:${inserted.id}`,
+    metadata: {
+      commissionTransactionId: params.commissionTransactionId,
+      requestedBy: params.requestedBy,
+    },
+  });
+
   return toView(inserted);
 }
 
@@ -141,6 +158,18 @@ export async function approveEditRequest(
   });
 
   const [updated] = await db.select().from(commissionEditRequests).where(eq(commissionEditRequests.id, requestId));
+  await createNotification({
+    recipientUserId: updated.requestedBy,
+    title: `Demande #${updated.id} approuvée`,
+    body: "Votre demande de modification de commission a été approuvée.",
+    category: "commission",
+    severity: "success",
+    sourceType: "commission_edit_requests",
+    sourceId: String(updated.id),
+    actionUrl: "/commissions/edit-requests",
+    dedupeKey: `commission-edit-approved:${updated.id}`,
+    metadata: { commissionTransactionId: updated.commissionTransactionId, reviewedBy: reviewerId },
+  });
   return toView(updated);
 }
 
@@ -170,6 +199,21 @@ export async function rejectEditRequest(
     entityType: "commission_edit_requests",
     entityId: String(requestId),
     metadata: { commissionTransactionId: request.commissionTransactionId, reviewNote },
+  });
+
+  await createNotification({
+    recipientUserId: updated.requestedBy,
+    title: `Demande #${updated.id} refusée`,
+    body: reviewNote
+      ? `Votre demande de modification de commission a été refusée : ${reviewNote}`
+      : "Votre demande de modification de commission a été refusée.",
+    category: "commission",
+    severity: "danger",
+    sourceType: "commission_edit_requests",
+    sourceId: String(updated.id),
+    actionUrl: "/commissions/edit-requests",
+    dedupeKey: `commission-edit-rejected:${updated.id}`,
+    metadata: { commissionTransactionId: updated.commissionTransactionId, reviewedBy: reviewerId },
   });
 
   return toView(updated);

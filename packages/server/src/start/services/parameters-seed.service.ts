@@ -72,6 +72,34 @@ const DEFAULTS = [
     module: "M1",
     description: "Account lockout duration after exceeding max attempts",
   },
+  {
+    key: "mail_enabled",
+    value: "true",
+    type: "boolean" as const,
+    module: "MAIL",
+    description: "Runtime switch for all outbound application emails",
+  },
+  {
+    key: "mail_automatic_reminders_enabled",
+    value: "false",
+    type: "boolean" as const,
+    module: "MAIL",
+    description: "Allows scheduled invoice/installment reminder emails when enabled",
+  },
+  {
+    key: "mail_document_auto_send_enabled",
+    value: "false",
+    type: "boolean" as const,
+    module: "MAIL",
+    description: "Allows generated proformas, invoices and delivery notes to be emailed automatically",
+  },
+  {
+    key: "mail_sender_name",
+    value: "PrestiX",
+    type: "text" as const,
+    module: "MAIL",
+    description: "Display name used by generated emails when templates need it",
+  },
 ] satisfies (typeof settings.$inferInsert)[];
 
 // Idempotent — never overwrites a value an admin already changed

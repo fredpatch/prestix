@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-21",
-  "currentSprint": "Sprint 11f UI/reporting polish closed in code; next up: Sprint 11d Notifications",
+  "currentSprint": "Sprint 11d Notifications/mail foundation implemented; runtime smoke and mail automation pass next",
   "files": [
     "index.md",
     "quick-ref.md",
