@@ -1,6 +1,9 @@
-import type { CaCompositionResult } from "@/lib/reporting.api";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CaCompositionBucket, CaCompositionResult } from "@/lib/reporting.api";
 import { fmt } from "./format";
 import { cn } from "@/lib/utils";
+import { ReadOnlyTable } from "@/components/ui/read-only-table";
+import { TableRow, TableCell } from "@/components/ui/table";
 
 interface CaCompositionTableProps {
   composition: CaCompositionResult;
@@ -10,72 +13,51 @@ interface CaCompositionTableProps {
 
 // CA composition - gross always shown, gain always shown, buckets dynamic
 export function CaCompositionTable({ composition, className, showVolume = false }: CaCompositionTableProps) {
+  const columns: ColumnDef<CaCompositionBucket, any>[] = [
+    { accessorKey: "label", header: "Bucket" },
+    ...(showVolume
+      ? [{ accessorKey: "volume", header: "Volume", meta: { align: "right" as const } }]
+      : []),
+    {
+      accessorKey: "gross",
+      header: "CA Brut (XAF)",
+      meta: { align: "right" },
+      cell: ({ row }) => fmt(row.original.gross),
+    },
+    {
+      accessorKey: "gain",
+      header: "Gain (XAF)",
+      meta: { align: "right" },
+      cell: ({ row }) => <span className="font-medium text-emerald-700">{fmt(row.original.gain)}</span>,
+    },
+  ];
+
   return (
-    <div
-      className={cn(
-        "bg-white border border-neutral-200 rounded-lg overflow-hidden mb-6",
-        className,
-      )}
-    >
-      <div className="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between">
-        <p className="text-[11.5px] font-semibold text-neutral-800">Composition du CA</p>
-        <p className="text-[10.5px] text-neutral-500">
-          Factures émises uniquement - brouillons et annulées exclues
-        </p>
-      </div>
-      <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
-          <tr>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-              Bucket
-            </th>
-            {showVolume && (
-              <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                Volume
-              </th>
-            )}
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-              CA Brut (XAF)
-            </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-              Gain (XAF)
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {composition.buckets.map((b) => (
-            <tr key={b.bucketKey} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-2 text-[12px] text-neutral-800">{b.label}</td>
-              {showVolume && (
-                <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{b.volume}</td>
-              )}
-              <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{fmt(b.gross)}</td>
-              <td className="px-4 py-2 text-[12px] font-medium text-emerald-700 text-right">
-                {fmt(b.gain)}
-              </td>
-            </tr>
-          ))}
-          {composition.buckets.length === 0 && (
-            <tr>
-              <td colSpan={showVolume ? 4 : 3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
-                Aucune donnée pour cette période.
-              </td>
-            </tr>
-          )}
-        </tbody>
-        <tfoot>
-          <tr className="bg-neutral-50">
-            <td className="px-4 py-2 text-[12px] font-semibold text-neutral-800">TOTAL</td>
-            {showVolume && <td className="px-4 py-2"></td>}
-            <td className="px-4 py-2 text-[13px] font-bold text-neutral-800 text-right">
+    <div className={cn("mb-6", className)}>
+      <ReadOnlyTable
+        title={
+          <div className="flex items-center justify-between">
+            <span>Composition du CA</span>
+            <span className="text-[10.5px] font-normal text-neutral-500">
+              Factures émises uniquement - brouillons et annulées exclues
+            </span>
+          </div>
+        }
+        columns={columns}
+        data={composition.buckets}
+        footer={
+          <TableRow className="hover:bg-transparent">
+            <TableCell className="px-4 py-2 text-[12px] font-semibold text-neutral-800">TOTAL</TableCell>
+            {showVolume && <TableCell className="px-4 py-2" />}
+            <TableCell className="px-4 py-2 text-[13px] font-bold text-neutral-800 text-right">
               {fmt(composition.totalGross)}
-            </td>
-            <td className="px-4 py-2 text-[13px] font-bold text-brand-gold-dark text-right">
+            </TableCell>
+            <TableCell className="px-4 py-2 text-[13px] font-bold text-brand-gold-dark text-right">
               {fmt(composition.totalGain)}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+            </TableCell>
+          </TableRow>
+        }
+      />
     </div>
   );
 }

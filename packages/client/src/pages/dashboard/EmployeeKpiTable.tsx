@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { EmployeeKpiRow } from "@/lib/reporting.api";
 import { fmt } from "./format";
+import { ReadOnlyTable } from "@/components/ui/read-only-table";
 
 interface EmployeeKpiTableProps {
   rows: EmployeeKpiRow[];
@@ -26,53 +28,40 @@ function breakdownSummary(b: EmployeeKpiRow["breakdown"]): string {
 }
 
 export function EmployeeKpiTable({ rows, from, to, basis }: EmployeeKpiTableProps) {
-  return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-neutral-200">
-        <p className="text-[11.5px] font-semibold text-neutral-800">KPI Employé</p>
-      </div>
-      <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
-          <tr>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-              Nom
-            </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-              Valeur (XAF)
-            </th>
-            <th className="px-4 py-2 w-10"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.slice(0, 10).map((r) => (
-            <tr key={r.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-              <td className="px-4 py-2">
-                <p className="text-[12px] text-neutral-800">{r.name}</p>
-                <p className="text-[10px] text-neutral-500">{breakdownSummary(r.breakdown)}</p>
-              </td>
-              <td className="px-4 py-2 text-[12px] font-medium text-neutral-800 text-right align-top">
-                {fmt(r.value)}
-              </td>
-              <td className="px-4 py-2 text-right align-top">
-                <Link
-                  to={`/reporting/employees/${r.id}?from=${from}&to=${to}&basis=${basis}`}
-                  className="inline-flex items-center text-neutral-400 hover:text-brand-gold-dark"
-                  title="Voir détail"
-                >
-                  <ChevronRight size={14} />
-                </Link>
-              </td>
-            </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={3} className="px-4 py-6 text-center text-[11.5px] text-neutral-500">
-                Aucune donnée pour cette période.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+  const columns: ColumnDef<EmployeeKpiRow, any>[] = [
+    {
+      accessorKey: "name",
+      header: "Nom",
+      cell: ({ row }) => (
+        <>
+          <p className="text-[12px] text-neutral-800">{row.original.name}</p>
+          <p className="text-[10px] text-neutral-500">{breakdownSummary(row.original.breakdown)}</p>
+        </>
+      ),
+    },
+    {
+      accessorKey: "value",
+      header: "Valeur (XAF)",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="font-medium text-neutral-800 align-top">{fmt(row.original.value)}</span>
+      ),
+    },
+    {
+      id: "link",
+      header: "",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <Link
+          to={`/reporting/employees/${row.original.id}?from=${from}&to=${to}&basis=${basis}`}
+          className="inline-flex items-center text-neutral-400 hover:text-brand-gold-dark align-top"
+          title="Voir détail"
+        >
+          <ChevronRight size={14} />
+        </Link>
+      ),
+    },
+  ];
+
+  return <ReadOnlyTable title="KPI Employé" columns={columns} data={rows} limit={10} />;
 }

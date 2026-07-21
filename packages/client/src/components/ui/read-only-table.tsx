@@ -1,13 +1,17 @@
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from "@tanstack/react-table";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { alignClass } from "@/lib/table-meta";
 
 interface ReadOnlyTableProps<T> {
   columns: ColumnDef<T, any>[];
   data: T[];
-  title?: string;
+  title?: React.ReactNode;
   limit?: number;
   emptyMessage?: string;
+  // Full control given to the caller — totals rows vary too much in shape
+  // (some columns spanned, some blank, some showing a second value) to
+  // generalize into column defs. Expects one or more <TableRow> elements.
+  footer?: React.ReactNode;
 }
 
 // Static display table — KPI lists, dashboard/analyse breakdowns. No sort,
@@ -22,6 +26,7 @@ export function ReadOnlyTable<T>({
   title,
   limit,
   emptyMessage = "Aucune donnée pour cette période.",
+  footer,
 }: ReadOnlyTableProps<T>) {
   const rows = limit ? data.slice(0, limit) : data;
 
@@ -35,7 +40,7 @@ export function ReadOnlyTable<T>({
     <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
       {title && (
         <div className="px-4 py-2.5 border-b border-neutral-200">
-          <p className="text-[11.5px] font-semibold text-neutral-800">{title}</p>
+          <div className="text-[11.5px] font-semibold text-neutral-800">{title}</div>
         </div>
       )}
       <Table>
@@ -79,6 +84,7 @@ export function ReadOnlyTable<T>({
             </TableRow>
           )}
         </TableBody>
+        {footer && rows.length > 0 && <TableFooter className="bg-neutral-50">{footer}</TableFooter>}
       </Table>
     </div>
   );
