@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowRightCircle, Download, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { proformaApi, type DocumentLineView, type Proforma } from "@/lib/proforma.api";
-import { invoiceApi } from "@/lib/invoice.api";
+import { type DocumentLineView, type Proforma } from "@/lib/proforma.api";
 import { Party, partyApi } from "@/lib/party.api";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { cn } from "@/lib/utils";
+import { useProforma } from "@/hooks/queries/useProforma";
+import { usePromoteProformaMutation } from "@/hooks/mutations/usePromoteProforma";
+import { useAddProformaLineMutation } from "@/hooks/mutations/useAddProformaLine";
+import { useUpdateProformaLineMutation } from "@/hooks/mutations/useUpdateProformaLine";
+import { useRemoveProformaLineMutation } from "@/hooks/mutations/useRemoveProformaLine";
 
 const STATUS_LABELS: Record<Proforma["status"], string> = {
   draft: "Valide",
@@ -36,26 +38,22 @@ function toDraft(l: DocumentLineView): LineDraft {
 
 export default function ProformaDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const proformaId = id ? parseInt(id) : undefined;
   const navigate = useNavigate();
   const [proforma, setProforma] = useState<Proforma | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
-  const [promoting, setPromoting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [editingLineId, setEditingLineId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<LineDraft>({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
-  const [savingLine, setSavingLine] = useState(false);
 
   const [adding, setAdding] = useState(false);
   const [newLine, setNewLine] = useState<LineDraft>({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
 
-  const queryClient = useQueryClient();
-
-  const { data: proformaData, isLoading } = useQuery({
-    queryKey: queryKeys.proforma(parseInt(id!)),
-    queryFn: () => proformaApi.getById(parseInt(id!)).then((r) => r.data),
-    enabled: !!id,
-  });
+  const { data: proformaData, isLoading } = useProforma(proformaId);
+  const promoteMutation = usePromoteProformaMutation();
+  const addLineMutation = useAddProformaLineMutation(proformaId ?? -1);
+  const updateLineMutation = useUpdateProformaLineMutation(proformaId ?? -1);
+  const removeLineMutation = useRemoveProformaLineMutation(proformaId ?? -1);
 
   if (proformaData && proformaData !== proforma) {
     setProforma(proformaData);
@@ -64,84 +62,44 @@ export default function ProformaDetailPage() {
     }
   }
 
-  function handleReload() {
-    queryClient.invalidateQueries({ queryKey: queryKeys.proforma(parseInt(id!)) });
-    queryClient.invalidateQueries({ queryKey: queryKeys.invoices() });
-  }
-
   usePageHeader({ title: proforma?.number ?? "Proforma", backTo: "/proformas" });
 
-  async function handlePromote() {
+  function handlePromote() {
     if (!proforma) return;
-    setPromoting(true);
-    setError(null);
-    try {
-      const res = await invoiceApi.promoteFromProforma(proforma.id);
-      navigate(`/invoices/${res.data.id}`);
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la promotion.",
-      );
-      setPromoting(false);
-    }
+    promoteMutation.mutate(proforma.id, {
+      onSuccess: (invoice) => navigate(`/invoices/${invoice.id}`),
+    });
   }
 
-  async function handleAddLine() {
+  function handleAddLine() {
     if (!proforma) return;
-    setSavingLine(true);
-    setError(null);
-    try {
-      await proformaApi.addLine(proforma.id, { lineType: "shop", ...newLine });
-      setAdding(false);
-      setNewLine({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'ajout de la ligne.",
-      );
-    } finally {
-      setSavingLine(false);
-    }
+    addLineMutation.mutate(
+      { lineType: "shop", ...newLine },
+      {
+        onSuccess: () => {
+          setAdding(false);
+          setNewLine({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
+        },
+      },
+    );
   }
 
   function startEdit(l: DocumentLineView) {
     setEditingLineId(l.id);
     setEditDraft(toDraft(l));
-    setError(null);
   }
 
-  async function handleSaveEdit(lineId: number) {
+  function handleSaveEdit(lineId: number) {
     if (!proforma) return;
-    setSavingLine(true);
-    setError(null);
-    try {
-      await proformaApi.updateLine(proforma.id, lineId, editDraft);
-      setEditingLineId(null);
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la modification.",
-      );
-    } finally {
-      setSavingLine(false);
-    }
+    updateLineMutation.mutate(
+      { lineId, patch: editDraft },
+      { onSuccess: () => setEditingLineId(null) },
+    );
   }
 
-  async function handleRemoveLine(lineId: number) {
+  function handleRemoveLine(lineId: number) {
     if (!proforma) return;
-    setError(null);
-    try {
-      await proformaApi.removeLine(proforma.id, lineId);
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la suppression.",
-      );
-    }
+    removeLineMutation.mutate(lineId);
   }
 
   if (isLoading || !proforma) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
@@ -153,6 +111,7 @@ export default function ProformaDetailPage() {
   // they'd obviously fail; a stale "still draft" client view attempting an edit
   // against an already-promoted proforma still gets a clean server error.
   const canEdit = proforma.status === "draft";
+  const savingLine = updateLineMutation.isPending || addLineMutation.isPending;
 
   return (
     <div>
@@ -175,8 +134,8 @@ export default function ProformaDetailPage() {
             <Download size={13} /> PDF
           </a>
           {canPromote && (
-            <Button size="sm" onClick={handlePromote} disabled={promoting}>
-              {promoting ? (
+            <Button size="sm" onClick={handlePromote} disabled={promoteMutation.isPending}>
+              {promoteMutation.isPending ? (
                 <Loader2 size={13} className="animate-spin" />
               ) : (
                 <ArrowRightCircle size={13} />
@@ -186,8 +145,6 @@ export default function ProformaDetailPage() {
           )}
         </div>
       </div>
-
-      {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}
 
       <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-4">
         <table className="w-full text-left">

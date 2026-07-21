@@ -1,14 +1,9 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Power, Pencil, Download } from "lucide-react";
+import { Loader2, Power, Pencil, Download } from "lucide-react";
+import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { partyApi, type Party, type PartyHistory } from "@/lib/party.api";
-import { creditApi, type CreditLot } from "@/lib/credit.api";
-import { creanceApi, type CreanceRow } from "@/lib/creance.api";
-import { savingsApi, type SavingsAccount, type SavingsTransaction } from "@/lib/savings.api";
 import { useAuth } from "@/App";
 import { EditPartyDialog } from "./EditPartyDialog";
 import { SubscribeButton } from "./components/SubscribeButton";
@@ -16,6 +11,15 @@ import { SavingsTransactionDialog } from "./components/SavingsTransactionDialog"
 import { ReverseSavingsTransactionDialog } from "./components/ReverseSavingsTransactionDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { cn } from "@/lib/utils";
+import { queryKeys } from "@/lib/query-keys";
+import { useParty } from "@/hooks/queries/useParty";
+import { usePartyCreditBalance } from "@/hooks/queries/usePartyCreditBalance";
+import { usePartyCreditLots } from "@/hooks/queries/usePartyCreditLots";
+import { usePartyHistory } from "@/hooks/queries/usePartyHistory";
+import { useCreances } from "@/hooks/queries/useCreances";
+import { usePartySavingsAccount } from "@/hooks/queries/usePartySavingsAccount";
+import { usePartySavingsTransactions } from "@/hooks/queries/usePartySavingsTransactions";
+import { useTogglePartyActivationMutation } from "@/hooks/mutations/useTogglePartyActivation";
 
 const NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
 
@@ -23,50 +27,27 @@ export default function PartyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const partyId = parseInt(id!);
   const { user } = useAuth();
-
-  const [editing, setEditing] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: party, isLoading } = useQuery({
-    queryKey: queryKeys.party(partyId),
-    queryFn: () => partyApi.getById(partyId).then((r) => r.data),
-  });
+  const [editing, setEditing] = useState(false);
 
-  const { data: creditBalanceData } = useQuery({
-    queryKey: queryKeys.credits(partyId),
-    queryFn: () => creditApi.getBalance(partyId).then((r) => r.data),
-  });
+  const { data: party, isLoading } = useParty(partyId);
+  const { data: creditBalanceData } = usePartyCreditBalance(partyId);
   const creditBalance = creditBalanceData?.balance ?? null;
-
-  const { data: creditLots = [] } = useQuery({
-    queryKey: queryKeys.creditLots(partyId),
-    queryFn: () => creditApi.listLots(partyId).then((r) => r.data),
-  });
-
-  const { data: history = null } = useQuery({
-    queryKey: queryKeys.partyHistory(partyId),
-    queryFn: () => partyApi.getHistory(partyId).then((r) => r.data),
-  });
-
-  const { data: creances = [] } = useQuery({
-    queryKey: queryKeys.creances({ partyId }),
-    queryFn: () => creanceApi.list(false, partyId).then((r) => r.data),
-  });
-
+  const { data: creditLots = [] } = usePartyCreditLots(partyId);
+  const { data: history = null } = usePartyHistory(partyId);
+  const { data: creances = [] } = useCreances({ partyId });
   // Separate from the main queries — a party without a savings account is the
   // normal case (404), not an error the page should block on.
-  const { data: savingsAccount = null } = useQuery({
-    queryKey: queryKeys.savings(partyId),
-    queryFn: () => savingsApi.getAccountByParty(partyId).then((r) => r.data).catch(() => null),
-  });
+  const { data: savingsAccount = null } = usePartySavingsAccount(partyId);
+  const { data: savingsTransactions = [] } = usePartySavingsTransactions(savingsAccount?.id);
 
-  const { data: savingsTransactions = [] } = useQuery({
-    queryKey: ["savings-transactions", savingsAccount?.id],
-    queryFn: () => savingsApi.listTransactions(savingsAccount!.id).then((r) => r.data),
-    enabled: !!savingsAccount?.id,
-  });
+  const toggleActivationMutation = useTogglePartyActivationMutation(partyId);
 
+  // EditPartyDialog/SavingsTransactionDialog/SubscribeButton/
+  // ReverseSavingsTransactionDialog aren't on useMutation yet (out of scope
+  // for this pass), so they still need this explicit invalidate after their
+  // own plain API calls. Same scope as the toggle-activation mutation above.
   function handleReload() {
     queryClient.invalidateQueries({ queryKey: queryKeys.party(partyId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.credits(partyId) });
@@ -74,20 +55,14 @@ export default function PartyDetailPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.partyHistory(partyId) });
     queryClient.invalidateQueries({ queryKey: queryKeys.creances({ partyId }) });
     queryClient.invalidateQueries({ queryKey: queryKeys.savings(partyId) });
-    queryClient.invalidateQueries({ queryKey: ["savings-transactions", savingsAccount?.id] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.savingsTransactions() });
   }
 
   usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties" });
 
-  async function handleToggleActivation() {
+  function handleToggleActivation() {
     if (!party) return;
-    setActionLoading(true);
-    try {
-      await partyApi.toggleActivation(party.id, !party.active);
-      handleReload();
-    } finally {
-      setActionLoading(false);
-    }
+    toggleActivationMutation.mutate(!party.active);
   }
 
   if (isLoading || !party) {
@@ -138,14 +113,18 @@ export default function PartyDetailPage() {
               variant="ghost"
               size="sm"
               onClick={handleToggleActivation}
-              disabled={actionLoading}
+              disabled={toggleActivationMutation.isPending}
               className={
                 party.active
                   ? "text-red-500 hover:bg-red-50"
                   : "text-emerald-600 hover:bg-emerald-50"
               }
             >
-              {actionLoading ? <Loader2 size={13} className="animate-spin" /> : <Power size={13} />}
+              {toggleActivationMutation.isPending ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Power size={13} />
+              )}
               {party.active ? "Désactiver" : "Activer"}
             </Button>
           </div>

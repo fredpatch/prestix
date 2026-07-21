@@ -1,9 +1,6 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2 } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
-import { commissionCatalogApi } from "@/lib/commission-catalog.api";
-import { partyApi, type Party } from "@/lib/party.api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/App";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
@@ -11,6 +8,10 @@ import { CreateCommissionDialog } from "./commission/CreateCommissionDialog";
 import { RequestCommissionEditDialog } from "./commission/RequestCommissionEditDialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query-keys";
+import { useCommissionTypes } from "@/hooks/queries/useCommissionTypes";
+import { useCommissions } from "@/hooks/queries/useCommissions";
+import { useCommissionParties } from "@/hooks/queries/useCommissionParties";
+import { useDeleteCommissionMutation } from "@/hooks/mutations/useDeleteCommission";
 
 export default function CommissionsPage() {
   const { user } = useAuth();
@@ -21,45 +22,24 @@ export default function CommissionsPage() {
 
   const canDelete = user && ["admin", "super_admin"].includes(user.role);
 
-  const { data: types = [] } = useQuery({
-    queryKey: queryKeys.commissionTypes(),
-    queryFn: () => commissionCatalogApi.list().then((r) => r.data),
-  });
-
-  const { data: commissions = [], isLoading } = useQuery({
-    queryKey: queryKeys.commissions({ type: typeFilter }),
-    queryFn: () => commissionApi.list(typeFilter ? { type: typeFilter } : {}).then((r) => r.data),
-  });
-
-  // Party lookup: fetch only the party IDs actually referenced, not the
-  // whole table. Keyed off the commission IDs so it refetches when the
-  // commission list changes.
-  const { data: parties = {} } = useQuery<Record<number, Party>>({
-    queryKey: ["commission-parties", commissions.map((c) => c.id)],
-    queryFn: async () => {
-      const partyIds = [
-        ...new Set(
-          commissions.flatMap((c) => [c.clientPartyId, c.referrerPartyId]).filter((id): id is number => !!id),
-        ),
-      ];
-      if (partyIds.length === 0) return {};
-      const results = await Promise.all(partyIds.map((id) => partyApi.getById(id)));
-      return Object.fromEntries(results.map((r) => [r.data.id, r.data]));
-    },
-    enabled: commissions.length > 0,
-  });
+  const { data: types = [] } = useCommissionTypes();
+  const { data: commissions = [], isLoading } = useCommissions({ type: typeFilter });
+  const { data: parties = {} } = useCommissionParties(commissions);
+  const deleteMutation = useDeleteCommissionMutation();
 
   function typeLabel(code: string): string {
     return types.find((t) => t.code === code)?.label ?? code;
   }
 
+  // CreateCommissionDialog/RequestCommissionEditDialog aren't on useMutation
+  // yet (out of scope for this pass), so they still need this explicit
+  // invalidate after their own plain API calls.
   function handleReload() {
-    queryClient.invalidateQueries({ queryKey: ["commissions"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.commissions() });
   }
 
-  async function handleDelete(id: number) {
-    await commissionApi.softDelete(id);
-    handleReload();
+  function handleDelete(id: number) {
+    deleteMutation.mutate(id);
   }
 
   const total = commissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);

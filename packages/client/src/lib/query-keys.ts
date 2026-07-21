@@ -24,9 +24,12 @@ export const queryKeys = {
   credits: (partyId: number) => ["credits", partyId] as const,
   creditLots: (partyId: number) => ["credits", partyId, "lots"] as const,
   savings: (partyId: number) => ["savings", partyId] as const,
+  savingsTransactions: (accountId?: number) => ["savings-transactions", accountId] as const,
 
   // Operations
   commissions: (filters?: { type?: string }) => ["commissions", filters ?? {}] as const,
+  commissionAll: () => ["commission-all"] as const,
+  commissionParties: (commissionIds: number[]) => ["commission-parties", commissionIds] as const,
   commissionTypes: () => ["commission-types"] as const,
   commissionEditRequests: () => ["commission-edit-requests"] as const,
   stock: (filters?: object) => ["stock", filters ?? {}] as const,
@@ -35,8 +38,9 @@ export const queryKeys = {
   users: (filters?: { search?: string; roleFilter?: string }) =>
     ["users", filters ?? {}] as const,
 
-  // Reporting (no query keys here — dashboard/analyse use local state
-  // with date-range params rather than cached entity queries, since every
-  // parameter change is a genuinely different dataset, not a refetch of
-  // the same list)
+  // Reporting
+  employeeActivityDetail: (
+    agentId: number,
+    params: { from: string; to: string; basis: "accrual" | "cash" },
+  ) => ["employee-detail", agentId, params.from, params.to, params.basis] as const,
 } as const;

@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { Loader2, Trash2, Plus, FileText, Download, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { invoiceApi, type Invoice } from "@/lib/invoice.api";
+import { type Invoice } from "@/lib/invoice.api";
 import type { DocumentLineView } from "@/lib/proforma.api";
-import { deliveryNoteApi, type DeliveryNote } from "@/lib/delivery-note.api";
+import { type DeliveryNote, deliveryNoteApi } from "@/lib/delivery-note.api";
 import { useAuth } from "@/App";
 import { CancelInvoiceDialog } from "./CancelInvoiceDialog";
 import { Party, partyApi } from "@/lib/party.api";
@@ -16,6 +15,12 @@ import { IssueInvoiceDialog } from "./IssueInvoiceDialog";
 import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { PaymentPlanCard } from "./PaymentPlanCard";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { queryKeys } from "@/lib/query-keys";
+import { useInvoice } from "@/hooks/queries/useInvoice";
+import { useAddInvoiceLineMutation } from "@/hooks/mutations/useAddInvoiceLine";
+import { useRemoveInvoiceLineMutation } from "@/hooks/mutations/useRemoveInvoiceLine";
+import { useUpdateInvoiceLineMutation } from "@/hooks/mutations/useUpdateInvoiceLine";
+import { useCreateDeliveryNoteMutation } from "@/hooks/mutations/useCreateDeliveryNote";
 
 const STATUS_LABELS: Record<Invoice["status"], string> = {
   draft: "Brouillon",
@@ -49,8 +54,6 @@ export default function InvoiceDetailPage() {
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
   const [installments, setInstallments] = useState<Installment[]>([]);
-  const [creatingBL, setCreatingBL] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   usePageHeader({
     title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
@@ -61,18 +64,16 @@ export default function InvoiceDetailPage() {
   const [newQty, setNewQty] = useState(1);
   const [newPrice, setNewPrice] = useState(0);
   const [newDiscount, setNewDiscount] = useState(0);
-  const [addingLine, setAddingLine] = useState(false);
 
   const [editingLineId, setEditingLineId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<LineDraft>({ description: "", quantity: 1, unitPrice: 0, discount: 0 });
-  const [savingLine, setSavingLine] = useState(false);
 
+  const { data: invoiceData, isLoading } = useInvoice(invoiceId);
+  const addLineMutation = useAddInvoiceLineMutation(invoiceId);
+  const removeLineMutation = useRemoveInvoiceLineMutation(invoiceId);
+  const updateLineMutation = useUpdateInvoiceLineMutation(invoiceId);
+  const createBLMutation = useCreateDeliveryNoteMutation();
   const queryClient = useQueryClient();
-
-  const { data: invoiceData, isLoading } = useQuery({
-    queryKey: queryKeys.invoice(invoiceId),
-    queryFn: () => invoiceApi.getById(invoiceId).then((r) => r.data),
-  });
 
   // Keep invoice/referrer/deliveryNote/installments in local state synced
   // from the query result — these have sub-fetches that depend on invoice
@@ -90,86 +91,48 @@ export default function InvoiceDetailPage() {
     }
   }
 
+  // IssueInvoiceDialog/RecordPaymentDialog/CancelInvoiceDialog/
+  // PaymentPlanCard aren't on useMutation yet (out of scope for this pass),
+  // so they still need this explicit invalidate after their own plain API
+  // calls. The 3 line-edit mutations above invalidate via their own hooks.
   function handleReload() {
     queryClient.invalidateQueries({ queryKey: queryKeys.invoice(invoiceId) });
   }
 
-  async function handleAddLine() {
-    setAddingLine(true);
-    setError(null);
-    try {
-      await invoiceApi.addLine(invoiceId, {
-        lineType: "shop",
-        description: newDesc,
-        quantity: newQty,
-        unitPrice: newPrice,
-        discount: newDiscount,
-      });
-      setNewDesc("");
-      setNewQty(1);
-      setNewPrice(0);
-      setNewDiscount(0);
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur.",
-      );
-    } finally {
-      setAddingLine(false);
-    }
+  function handleAddLine() {
+    addLineMutation.mutate(
+      { lineType: "shop", description: newDesc, quantity: newQty, unitPrice: newPrice, discount: newDiscount },
+      {
+        onSuccess: () => {
+          setNewDesc("");
+          setNewQty(1);
+          setNewPrice(0);
+          setNewDiscount(0);
+        },
+      },
+    );
   }
 
-  async function handleRemoveLine(lineId: number) {
-    setError(null);
-    try {
-      await invoiceApi.removeLine(invoiceId, lineId);
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la suppression.",
-      );
-    }
+  function handleRemoveLine(lineId: number) {
+    removeLineMutation.mutate(lineId);
   }
 
   function startEdit(l: DocumentLineView) {
     setEditingLineId(l.id);
     setEditDraft(toDraft(l));
-    setError(null);
   }
 
-  async function handleSaveEdit(lineId: number) {
-    setSavingLine(true);
-    setError(null);
-    try {
-      await invoiceApi.updateLine(invoiceId, lineId, editDraft);
-      setEditingLineId(null);
-      handleReload();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la modification.",
-      );
-    } finally {
-      setSavingLine(false);
-    }
+  function handleSaveEdit(lineId: number) {
+    updateLineMutation.mutate(
+      { lineId, patch: editDraft },
+      { onSuccess: () => setEditingLineId(null) },
+    );
   }
 
-  async function handleCreateBL() {
-    setCreatingBL(true);
-    setError(null);
-    try {
-      const res = await deliveryNoteApi.create(invoiceId);
-      setDeliveryNote(res.data);
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la création du BL.",
-      );
-    } finally {
-      setCreatingBL(false);
-    }
+  function handleCreateBL() {
+    createBLMutation.mutate(invoiceId, {
+      onSuccess: (data) => setDeliveryNote(data),
+    });
   }
 
   if (isLoading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
@@ -212,8 +175,8 @@ export default function InvoiceDetailPage() {
             <RecordPaymentDialog invoiceId={invoice.id} onRecorded={handleReload} />
           )}
           {isIssued && !deliveryNote && (
-            <Button size="sm" variant="outline" onClick={handleCreateBL} disabled={creatingBL}>
-              {creatingBL ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
+            <Button size="sm" variant="outline" onClick={handleCreateBL} disabled={createBLMutation.isPending}>
+              {createBLMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
               Générer le BL
             </Button>
           )}
@@ -228,7 +191,6 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      {error && <p className="text-[11px] text-red-600 mb-3">{error}</p>}
       {isDraft && !isEditableDraft && (
         <p className="text-[11.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
           Cette facture provient d'un proforma validé par le client — ses lignes sont verrouillées.
@@ -320,10 +282,10 @@ export default function InvoiceDetailPage() {
                       {((editDraft.unitPrice || 0) * (editDraft.quantity || 1) - (editDraft.discount || 0)).toLocaleString("fr-FR")}
                     </td>
                     <td className="px-4 py-2 text-right whitespace-nowrap">
-                      <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(l.id)} disabled={savingLine}>
-                        {savingLine ? <Loader2 size={13} className="animate-spin" /> : "✓"}
+                      <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(l.id)} disabled={updateLineMutation.isPending}>
+                        {updateLineMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "✓"}
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setEditingLineId(null)} disabled={savingLine}>
+                      <Button variant="ghost" size="icon" onClick={() => setEditingLineId(null)} disabled={updateLineMutation.isPending}>
                         ✕
                       </Button>
                     </td>
@@ -421,9 +383,9 @@ export default function InvoiceDetailPage() {
             <Button
               size="sm"
               onClick={handleAddLine}
-              disabled={addingLine || !newDesc || newPrice <= 0}
+              disabled={addLineMutation.isPending || !newDesc || newPrice <= 0}
             >
-              {addingLine ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              {addLineMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
             </Button>
           </div>
           <p className="text-[10.5px] text-neutral-500 mt-2">

@@ -1,0 +1,14 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { proformaApi } from "@/lib/proforma.api";
+import { queryKeys } from "@/lib/query-keys";
+
+export function useRemoveProformaLineMutation(proformaId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (lineId: number) => proformaApi.removeLine(proformaId, lineId).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.proforma(proformaId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.invoices() });
+    },
+  });
+}

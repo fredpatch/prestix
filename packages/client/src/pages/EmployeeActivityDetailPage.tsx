@@ -1,8 +1,7 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { reportingApi } from "@/lib/reporting.api";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
+import { useEmployeeActivityDetail } from "@/hooks/queries/useEmployeeActivityDetail";
 
 function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
@@ -83,12 +82,10 @@ export default function EmployeeActivityDetailPage() {
 
   usePageHeader({ title: "Détail employé", backTo: "/dashboard" });
 
-  const { data: detail, isLoading } = useQuery({
-    queryKey: ["employee-detail", agentId, from, to, basis],
-    queryFn: () =>
-      reportingApi.getEmployeeActivityDetail(parseInt(agentId!), { from, to, basis }).then((r) => r.data),
-    enabled: !!agentId,
-  });
+  const { data: detail, isLoading } = useEmployeeActivityDetail(
+    agentId ? parseInt(agentId) : undefined,
+    { from, to, basis },
+  );
 
   if (isLoading || !detail) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
 

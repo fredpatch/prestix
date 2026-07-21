@@ -1,63 +1,59 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, KeyRound, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { usersApi, type User, type Role } from "@/lib/users.api";
+import { type User, type Role } from "@/lib/users.api";
 import { CreateUserDialog } from "./users/components/dialogs/CreateUserDialog";
 import { RolesBadge } from "./users/components/RolesBadges";
 import { AccountStatusBadge } from "./users/components/AccountStatusBadge";
 import { EditUserDialog } from "./users/components/dialogs/EditUserDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { queryKeys } from "@/lib/query-keys";
+import { useUsers } from "@/hooks/queries/useUsers";
+import { useToggleUserActivationMutation } from "@/hooks/mutations/useToggleUserActivation";
+import { useResetUserOtpMutation } from "@/hooks/mutations/useResetUserOtp";
 
 export default function UsersPage() {
   usePageHeader({ title: "Utilisateurs" });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "">("");
   const [editing, setEditing] = useState<User | null>(null);
-  const [actionId, setActionId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.users({ search, roleFilter }),
-    queryFn: () =>
-      usersApi
-        .list({ search: search || undefined, role: (roleFilter || undefined) as Role | undefined })
-        .then((r) => r.data),
-    placeholderData: (prev) => prev,
-  });
+  const { data, isLoading } = useUsers({ search, roleFilter });
+  const toggleMutation = useToggleUserActivationMutation();
+  const resetOtpMutation = useResetUserOtpMutation();
 
   const users = data?.data ?? [];
   const total = data?.total ?? 0;
 
+  // Both actions share one "which row is busy" indicator, same as before —
+  // only one of the two mutations can be in flight per click, so this is
+  // just picking whichever one has a pending call right now.
+  const busyId = toggleMutation.isPending
+    ? toggleMutation.variables?.id
+    : resetOtpMutation.isPending
+      ? resetOtpMutation.variables
+      : null;
+
+  // CreateUserDialog/EditUserDialog aren't on useMutation yet (out of scope
+  // for this pass — see the RHF-dialogs note), so they still need an
+  // explicit invalidate via this callback after their own plain API calls.
   function handleReload() {
-    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.users() });
   }
 
-  async function handleToggleActivation(u: User) {
-    setActionId(u.id);
-    try {
-      await usersApi.toggleActivation(u.id, !u.active);
-      handleReload();
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, "Action impossible."));
-    } finally {
-      setActionId(null);
-    }
+  function handleToggleActivation(u: User) {
+    toggleMutation.mutate({ id: u.id, active: !u.active });
   }
 
-  async function handleResetOTP(u: User) {
-    setActionId(u.id);
-    try {
-      await usersApi.resetOTP(u.id);
-      toast.success(`Nouveau code OTP envoyé à ${u.email}.`);
-    } finally {
-      setActionId(null);
-    }
+  function handleResetOTP(u: User) {
+    resetOtpMutation.mutate(u.id, {
+      onSuccess: () => toast.success(`Nouveau code OTP envoyé à ${u.email}.`),
+    });
   }
 
   return (
@@ -143,10 +139,10 @@ export default function UsersPage() {
                       variant="ghost"
                       size="icon"
                       title="Réinitialiser l'OTP"
-                      disabled={actionId === u.id}
+                      disabled={busyId === u.id}
                       onClick={() => handleResetOTP(u)}
                     >
-                      {actionId === u.id ? (
+                      {busyId === u.id ? (
                         <Loader2 size={13} className="animate-spin" />
                       ) : (
                         <KeyRound size={13} />
@@ -156,7 +152,7 @@ export default function UsersPage() {
                       variant="ghost"
                       size="icon"
                       title={u.active ? "Désactiver" : "Activer"}
-                      disabled={actionId === u.id}
+                      disabled={busyId === u.id}
                       onClick={() => handleToggleActivation(u)}
                       className={
                         u.active

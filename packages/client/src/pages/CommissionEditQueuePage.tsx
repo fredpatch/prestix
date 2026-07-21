@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Loader2, Check, X } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
-import { commissionCatalogApi } from "@/lib/commission-catalog.api";
-import { usersApi, type User } from "@/lib/users.api";
+import { type CommissionTransaction } from "@/lib/commission.api";
+import { type User } from "@/lib/users.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
-import { queryKeys } from "@/lib/query-keys";
+import { useCommissionEditRequests } from "@/hooks/queries/useCommissionEditRequests";
+import { useCommissionAll } from "@/hooks/queries/useCommissionAll";
+import { useUsers } from "@/hooks/queries/useUsers";
+import { useCommissionTypes } from "@/hooks/queries/useCommissionTypes";
+import { useApproveCommissionEditRequestMutation } from "@/hooks/mutations/useApproveCommissionEditRequest";
+import { useRejectCommissionEditRequestMutation } from "@/hooks/mutations/useRejectCommissionEditRequest";
 
 const FIELD_LABELS: Record<string, string> = {
   date: "Date",
@@ -29,64 +32,46 @@ function formatValue(key: string, value: unknown): string {
 export default function CommissionEditQueuePage() {
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState("");
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const queryClient = useQueryClient();
 
   usePageHeader({ title: "Demandes de modification" });
 
-  const { data: requests = [], isLoading: loadingRequests } = useQuery({
-    queryKey: queryKeys.commissionEditRequests(),
-    queryFn: () => commissionApi.listEditRequests("pending").then((r) => r.data),
-  });
-
-  const { data: transactionList = [] } = useQuery({
-    queryKey: ["commission-all"],
-    queryFn: () => commissionApi.list({ includeInactive: true }).then((r) => r.data),
-  });
+  const { data: requests = [], isLoading: loadingRequests } = useCommissionEditRequests();
+  const { data: transactionList = [] } = useCommissionAll();
   const transactions: Record<number, CommissionTransaction> = Object.fromEntries(
     transactionList.map((c) => [c.id, c]),
   );
 
-  const { data: userList } = useQuery({
-    queryKey: queryKeys.users(),
-    queryFn: () => usersApi.list({}).then((r) => r.data),
-  });
+  const { data: userList } = useUsers({});
   const users: Record<number, User> = Object.fromEntries(
     (userList?.data ?? []).map((u: User) => [u.id, u]),
   );
 
-  const { data: types = [] } = useQuery({
-    queryKey: queryKeys.commissionTypes(),
-    queryFn: () => commissionCatalogApi.list().then((r) => r.data),
-  });
+  const { data: types = [] } = useCommissionTypes();
+
+  const approveMutation = useApproveCommissionEditRequestMutation();
+  const rejectMutation = useRejectCommissionEditRequestMutation();
 
   const isLoading = loadingRequests;
+  const busyId = approveMutation.isPending
+    ? approveMutation.variables
+    : rejectMutation.isPending
+      ? rejectMutation.variables?.requestId
+      : null;
 
-  function handleReload() {
-    queryClient.invalidateQueries({ queryKey: ["commission-edit-requests"] });
-    queryClient.invalidateQueries({ queryKey: ["commissions"] });
+  function handleApprove(requestId: number) {
+    approveMutation.mutate(requestId);
   }
 
-  async function handleApprove(requestId: number) {
-    setBusyId(requestId);
-    try {
-      await commissionApi.approveEditRequest(requestId);
-      handleReload();
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleReject(requestId: number) {
-    setBusyId(requestId);
-    try {
-      await commissionApi.rejectEditRequest(requestId, rejectNote || undefined);
-      setRejectingId(null);
-      setRejectNote("");
-      handleReload();
-    } finally {
-      setBusyId(null);
-    }
+  function handleReject(requestId: number) {
+    rejectMutation.mutate(
+      { requestId, note: rejectNote || undefined },
+      {
+        onSuccess: () => {
+          setRejectingId(null);
+          setRejectNote("");
+        },
+      },
+    );
   }
 
   if (isLoading) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
