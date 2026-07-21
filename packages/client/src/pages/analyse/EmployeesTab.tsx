@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { reportingApi, type EmployeeKpiRow } from "@/lib/reporting.api";
 import { EmployeeKpiTable } from "../dashboard/EmployeeKpiTable";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { useEmployeeKpis } from "@/hooks/queries/useEmployeeKpis";
 
 interface EmployeesTabProps {
   from: string;
@@ -11,18 +10,9 @@ interface EmployeesTabProps {
 }
 
 export function EmployeesTab({ from, to, basis }: EmployeesTabProps) {
-  const [rows, setRows] = useState<EmployeeKpiRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rows = [], isLoading } = useEmployeeKpis({ from, to, basis });
 
-  useEffect(() => {
-    setLoading(true);
-    reportingApi.getEmployeKpis({ from, to, basis }).then((res) => {
-      setRows(res.data);
-      setLoading(false);
-    });
-  }, [from, to, basis]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="text-center py-16 text-neutral-400">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...

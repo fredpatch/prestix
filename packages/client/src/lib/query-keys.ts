@@ -43,4 +43,22 @@ export const queryKeys = {
     agentId: number,
     params: { from: string; to: string; basis: "accrual" | "cash" },
   ) => ["employee-detail", agentId, params.from, params.to, params.basis] as const,
+  clientKpis: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "client-kpis", params.from, params.to, params.basis] as const,
+  apporteurKpis: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "apporteur-kpis", params.from, params.to, params.basis] as const,
+  employeeKpis: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "employee-kpis", params.from, params.to, params.basis] as const,
+  dashboardSummary: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "summary", params.from, params.to, params.basis] as const,
+  caComposition: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "ca-composition", params.from, params.to, params.basis] as const,
+  caTrend: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "ca-trend", params.from, params.to, params.basis] as const,
+  serviceTrend: (params: { from: string; to: string; basis: "accrual" | "cash" }) =>
+    ["reporting", "service-trend", params.from, params.to, params.basis] as const,
+  creancesByParty: () => ["reporting", "creances-by-party"] as const,
+  accrualVsCash: (params: { from: string; to: string }) =>
+    ["reporting", "accrual-vs-cash", params.from, params.to] as const,
+  openEngagements: () => ["reporting", "open-engagements"] as const,
 } as const;

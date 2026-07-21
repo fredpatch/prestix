@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { reportingApi, type DashboardSummary, type CaCompositionResult } from "@/lib/reporting.api";
 import { SummaryCards } from "../dashboard/SummaryCards";
 import { CaCompositionTable } from "../dashboard/CaCompositionTable";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { useDashboardSummary } from "@/hooks/queries/useDashboardSummary";
+import { useCaComposition } from "@/hooks/queries/useCaComposition";
+import { useCaTrend } from "@/hooks/queries/useCaTrend";
 
 interface GlobalTabProps {
   from: string;
@@ -19,25 +20,11 @@ function bucketLabel(bucket: string): string {
 }
 
 export function GlobalTab({ from, to, basis }: GlobalTabProps) {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [composition, setComposition] = useState<CaCompositionResult | null>(null);
-  const [trend, setTrend] = useState<{ bucket: string; gross: number; gain: number }[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = { from, to, basis };
-    Promise.all([
-      reportingApi.getSummary(params),
-      reportingApi.getCaComposition(params),
-      reportingApi.getCaTrend(params),
-    ]).then(([summaryRes, compRes, trendRes]) => {
-      setSummary(summaryRes.data);
-      setComposition(compRes.data);
-      setTrend(trendRes.data);
-      setLoading(false);
-    });
-  }, [from, to, basis]);
+  const params = { from, to, basis };
+  const { data: summary, isLoading: loadingSummary } = useDashboardSummary(params);
+  const { data: composition, isLoading: loadingComposition } = useCaComposition(params);
+  const { data: trend = [] } = useCaTrend(params);
+  const loading = loadingSummary || loadingComposition;
 
   if (loading || !summary || !composition) {
     return (

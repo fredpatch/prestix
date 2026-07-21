@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { reportingApi, type CaCompositionResult } from "@/lib/reporting.api";
 import { CaCompositionTable } from "../dashboard/CaCompositionTable";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { useCaComposition } from "@/hooks/queries/useCaComposition";
+import { useServiceTrend } from "@/hooks/queries/useServiceTrend";
 
 interface ServicesTabProps {
   from: string;
@@ -33,23 +33,11 @@ const SERIES_COLORS = {
 };
 
 export function ServicesTab({ from, to, basis }: ServicesTabProps) {
-  const [composition, setComposition] = useState<CaCompositionResult | null>(null);
-  const [trend, setTrend] = useState<ServiceTrendPoint[]>([]);
-  const [loading, setLoading] = useState(true);
+  const params = { from, to, basis };
+  const { data: composition, isLoading: loadingComposition } = useCaComposition(params);
+  const { data: trend = [] } = useServiceTrend(params);
 
-  useEffect(() => {
-    setLoading(true);
-    const params = { from, to, basis };
-    Promise.all([reportingApi.getCaComposition(params), reportingApi.getServiceTrend(params)]).then(
-      ([compRes, trendRes]) => {
-        setComposition(compRes.data);
-        setTrend(trendRes.data);
-        setLoading(false);
-      },
-    );
-  }, [from, to, basis]);
-
-  if (loading || !composition) {
+  if (loadingComposition || !composition) {
     return (
       <div className="text-center py-16 text-neutral-400">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...

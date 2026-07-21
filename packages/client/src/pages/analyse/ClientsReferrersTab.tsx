@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { reportingApi, type KpiRow } from "@/lib/reporting.api";
+import { type KpiRow } from "@/lib/reporting.api";
 import { KpiTable } from "../dashboard/KpiTable";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { useClientKpis } from "@/hooks/queries/useClientKpis";
+import { useApporteurKpis } from "@/hooks/queries/useApporteurKpis";
 
 interface ClientsReferrersTabProps {
   from: string;
@@ -44,21 +45,9 @@ function ComparisonChart({ label, rows, color }: { label: string; rows: KpiRow[]
 // for the real drill-down (transaction history, balances), rather than
 // duplicating that content here.
 export function ClientsReferrersTab({ from, to, basis }: ClientsReferrersTabProps) {
-  const [clients, setClients] = useState<KpiRow[]>([]);
-  const [referrers, setReferrers] = useState<KpiRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = { from, to, basis };
-    Promise.all([reportingApi.getClientKpis(params), reportingApi.getApporteurKpis(params)]).then(
-      ([clientRes, referrerRes]) => {
-        setClients(clientRes.data);
-        setReferrers(referrerRes.data);
-        setLoading(false);
-      },
-    );
-  }, [from, to, basis]);
+  const { data: clients = [], isLoading: loadingClients } = useClientKpis({ from, to, basis });
+  const { data: referrers = [], isLoading: loadingReferrers } = useApporteurKpis({ from, to, basis });
+  const loading = loadingClients || loadingReferrers;
 
   if (loading) {
     return (

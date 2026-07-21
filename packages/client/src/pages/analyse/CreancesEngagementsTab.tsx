@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Loader2, AlertTriangle } from "lucide-react";
-import {
-  reportingApi,
-  type CreanceByParty,
-  type AccrualVsCashComparison,
-  type OpenEngagements,
-} from "@/lib/reporting.api";
 import { ChartCanvas, CHART_COLORS } from "@/components/analytics/ChartCanvas";
+import { useCreancesByParty } from "@/hooks/queries/useCreancesByParty";
+import { useAccrualVsCashComparison } from "@/hooks/queries/useAccrualVsCashComparison";
+import { useOpenEngagements } from "@/hooks/queries/useOpenEngagements";
+import { ReadOnlyTable } from "@/components/ui/read-only-table";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CreanceByParty } from "@/lib/reporting.api";
+import { Link } from "react-router-dom";
 
 interface CreancesEngagementsTabProps {
   from: string;
@@ -18,25 +17,51 @@ function fmt(n: number): string {
   return n.toLocaleString("fr-FR");
 }
 
-export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps) {
-  const [creances, setCreances] = useState<CreanceByParty[]>([]);
-  const [comparison, setComparison] = useState<AccrualVsCashComparison | null>(null);
-  const [engagements, setEngagements] = useState<OpenEngagements | null>(null);
-  const [loading, setLoading] = useState(true);
+const creanceColumns: ColumnDef<CreanceByParty, any>[] = [
+  {
+    accessorKey: "partyName",
+    header: "Partie",
+    cell: ({ row }) => (
+      <Link to={`/parties/${row.original.partyId}`} className="hover:text-brand-gold-dark hover:underline">
+        {row.original.partyName}
+      </Link>
+    ),
+  },
+  {
+    accessorKey: "principalDue",
+    header: "Principal dû",
+    meta: { align: "right" },
+    cell: ({ row }) => fmt(row.original.principalDue),
+  },
+  {
+    accessorKey: "penaltyDue",
+    header: "Pénalités dues",
+    meta: { align: "right" },
+    cell: ({ row }) => fmt(row.original.penaltyDue),
+  },
+  {
+    accessorKey: "totalDue",
+    header: "Total dû",
+    meta: { align: "right" },
+    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.totalDue)}</span>,
+  },
+  {
+    id: "overdue",
+    header: "",
+    cell: ({ row }) =>
+      row.original.overdueCount > 0 && (
+        <span className="inline-flex items-center gap-1 text-[10px] text-red-600">
+          <AlertTriangle size={10} /> {row.original.overdueCount} en retard
+        </span>
+      ),
+  },
+];
 
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      reportingApi.getCreancesByParty(),
-      reportingApi.getAccrualVsCashComparison({ from, to }),
-      reportingApi.getOpenEngagements(),
-    ]).then(([creancesRes, comparisonRes, engagementsRes]) => {
-      setCreances(creancesRes.data);
-      setComparison(comparisonRes.data);
-      setEngagements(engagementsRes.data);
-      setLoading(false);
-    });
-  }, [from, to]);
+export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps) {
+  const { data: creances = [], isLoading: loadingCreances } = useCreancesByParty();
+  const { data: comparison, isLoading: loadingComparison } = useAccrualVsCashComparison({ from, to });
+  const { data: engagements, isLoading: loadingEngagements } = useOpenEngagements();
+  const loading = loadingCreances || loadingComparison || loadingEngagements;
 
   if (loading || !comparison || !engagements) {
     return (
@@ -149,46 +174,7 @@ export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps
                 }}
               />
             </div>
-            <table className="w-full text-left">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
-                <tr>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                    Partie
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                    Principal dû
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                    Pénalités dues
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                    Total dû
-                  </th>
-                  <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {creances.map((c) => (
-                  <tr key={c.partyId} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
-                    <td className="px-4 py-2 text-[12px] text-neutral-800">
-                      <Link to={`/parties/${c.partyId}`} className="hover:text-brand-gold-dark hover:underline">
-                        {c.partyName}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{fmt(c.principalDue)}</td>
-                    <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">{fmt(c.penaltyDue)}</td>
-                    <td className="px-4 py-2 text-[12px] font-medium text-neutral-800 text-right">{fmt(c.totalDue)}</td>
-                    <td className="px-4 py-2 text-right">
-                      {c.overdueCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-red-600">
-                          <AlertTriangle size={10} /> {c.overdueCount} en retard
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ReadOnlyTable columns={creanceColumns} data={creances} bare />
           </>
         )}
       </div>
