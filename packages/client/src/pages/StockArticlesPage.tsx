@@ -1,36 +1,114 @@
-import { useEffect, useState } from "react";
-import { Check, CircleSlash, Loader2 } from "lucide-react";
-import { stockApi, type StockArticle } from "@/lib/stock.api";
+import { useState } from "react";
+import { Check, CircleSlash } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { type StockArticle } from "@/lib/stock.api";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/App";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { CreateStockArticleDialog } from "./stock/CreateStockArticleDialog";
 import { RestockDialog } from "./stock/RestockDialog";
+import { useStockArticles } from "@/hooks/queries/useStockArticles";
+import { useToggleStockArticleActivationMutation } from "@/hooks/mutations/useToggleStockArticleActivation";
+import { DataTable } from "@/components/ui/data-table";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export default function StockArticlesPage() {
   const { user } = useAuth();
-  const [articles, setArticles] = useState<StockArticle[]>([]);
-  const [loading, setLoading] = useState(true);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const queryClient = useQueryClient();
 
   usePageHeader({ title: "Stock" });
 
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
 
-  function load() {
-    setLoading(true);
-    stockApi.list(includeInactive).then((res) => {
-      setArticles(res.data);
-      setLoading(false);
-    });
+  const { data: articles = [], isLoading } = useStockArticles(includeInactive);
+  const toggleMutation = useToggleStockArticleActivationMutation();
+
+  // CreateStockArticleDialog isn't on this page's mutation hook (it's
+  // shared with no cache-invalidation target of its own), so it still
+  // needs this explicit invalidate via its onCreated prop.
+  function handleReload() {
+    queryClient.invalidateQueries({ queryKey: queryKeys.stock() });
   }
 
-  useEffect(load, [includeInactive]);
-
-  async function handleToggleActive(article: StockArticle) {
-    await stockApi.toggleActive(article.id, !article.active);
-    load();
+  function handleToggleActive(article: StockArticle) {
+    toggleMutation.mutate({ id: article.id, active: !article.active });
   }
+
+  const columns: ColumnDef<StockArticle, any>[] = [
+    {
+      accessorKey: "name",
+      header: "Article",
+      cell: ({ row }) => (
+        <span className="text-[12px] text-neutral-800">
+          {row.original.name} <span className="text-neutral-400">({row.original.unit})</span>
+        </span>
+      ),
+    },
+    {
+      accessorKey: "onHand",
+      header: "En stock",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span
+          className={`text-[12px] font-medium ${row.original.onHand < row.original.minLevel ? "text-amber-600" : "text-neutral-800"}`}
+        >
+          {row.original.onHand}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "minLevel",
+      header: "Seuil bas",
+      meta: { align: "right" },
+      cell: ({ row }) => <span className="text-[12px] text-neutral-500">{row.original.minLevel}</span>,
+    },
+    {
+      accessorKey: "defaultSellingPrice",
+      header: "Prix vente",
+      meta: { align: "right" },
+      cell: ({ row }) => (
+        <span className="text-[12px] text-neutral-500">
+          {parseFloat(row.original.defaultSellingPrice).toLocaleString("fr-FR")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "active",
+      header: "Statut",
+      cell: ({ row }) => (
+        <span
+          className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold ${row.original.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+        >
+          {row.original.active ? "Actif" : "Désactivé"}
+        </span>
+      ),
+    },
+    ...(canManage
+      ? [
+          {
+            id: "actions",
+            header: "",
+            meta: { align: "right" as const },
+            cell: ({ row }: { row: { original: StockArticle } }) => (
+              <div className="text-right space-x-1">
+                <RestockDialog article={row.original} onDone={handleReload} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToggleActive(row.original)}
+                  title={row.original.active ? "Désactiver" : "Activer"}
+                  disabled={toggleMutation.isPending}
+                >
+                  {row.original.active ? <CircleSlash size={14} /> : <Check size={14} />}
+                </Button>
+              </div>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div>
@@ -40,7 +118,7 @@ export default function StockArticlesPage() {
             {articles.length} article{articles.length !== 1 ? "s" : ""}
           </p>
         </div>
-        {canManage && <CreateStockArticleDialog onCreated={load} />}
+        {canManage && <CreateStockArticleDialog onCreated={handleReload} />}
       </div>
 
       <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer mb-4">
@@ -53,87 +131,7 @@ export default function StockArticlesPage() {
         Inclure les articles désactivés
       </label>
 
-      {loading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
-      ) : (
-        <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Article
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  En stock
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Seuil bas
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
-                  Prix vente
-                </th>
-                <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
-                  Statut
-                </th>
-                {canManage && <th className="px-4 py-2.5 w-20"></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {articles.map((a) => (
-                <tr
-                  key={a.id}
-                  className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                >
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-800">
-                    {a.name} <span className="text-neutral-400">({a.unit})</span>
-                  </td>
-                  <td
-                    className={`px-4 py-2.5 text-[12px] text-right font-medium ${a.onHand < a.minLevel ? "text-amber-600" : "text-neutral-800"}`}
-                  >
-                    {a.onHand}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500 text-right">
-                    {a.minLevel}
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-neutral-500 text-right">
-                    {parseFloat(a.defaultSellingPrice).toLocaleString("fr-FR")}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold ${a.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
-                    >
-                      {a.active ? "Actif" : "Désactivé"}
-                    </span>
-                  </td>
-                  {canManage && (
-                    <td className="px-4 py-2.5 text-right space-x-1">
-                      <RestockDialog article={a} onDone={load} />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleToggleActive(a)}
-                        title={a.active ? "Désactiver" : "Activer"}
-                      >
-                        {a.active ? <CircleSlash size={14} /> : <Check size={14} />}
-                      </Button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {articles.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={canManage ? 6 : 5}
-                    className="px-4 py-8 text-center text-[12px] text-neutral-500"
-                  >
-                    Aucun article.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable columns={columns} data={articles} loading={isLoading} emptyMessage="Aucun article." />
     </div>
   );
 }

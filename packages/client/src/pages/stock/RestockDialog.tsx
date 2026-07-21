@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { stockApi, type StockArticle } from "@/lib/stock.api";
+import { type StockArticle } from "@/lib/stock.api";
+import { useRestockArticleMutation } from "@/hooks/mutations/useRestockArticle";
 
 interface RestockDialogProps {
   article: StockArticle;
@@ -21,25 +22,19 @@ export function RestockDialog({ article, onDone }: RestockDialogProps) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<"IN" | "ADJUST">("IN");
   const [quantity, setQuantity] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const restockMutation = useRestockArticleMutation();
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await stockApi.restock(article.id, type, type === "IN" ? Math.abs(quantity) : quantity);
-      setOpen(false);
-      setQuantity(0);
-      onDone();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur — vérifiez que la quantité ne fait pas passer le stock sous zéro.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    restockMutation.mutate(
+      { id: article.id, type, quantity: type === "IN" ? Math.abs(quantity) : quantity },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setQuantity(0);
+          onDone();
+        },
+      },
+    );
   }
 
   return (
@@ -47,10 +42,7 @@ export function RestockDialog({ article, onDone }: RestockDialogProps) {
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) {
-          setQuantity(0);
-          setError(null);
-        }
+        if (!v) setQuantity(0);
       }}
     >
       <DialogTrigger>
@@ -97,14 +89,13 @@ export function RestockDialog({ article, onDone }: RestockDialogProps) {
               </p>
             )}
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || quantity === 0}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
+          <Button onClick={handleSubmit} disabled={restockMutation.isPending || quantity === 0}>
+            {restockMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
           </Button>
         </DialogFooter>
       </DialogContent>
