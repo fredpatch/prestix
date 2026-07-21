@@ -72,6 +72,7 @@ import stockRoutes from "./modules/stock/routes/stock.routes.js";
 import commissionRoutes from "./modules/commission/routes/commission.routes.js";
 import savingsRoutes from "./modules/savings/routes/savings.routes.js";
 import reportingRoutes from "./modules/reporting/routes/reporting.routes.js";
+import auditLogRoutes from "./modules/audit-log/routes/audit-log.routes.js";
 import { registerJobs } from "./jobs/index.js";
 
 // ── Routes API ─────────────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ app.use("/api/stock", stockRoutes);
 app.use("/api/commissions", commissionRoutes);
 app.use("/api/savings", savingsRoutes);
 app.use("/api/reporting", reportingRoutes);
+app.use("/api/audit-log", auditLogRoutes);
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

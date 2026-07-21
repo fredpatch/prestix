@@ -62,4 +62,9 @@ export const queryKeys = {
     ["reporting", "accrual-vs-cash", params.from, params.to] as const,
   openEngagements: () => ["reporting", "open-engagements"] as const,
   recentActivity: (limit: number) => ["reporting", "recent-activity", limit] as const,
+
+  // Audit log
+  auditLog: (filters?: object) => ["audit-log", filters ?? {}] as const,
+  auditLogActions: () => ["audit-log", "actions"] as const,
+  auditLogEntityTypes: () => ["audit-log", "entity-types"] as const,
 } as const;
