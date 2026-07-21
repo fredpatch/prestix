@@ -18,12 +18,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
-import { commissionApi, type CommissionDetails } from "@/lib/commission.api";
+import { type CommissionDetails } from "@/lib/commission.api";
 import { PartySelect } from "@/pages/documents/PartySelect";
 import { QuickAddPartyDialog } from "@/pages/party/components/QuickAddPartyDialog";
 import { CommissionDynamicFields } from "@/components/customs/CommissionDynamicFields";
-import { getApiErrorMessage } from "@/lib/api-error";
 import type { Party } from "@/lib/party.api";
+import { useCreateCommissionMutation } from "@/hooks/mutations/useCreateCommission";
 
 interface CreateCommissionDialogProps {
   onCreated: () => void;
@@ -54,6 +54,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
   const [client, setClient] = useState<Party | null>(null);
   const [referrer, setReferrer] = useState<Party | null>(null);
   const [details, setDetails] = useState<CommissionDetails>({});
+  const createMutation = useCreateCommissionMutation();
 
   const {
     register,
@@ -88,7 +89,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
 
   async function onSubmit(values: CommissionFormValues) {
     try {
-      await commissionApi.create({
+      await createMutation.mutateAsync({
         type: selectedTypeCode,
         clientPartyId: client?.id,
         referrerPartyId: referrer?.id,
@@ -101,8 +102,8 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
       setOpen(false);
       resetAll();
       onCreated();
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement."));
+    } catch {
+      // Error toast already handled by the global mutation default.
     }
   }
 

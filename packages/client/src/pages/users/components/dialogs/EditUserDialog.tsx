@@ -16,8 +16,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { usersApi, type Role, type User } from "@/lib/users.api";
+import { type Role, type User } from "@/lib/users.api";
 import { useAuth } from "@/App";
+import { useUpdateUserMutation } from "@/hooks/mutations/useUpdateUser";
 
 const ALL_ROLES: { value: Role; label: string }[] = [
   { value: "agent", label: "Agent" },
@@ -36,36 +37,29 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
   const { user } = useAuth();
   const [email, setEmail] = useState(targetUser?.email ?? "");
   const [role, setRole] = useState<Role>(targetUser?.role ?? "agent");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const updateMutation = useUpdateUserMutation();
 
   useEffect(() => {
     if (targetUser) {
       setEmail(targetUser.email);
       setRole(targetUser.role);
-      setError(null);
     }
   }, [targetUser]);
 
   const isManagedAdmin = targetUser && ["admin", "super_admin"].includes(targetUser.role);
   const canEditRole = user?.role === "super_admin" || !isManagedAdmin;
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!targetUser) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      await usersApi.update(targetUser.id, { email, role: canEditRole ? role : undefined });
-      onUpdated();
-      onClose();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la modification.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    updateMutation.mutate(
+      { id: targetUser.id, data: { email, role: canEditRole ? role : undefined } },
+      {
+        onSuccess: () => {
+          onUpdated();
+          onClose();
+        },
+      },
+    );
   }
 
   return (
@@ -114,7 +108,6 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
                 </p>
               )}
             </div>
-            {error && <p className="text-[11px] text-red-600">{error}</p>}
           </div>
         )}
 
@@ -122,8 +115,8 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
           <Button variant="secondary" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !email}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+          <Button onClick={handleSubmit} disabled={updateMutation.isPending || !email}>
+            {updateMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
           </Button>
         </DialogFooter>
       </DialogContent>

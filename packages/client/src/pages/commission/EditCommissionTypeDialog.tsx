@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
+import { type CommissionType } from "@/lib/commission-catalog.api";
+import { useEditCommissionTypeMutation } from "@/hooks/mutations/useEditCommissionType";
 
 interface EditCommissionTypeDialogProps {
   type: CommissionType;
@@ -61,8 +62,7 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(type.label);
   const [rows, setRows] = useState<FieldRow[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const editMutation = useEditCommissionTypeMutation();
 
   // Re-parse from the current type every time the dialog opens, so stale
   // edits from a previous open (never saved) don't linger.
@@ -70,7 +70,6 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
     if (open) {
       setLabel(type.label);
       setRows(parseFieldSchema(type.fieldSchema));
-      setError(null);
     }
   }, [open, type]);
 
@@ -86,24 +85,16 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
     setRows(rows.filter((_, i) => i !== index));
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await commissionCatalogApi.update(type.code, {
-        label,
-        fieldSchema: serializeFieldSchema(rows),
-      });
-      setOpen(false);
-      onUpdated();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la modification.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    editMutation.mutate(
+      { code: type.code, data: { label, fieldSchema: serializeFieldSchema(rows) } },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          onUpdated();
+        },
+      },
+    );
   }
 
   return (
@@ -181,16 +172,14 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
               )}
             </div>
           </div>
-
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !label}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+          <Button onClick={handleSubmit} disabled={editMutation.isPending || !label}>
+            {editMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
           </Button>
         </DialogFooter>
       </DialogContent>

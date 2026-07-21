@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { invoiceApi } from "@/lib/invoice.api";
+import { useCancelInvoiceMutation } from "@/hooks/mutations/useCancelInvoice";
 
 interface CancelInvoiceDialogProps {
   invoiceId: number;
@@ -21,24 +21,15 @@ interface CancelInvoiceDialogProps {
 export function CancelInvoiceDialog({ invoiceId, onCancelled }: CancelInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const cancelMutation = useCancelInvoiceMutation(invoiceId);
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await invoiceApi.cancel(invoiceId, reason);
-      setOpen(false);
-      onCancelled();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'annulation.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    cancelMutation.mutate(reason, {
+      onSuccess: () => {
+        setOpen(false);
+        onCancelled();
+      },
+    });
   }
 
   return (
@@ -46,10 +37,7 @@ export function CancelInvoiceDialog({ invoiceId, onCancelled }: CancelInvoiceDia
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) {
-          setReason("");
-          setError(null);
-        }
+        if (!v) setReason("");
       }}
     >
       <DialogTrigger>
@@ -71,7 +59,6 @@ export function CancelInvoiceDialog({ invoiceId, onCancelled }: CancelInvoiceDia
             </label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
@@ -80,9 +67,9 @@ export function CancelInvoiceDialog({ invoiceId, onCancelled }: CancelInvoiceDia
           <Button
             variant="destructive"
             onClick={handleSubmit}
-            disabled={submitting || !reason.trim()}
+            disabled={cancelMutation.isPending || !reason.trim()}
           >
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'annulation"}
+            {cancelMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'annulation"}
           </Button>
         </DialogFooter>
       </DialogContent>

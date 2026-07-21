@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { stockApi } from "@/lib/stock.api";
-import { getApiErrorMessage } from "@/lib/api-error";
+import { useCreateStockArticleMutation } from "@/hooks/mutations/useCreateStockArticle";
 
 const stockArticleSchema = z.object({
   name: z.string().min(1, "Le nom est requis."),
@@ -43,6 +42,7 @@ interface CreateStockArticleDialogProps {
 
 export function CreateStockArticleDialog({ onCreated }: CreateStockArticleDialogProps) {
   const [open, setOpen] = useState(false);
+  const createMutation = useCreateStockArticleMutation();
 
   const {
     register,
@@ -56,7 +56,7 @@ export function CreateStockArticleDialog({ onCreated }: CreateStockArticleDialog
 
   async function onSubmit(values: StockArticleFormValues) {
     try {
-      await stockApi.create({
+      await createMutation.mutateAsync({
         name: values.name,
         unit: values.unit || undefined,
         defaultSellingPrice: values.sellingPrice,
@@ -67,8 +67,8 @@ export function CreateStockArticleDialog({ onCreated }: CreateStockArticleDialog
       setOpen(false);
       reset(STOCK_ARTICLE_DEFAULTS);
       onCreated();
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Erreur lors de la création."));
+    } catch {
+      // Error toast already handled by the global mutation default.
     }
   }
 

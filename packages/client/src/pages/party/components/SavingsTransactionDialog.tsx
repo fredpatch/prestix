@@ -10,26 +10,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { savingsApi, type SavingsAccount } from "@/lib/savings.api";
+import { type SavingsAccount } from "@/lib/savings.api";
 import { useAuth } from "@/App";
+import { useSavingsTransactionMutation } from "@/hooks/mutations/useSavingsTransaction";
 
 interface SavingsTransactionDialogProps {
   account: SavingsAccount;
   onRecorded: () => void;
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
-  INSUFFICIENT_EPARGNE_BALANCE: "Solde insuffisant pour ce retrait.",
-  SAVINGS_AMOUNT_MUST_BE_POSITIVE: "Le montant doit être supérieur à zéro.",
-};
-
 export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransactionDialogProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [nature, setNature] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const transactionMutation = useSavingsTransactionMutation(account.partyId);
 
   // Withdrawal is admin+ (confirmed correction from Fred): money normally
   // only leaves an épargne account by being spent — a ticket or shop
@@ -41,27 +36,19 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
   function reset() {
     setNature("deposit");
     setAmount(0);
-    setError(null);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      if (nature === "deposit") {
-        await savingsApi.deposit(account.id, amount);
-      } else {
-        await savingsApi.withdraw(account.id, amount);
-      }
-      setOpen(false);
-      reset();
-      onRecorded();
-    } catch (err: unknown) {
-      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
-      setError((code && ERROR_MESSAGES[code]) ?? "Erreur lors de l'enregistrement.");
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    transactionMutation.mutate(
+      { accountId: account.id, nature, amount },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          reset();
+          onRecorded();
+        },
+      },
+    );
   }
 
   return (
@@ -128,8 +115,6 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
             <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant</label>
             <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
           </div>
-
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
 
         <DialogFooter>
@@ -138,10 +123,10 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={submitting || amount <= 0 || (nature === "withdraw" && !canWithdraw)}
+            disabled={transactionMutation.isPending || amount <= 0 || (nature === "withdraw" && !canWithdraw)}
             variant={nature === "withdraw" ? "destructive" : "default"}
           >
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
+            {transactionMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirmer"}
           </Button>
         </DialogFooter>
       </DialogContent>

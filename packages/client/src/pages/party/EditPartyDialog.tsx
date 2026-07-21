@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { partyApi, type Party } from "@/lib/party.api";
-import { getApiErrorMessage } from "@/lib/api-error";
+import { type Party } from "@/lib/party.api";
 import {
   partySchema,
   PARTY_DEFAULTS,
   partyToValues,
   type PartyFormValues,
 } from "./components/party-schema";
+import { useUpdatePartyMutation } from "@/hooks/mutations/useUpdateParty";
 
 interface EditPartyDialogProps {
   party: Party | null;
@@ -28,6 +28,8 @@ interface EditPartyDialogProps {
 }
 
 export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogProps) {
+  const updateMutation = useUpdatePartyMutation();
+
   const {
     register,
     handleSubmit,
@@ -49,20 +51,23 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
   async function onSubmit(values: PartyFormValues) {
     if (!party) return;
     try {
-      await partyApi.update(party.id, {
-        fullName: values.fullName,
-        code: values.code || undefined,
-        phone: values.phone || undefined,
-        email: values.email || undefined,
-        address: values.address || undefined,
-        isClient: values.isClient,
-        isReferrer: values.isReferrer,
+      await updateMutation.mutateAsync({
+        id: party.id,
+        data: {
+          fullName: values.fullName,
+          code: values.code || undefined,
+          phone: values.phone || undefined,
+          email: values.email || undefined,
+          address: values.address || undefined,
+          isClient: values.isClient,
+          isReferrer: values.isReferrer,
+        },
       });
       toast.success("Partie modifiée.");
       onUpdated();
       onClose();
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Erreur lors de la modification."));
+    } catch {
+      // Error toast already handled by the global mutation default.
     }
   }
 

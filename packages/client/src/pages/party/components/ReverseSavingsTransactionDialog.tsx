@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { savingsApi } from "@/lib/savings.api";
+import { useReverseSavingsTransactionMutation } from "@/hooks/mutations/useReverseSavingsTransaction";
 
 interface ReverseSavingsTransactionDialogProps {
   transactionId: number;
@@ -27,25 +27,19 @@ export function ReverseSavingsTransactionDialog({
 }: ReverseSavingsTransactionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const reverseMutation = useReverseSavingsTransactionMutation();
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await savingsApi.reverse(transactionId, reason);
-      setOpen(false);
-      setReason("");
-      onReversed();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de l'annulation.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    reverseMutation.mutate(
+      { transactionId, reason },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          setReason("");
+          onReversed();
+        },
+      },
+    );
   }
 
   return (
@@ -53,10 +47,7 @@ export function ReverseSavingsTransactionDialog({
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) {
-          setReason("");
-          setError(null);
-        }
+        if (!v) setReason("");
       }}
     >
       <DialogTrigger>
@@ -76,14 +67,17 @@ export function ReverseSavingsTransactionDialog({
             <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Raison</label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Retour
           </Button>
-          <Button variant="destructive" onClick={handleSubmit} disabled={submitting || !reason.trim()}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'annulation"}
+          <Button
+            variant="destructive"
+            onClick={handleSubmit}
+            disabled={reverseMutation.isPending || !reason.trim()}
+          >
+            {reverseMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'annulation"}
           </Button>
         </DialogFooter>
       </DialogContent>

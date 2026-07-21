@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogTrigger,
@@ -11,8 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { commissionApi, type CommissionTransaction } from "@/lib/commission.api";
+import { type CommissionTransaction } from "@/lib/commission.api";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useRequestCommissionEditMutation } from "@/hooks/mutations/useRequestCommissionEdit";
 
 interface RequestCommissionEditDialogProps {
   commission: CommissionTransaction;
@@ -30,46 +32,40 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
   const [amount, setAmount] = useState(parseFloat(commission.commissionAmount));
   const [note, setNote] = useState(commission.note ?? "");
   const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const requestMutation = useRequestCommissionEditMutation();
 
   function reset() {
     setDate(commission.date.split("T")[0]);
     setAmount(parseFloat(commission.commissionAmount));
     setNote(commission.note ?? "");
     setReason("");
-    setError(null);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      // Only send fields that actually changed — a proposed "change" that's
-      // identical to the current value is just noise for the reviewer.
-      const proposedChanges: Record<string, unknown> = {};
-      if (date !== commission.date.split("T")[0]) proposedChanges.date = date;
-      if (amount !== parseFloat(commission.commissionAmount)) proposedChanges.commissionAmount = amount;
-      if (note !== (commission.note ?? "")) proposedChanges.note = note || null;
+  function handleSubmit() {
+    // Only send fields that actually changed — a proposed "change" that's
+    // identical to the current value is just noise for the reviewer. This
+    // is a pre-submit form-shape check, not an API failure, so it stays a
+    // direct toast rather than going through the mutation's error path.
+    const proposedChanges: Record<string, unknown> = {};
+    if (date !== commission.date.split("T")[0]) proposedChanges.date = date;
+    if (amount !== parseFloat(commission.commissionAmount)) proposedChanges.commissionAmount = amount;
+    if (note !== (commission.note ?? "")) proposedChanges.note = note || null;
 
-      if (Object.keys(proposedChanges).length === 0) {
-        setError("Aucun changement détecté.");
-        setSubmitting(false);
-        return;
-      }
-
-      await commissionApi.requestEdit(commission.id, reason, proposedChanges);
-      setOpen(false);
-      reset();
-      onRequested();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la demande.",
-      );
-    } finally {
-      setSubmitting(false);
+    if (Object.keys(proposedChanges).length === 0) {
+      toast.error("Aucun changement détecté.");
+      return;
     }
+
+    requestMutation.mutate(
+      { commissionId: commission.id, reason, proposedChanges },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          reset();
+          onRequested();
+        },
+      },
+    );
   }
 
   return (
@@ -127,16 +123,14 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
               className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
             />
           </div>
-
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !reason.trim()}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Soumettre la demande"}
+          <Button onClick={handleSubmit} disabled={requestMutation.isPending || !reason.trim()}>
+            {requestMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Soumettre la demande"}
           </Button>
         </DialogFooter>
       </DialogContent>

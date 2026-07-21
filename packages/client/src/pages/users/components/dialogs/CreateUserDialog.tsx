@@ -18,8 +18,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { usersApi, type Role } from "@/lib/users.api";
+import { type Role } from "@/lib/users.api";
 import { useAuth } from "@/App";
+import { useCreateUserMutation } from "@/hooks/mutations/useCreateUser";
 
 const ASSIGNABLE_ROLES: { value: Role; label: string }[] = [
   { value: "agent", label: "Agent" },
@@ -38,8 +39,7 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<Role>("agent");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const createMutation = useCreateUserMutation();
 
   // Only super_admin manages admin/super_admin accounts (M1 spec) — mirrors the server-side guard.
   const availableRoles = ASSIGNABLE_ROLES.filter(
@@ -50,25 +50,19 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
     setEmail("");
     setFullName("");
     setRole("agent");
-    setError(null);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      await usersApi.create({ email, fullName, role });
-      setOpen(false);
-      reset();
-      onCreated();
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la création.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    createMutation.mutate(
+      { email, fullName, role },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          reset();
+          onCreated();
+        },
+      },
+    );
   }
 
   return (
@@ -118,15 +112,14 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
               </SelectContent>
             </Select>
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
 
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !email || !fullName}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
+          <Button onClick={handleSubmit} disabled={createMutation.isPending || !email || !fullName}>
+            {createMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
           </Button>
         </DialogFooter>
       </DialogContent>

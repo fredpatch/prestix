@@ -3,7 +3,6 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Banknote, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogTrigger,
@@ -22,7 +21,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { paymentApi, type Installment, type RecordPaymentInput } from "@/lib/payment.api";
-import { getApiErrorMessage, getApiErrorCode } from "@/lib/api-error";
+import { useRecordPaymentMutation } from "@/hooks/mutations/useRecordPayment";
 
 interface RecordPaymentDialogProps {
   invoiceId: number;
@@ -55,11 +54,25 @@ const PAYMENT_DEFAULTS: PaymentFormValues = {
   allocationTarget: "principal",
 };
 
+function buildPayload(
+  values: PaymentFormValues,
+  overpaymentChoice?: "change" | "credit",
+): RecordPaymentInput {
+  return {
+    amountTendered: values.amount,
+    method: values.method,
+    targetInstallmentId: values.target !== "fifo" ? parseInt(values.target) : undefined,
+    overpaymentChoice,
+    allocationTarget: values.allocationTarget,
+  };
+}
+
 export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDialogProps) {
   const [open, setOpen] = useState(false);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [overpaymentPending, setOverpaymentPending] = useState<number | null>(null);
-  const [resolving, setResolving] = useState(false);
+
+  const recordMutation = useRecordPaymentMutation(invoiceId, setOverpaymentPending);
 
   const {
     register,
@@ -69,7 +82,6 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
     getValues,
     reset,
     control,
-    formState: { isSubmitting },
   } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: PAYMENT_DEFAULTS,
@@ -85,32 +97,19 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
   const anyPenaltyDue = installments.some((i) => parseFloat(i.penaltyDue) > 0);
   const allocationTarget = watch("allocationTarget");
 
-  async function doSubmit(values: PaymentFormValues, overpaymentChoice?: "change" | "credit") {
-    try {
-      await paymentApi.record(invoiceId, {
-        amountTendered: values.amount,
-        method: values.method,
-        targetInstallmentId: values.target !== "fifo" ? parseInt(values.target) : undefined,
-        overpaymentChoice,
-        allocationTarget: values.allocationTarget,
-      });
-      setOpen(false);
-      reset(PAYMENT_DEFAULTS);
-      setOverpaymentPending(null);
-      onRecorded();
-    } catch (err) {
-      if (getApiErrorCode(err) === "OVERPAYMENT_CHOICE_REQUIRED") {
-        setOverpaymentPending(values.amount);
-      } else {
-        toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement."));
-      }
-    }
+  function handleSuccess() {
+    setOpen(false);
+    reset(PAYMENT_DEFAULTS);
+    setOverpaymentPending(null);
+    onRecorded();
   }
 
-  async function resolveOverpayment(choice: "change" | "credit") {
-    setResolving(true);
-    await doSubmit(getValues(), choice);
-    setResolving(false);
+  function onSubmit(values: PaymentFormValues) {
+    recordMutation.mutate(buildPayload(values), { onSuccess: handleSuccess });
+  }
+
+  function resolveOverpayment(choice: "change" | "credit") {
+    recordMutation.mutate(buildPayload(getValues(), choice), { onSuccess: handleSuccess });
   }
 
   return (
@@ -144,22 +143,22 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                 variant="outline"
                 className="flex-1"
                 onClick={() => resolveOverpayment("change")}
-                disabled={resolving}
+                disabled={recordMutation.isPending}
               >
                 Rendre la monnaie
               </Button>
               <Button
                 className="flex-1"
                 onClick={() => resolveOverpayment("credit")}
-                disabled={resolving}
+                disabled={recordMutation.isPending}
               >
                 Créditer le compte
               </Button>
             </div>
-            {resolving && <Loader2 size={13} className="animate-spin mx-auto" />}
+            {recordMutation.isPending && <Loader2 size={13} className="animate-spin mx-auto" />}
           </div>
         ) : (
-          <form onSubmit={handleSubmit((values) => doSubmit(values))}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-3">
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
@@ -263,8 +262,8 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
+              <Button type="submit" disabled={recordMutation.isPending}>
+                {recordMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Enregistrer"}
               </Button>
             </DialogFooter>
           </form>

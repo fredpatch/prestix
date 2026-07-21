@@ -10,23 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { invoiceApi } from "@/lib/invoice.api";
 import { useAuth } from "@/App";
+import { useIssueInvoiceMutation } from "@/hooks/mutations/useIssueInvoice";
 
 interface IssueInvoiceDialogProps {
   invoiceId: number;
   totalAmount: number;
   onIssued: () => void;
 }
-
-const ERROR_MESSAGES: Record<string, string> = {
-  INSUFFICIENT_STOCK: "Stock insuffisant pour au moins un article de cette facture.",
-  INVOICE_HAS_NO_LINES: "La facture n'a aucune ligne.",
-  INVALID_INSTALLMENT_COUNT: "Le nombre d'échéances doit être entre 1 et 3.",
-  INSTALLMENTS_MUST_SUM_TO_TOTAL: "La somme des échéances doit égaler le total de la facture.",
-  NEGATIVE_STOCK_OVERRIDE_REQUIRES_MANAGER:
-    "Seul un manager peut forcer l'émission avec un stock insuffisant.",
-};
 
 interface InstallmentDraft {
   expectedDate: string;
@@ -45,16 +36,17 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
   const [installments, setInstallments] = useState<InstallmentDraft[]>([
     { expectedDate: todayISO(), expectedAmount: totalAmount },
   ]);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [stockOverridePending, setStockOverridePending] = useState(false);
 
   const canOverrideStock = user && ["manager", "admin", "super_admin"].includes(user.role);
 
+  const issueMutation = useIssueInvoiceMutation(invoiceId, !!canOverrideStock, () =>
+    setStockOverridePending(true),
+  );
+
   function reset() {
     setMode("full");
     setInstallments([{ expectedDate: todayISO(), expectedAmount: totalAmount }]);
-    setError(null);
     setStockOverridePending(false);
   }
 
@@ -77,33 +69,21 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
   const datesValid = mode === "full" || installments.every((i) => i.expectedDate);
   const canSubmit = mode === "full" || (sumMatches && datesValid);
 
-  async function handleSubmit(allowNegativeStockOverride = false) {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const requestId = crypto.randomUUID();
-      await invoiceApi.issue(
-        invoiceId,
-        requestId,
-        {
-          mode,
-          installments: mode === "installments" ? installments : undefined,
-        },
+  function handleSubmit(allowNegativeStockOverride = false) {
+    issueMutation.mutate(
+      {
+        requestId: crypto.randomUUID(),
+        paymentPlan: { mode, installments: mode === "installments" ? installments : undefined },
         allowNegativeStockOverride,
-      );
-      setOpen(false);
-      reset();
-      onIssued();
-    } catch (err: unknown) {
-      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
-      if (code === "INSUFFICIENT_STOCK" && canOverrideStock) {
-        setStockOverridePending(true);
-      } else {
-        setError((code && ERROR_MESSAGES[code]) ?? "Erreur lors de l'émission.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          setOpen(false);
+          reset();
+          onIssued();
+        },
+      },
+    );
   }
 
   return (
@@ -205,7 +185,6 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
             </div>
           )}
 
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
           {stockOverridePending && (
             <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 space-y-2">
               <p className="text-[12px] text-amber-800">
@@ -223,10 +202,10 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
                 <Button
                   size="sm"
                   onClick={() => handleSubmit(true)}
-                  disabled={submitting}
+                  disabled={issueMutation.isPending}
                   className="bg-amber-600 hover:bg-amber-700 text-white"
                 >
-                  {submitting ? (
+                  {issueMutation.isPending ? (
                     <Loader2 size={13} className="animate-spin" />
                   ) : (
                     "Forcer l'émission"
@@ -243,9 +222,9 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
           </Button>
           <Button
             onClick={() => handleSubmit(false)}
-            disabled={submitting || !canSubmit || stockOverridePending}
+            disabled={issueMutation.isPending || !canSubmit || stockOverridePending}
           >
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'émission"}
+            {issueMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirmer l'émission"}
           </Button>
         </DialogFooter>
       </DialogContent>

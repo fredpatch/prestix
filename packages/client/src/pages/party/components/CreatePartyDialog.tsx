@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { partyApi } from "@/lib/party.api";
-import { getApiErrorMessage } from "@/lib/api-error";
 import { partySchema, PARTY_DEFAULTS, type PartyFormValues } from "./party-schema";
+import { useCreatePartyMutation } from "@/hooks/mutations/useCreateParty";
 
 interface CreatePartyDialogProps {
   onCreated: () => void;
@@ -24,6 +23,7 @@ interface CreatePartyDialogProps {
 
 export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
   const [open, setOpen] = useState(false);
+  const createMutation = useCreatePartyMutation();
 
   const {
     register,
@@ -41,7 +41,7 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
 
   async function onSubmit(values: PartyFormValues) {
     try {
-      await partyApi.create({
+      await createMutation.mutateAsync({
         fullName: values.fullName,
         code: values.code || undefined,
         phone: values.phone || undefined,
@@ -54,8 +54,8 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
       setOpen(false);
       reset(PARTY_DEFAULTS);
       onCreated();
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, "Erreur lors de la création."));
+    } catch {
+      // Error toast already handled by the global mutation default.
     }
   }
 

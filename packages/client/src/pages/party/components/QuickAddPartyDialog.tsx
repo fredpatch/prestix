@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { partyApi, type Party } from "@/lib/party.api";
+import { type Party } from "@/lib/party.api";
+import { useCreatePartyMutation } from "@/hooks/mutations/useCreateParty";
 
 interface QuickAddPartyDialogProps {
   role: "client" | "referrer";
@@ -22,36 +23,24 @@ export function QuickAddPartyDialog({ role, onCreated, trigger }: QuickAddPartyD
   const [open, setOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const createMutation = useCreatePartyMutation();
 
   function reset() {
     setFullName("");
     setPhone("");
-    setError(null);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await partyApi.create({
-        fullName,
-        phone: phone || undefined,
-        isClient: role === "client",
-        isReferrer: role === "referrer",
-      });
-      setOpen(false);
-      reset();
-      onCreated(res.data);
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-          "Erreur lors de la création.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
+  function handleSubmit() {
+    createMutation.mutate(
+      { fullName, phone: phone || undefined, isClient: role === "client", isReferrer: role === "referrer" },
+      {
+        onSuccess: (party) => {
+          setOpen(false);
+          reset();
+          onCreated(party);
+        },
+      },
+    );
   }
 
   return (
@@ -88,14 +77,13 @@ export function QuickAddPartyDialog({ role, onCreated, trigger }: QuickAddPartyD
             </label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>
             Annuler
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !fullName}>
-            {submitting ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
+          <Button onClick={handleSubmit} disabled={createMutation.isPending || !fullName}>
+            {createMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : "Créer"}
           </Button>
         </DialogFooter>
       </DialogContent>
