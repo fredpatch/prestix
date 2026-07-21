@@ -1,17 +1,24 @@
 ## Where We Left Off
 
-Sprint 11c (UI Hardening) is closed in full: foundations, contained fixes,
-and the architectural migration to React Query hooks, real mutation hooks,
-React Hook Form/zod, and generic TanStack/shadcn table components.
+Sprint 11f UI/reporting polish is closed in code. The recent session shipped
+two main clusters:
 
-Sprint 11e (Journal d'audit) is now closed in code. It adds a standalone
-admin+ `/audit-log` page over the existing audit-log backend, using the
-11c primitives instead of another one-off table/form pattern.
+1. Operational UI/document polish across Party, Users, Login, Commission
+   requests, Commissions, Creances, Stock, Dashboard, Settings, mobile layout,
+   Proformas, Invoices, and document detail workspaces.
+2. Dashboard report export alignment so quick PDF/Excel exports reflect the
+   upgraded dashboard rather than only the older table/card report shape.
+
+Latest pushed commits:
+
+- `0870d10 feat: refine admin UI and dashboard workflows`
+- `2c64d26 feat: rework invoice and proforma document views`
+- `9ecd434 feat: align dashboard report exports`
 
 ## What's In Scope Today
 
-Cache/changelog/TASKS sync after Sprint 11e, then commit and push all
-changes.
+Cache/changelog/TASKS sync for the UI/reporting polish session, then commit
+and push documentation changes.
 
 ## State Of The Codebase
 
@@ -19,40 +26,42 @@ Backend routes are mounted for bootstrap, auth, users, settings, Party, Party
 History, Credit/Avoir, Proformas, Invoices, Delivery Notes, Payments,
 Creances, Stock, Commissions, Savings, Reporting, and Audit Log.
 
-Audit log backend already exists at `/api/audit-log` with admin+ access,
-pagination/filter support, and distinct action/entity-type helper endpoints.
-The new frontend page consumes that API directly; no new audit tracking or
-schema was needed.
+Document UI:
 
-Frontend architecture as of Sprint 11c/11e:
+- `ProformasPage` has KPIs, filters, table/grid views, pagination via
+  `DataTable`, mobile grid default, latest proforma, and quick view.
+- `InvoicesPage` now mirrors that pattern with KPIs, status/payment filters,
+  table/grid views, latest invoice, mobile grid default, and quick view.
+- `InvoiceDetailPage` and `ProformaDetailPage` use a shared
+  `DocumentWorkspace` module: KPI cards, status badges, party summary, line
+  cards, paper preview, preview toggle, and empty states.
 
-- **Data fetching**: `hooks/queries/` and `hooks/mutations/` — one hook per
-  query or mutation. `query-keys.ts` is the cache-key registry.
-- **Tables**: `DataTable` and `ReadOnlyTable`, both built on shadcn table
-  primitives. The audit log page uses `DataTable`.
-- **Forms/filters**: shadcn `Select`, `DatePicker`, and React Query state
-  patterns are now the norm for filterable operational pages.
-- **Audit log UI**: `/audit-log` is an admin+ route/nav item with filters
-  for user/action/entity/date, paginated rows, a refetch indicator, and
-  metadata details in a popover. The typoed `useAditLog.ts` hook was renamed
-  to `useAuditLog.ts`.
+Dashboard/reporting:
+
+- Dashboard uses summary KPIs, CA/gain trend, service trend,
+  commission-type trend, recent sales, top services, top parties/referrers,
+  and top employees.
+- PDF export now renders inline SVG charts from backend reporting data:
+  CA/gain, services, commission types, plus recent sales.
+- Excel export now includes graph-oriented sheets with numeric trend data and
+  static text-bar "vue" columns. Do not reintroduce ExcelJS `dataBar`
+  conditional formatting; Excel repaired/removed it in real use.
+- `getRecentSales()` now resolves payment party names via related invoices.
 
 ## Validation Snapshot (2026-07-21)
 
-- `npm run typecheck`: PASS after restoring the repo-compatible
-  `ignoreDeprecations: "5.0"` in `tsconfig.base.json`.
-- `npm run build -w packages/client`: sandboxed run hit the known
-  Vite/esbuild Windows `spawn EPERM`; elevated rerun PASS. Existing
+- `npm run typecheck`: PASS.
+- `npm run build -w packages/server`: PASS after report export changes.
+- `npm run build -w packages/client`: PASS during document UI passes after
+  elevated rerun for the known Vite/esbuild Windows `spawn EPERM`; existing
   chunk-size warning remains.
-- Not yet done: manual runtime smoke of Sprint 11c/11e UI flows in a running
-  browser session.
-- Reporting/analyse API-runtime smoke remains pending end-to-end, carried
-  over from Sprint 10.
 
 ## Key Constraints Active Right Now
 
-- npm workspaces, run scripts from within each package.
+- npm workspaces, run scripts from within each package when possible.
 - Windows dev environment.
 - Health check is `/api/health`, not `/health`.
-- Sandbox containers used for diff generation/validation are ephemeral —
+- Sandbox containers used for diff generation/validation are ephemeral;
   nothing persists between chat sessions unless committed and pushed.
+- Git worktree currently has an unrelated formatting-only local change in
+  `packages/client/src/pages/analyse/ClientsReferrersTab.tsx`.

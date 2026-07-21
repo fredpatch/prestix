@@ -224,3 +224,18 @@
 - Slightly relaxed shared `Button` density back upward and tightened the Login card width/input alignment after the UI hardening pass.
 - Consolidated TypeScript deprecation handling back into `tsconfig.base.json` with the repo-compatible `ignoreDeprecations: "5.0"` value; the first validation run caught the attempted `6.0` bump as invalid for the installed TS version.
 - Validation: `npm run typecheck` passes; client build passes after elevated rerun for the known Vite/esbuild Windows `spawn EPERM`, with the existing chunk-size warning.
+
+## Sprint 11f UI and Reporting Polish (2026-07-21)
+
+- Reworked major operational pages after Sprint 11e: Party, Users, Login, Commission edit requests, Commissions, Creances, Stock, Dashboard, Settings, and mobile layout ergonomics.
+- Added KPI cards, grid/table switching, filters, quick-view/detail modals, and mobile grid defaults across list-heavy admin pages.
+- Reworked Dashboard with trend panels for CA/gain, services, commission types, recent sales, top services, top parties/referrers, top employees, and section toggles.
+- Reworked Settings with human-readable option names, clearer descriptions, criticality color treatment, grid layout, and removed the duplicate embedded audit-log entry point now that `/audit-log` exists.
+- Reworked Proformas and Invoices: list KPIs, filters, pagination, grid views, latest document scan, quick-view modals, and mobile-friendly defaults.
+- Added shared document workspace components for invoice/proforma detail pages: KPI cards, status badges, party summary, line cards, empty states, preview toggle, and paper-style preview.
+- Reworked Proforma and Invoice detail pages into split document workspaces with operational controls and live paper previews.
+- Aligned Dashboard quick PDF export with the upgraded dashboard by adding backend-rendered inline SVG charts for CA/gain, service trend, commission-type trend, and recent sales.
+- Extended Excel reporting export with dashboard-aligned graph sheets (`Graph CA-Gain`, `Graph Services`, `Graph Commissions`, `Ventes recentes`) using numeric data and safe static `- vue` text-bar columns.
+- Fixed Excel graph export after real Excel repair testing showed ExcelJS `dataBar` conditional formatting corrupted/stripped the graph layer.
+- Fixed `getRecentSales()` party-name resolution for payment rows by resolving related invoice party IDs.
+- Validation: `npm run typecheck` passes; `npm run build -w packages/server` passes; client builds passed during document UI work after elevated reruns for the known Vite/esbuild Windows `spawn EPERM`, with the existing chunk-size warning.

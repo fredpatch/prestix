@@ -23,3 +23,18 @@ Run scripts from within the target package (e.g. packages/server), not the monor
 ### Compose commands fail when Docker Desktop engine is down
 
 If `docker compose up` reports named pipe `//./pipe/dockerDesktopLinuxEngine` unavailable, the daemon is not running. Start Docker Desktop/engine first; then retry compose and health checks.
+
+## [Category: Reporting Exports]
+
+### ExcelJS conditional-formatting data bars can corrupt generated reports
+
+During the Dashboard report alignment pass, Excel graph sheets first used
+`worksheet.addConditionalFormatting({ type: "dataBar" })`. A real generated
+workbook opened with an Excel repair prompt, and the repair stripped the graph
+layer. Do not reintroduce ExcelJS `dataBar` conditional formatting for these
+exports.
+
+Current safe pattern: keep real numeric trend columns and add ordinary text
+bar companion columns such as `CA brut - vue`. Excel treats those as normal
+cell values, so the workbook opens without repair while still giving users a
+quick visual scan.

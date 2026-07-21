@@ -312,6 +312,34 @@
 
 **Still pending:** runtime smoke in a running app with admin and super_admin users.
 
+## Sprint 11f - UI & Reporting Polish ✅ CLOSED IN CODE (2026-07-21) | scope TBD
+
+> A broad post-hardening polish slice. This was not a new business module;
+> it brought the high-traffic operational screens up to the new UI standard
+> and aligned Dashboard exports with the upgraded Dashboard itself. Code is
+> closed and pushed; runtime browser/report smoke remains the next confidence
+> step.
+
+- [x] Party list/detail rework: KPI cards, table/grid switching, aggregate scan data, and richer detail-page layout.
+- [x] Users list/detail rework: KPI cards, grid view, employee detail links, enhanced employee detail interpretation, and party-style personal-information display.
+- [x] Login page rework adapted to the travel-agency brand.
+- [x] Commission edit requests page rework: KPIs, filters, table/grid modes, old request history, and request-detail modal.
+- [x] Commissions page rework: KPIs, grid view, filters, and detail modal.
+- [x] Creances page rework: KPIs, grid view, filters, and detail modal.
+- [x] Stock page rework: KPI cards, movement tab, movement detail modal, article detail modal, stock value, and agency gain index based on supplier price.
+- [x] Dashboard rework: KPI row, CA/gain trend, service trend, commission-type trend, recent sales, top services, top parties/referrers, top employees, and section visibility toggles.
+- [x] Settings rework: readable names/descriptions for settings, criticality color treatment, grid layout, mobile tab improvements, and duplicate audit-log surface removed from Settings.
+- [x] Mobile ergonomics pass: overlay sidebar, scrollable tabs, mobile grid defaults for list pages, safer table overflow, and dashboard mobile layout fixes.
+- [x] Proformas page rework: KPIs, filters, table detail columns, pagination, grid view, latest proforma, mobile grid default, and quick-view modal.
+- [x] Invoices page rework: KPIs, status/payment filters, table detail columns, pagination, grid view, latest invoice, mobile grid default, overdue emphasis, and quick-view modal.
+- [x] Proforma/Invoice detail rework: shared document workspace components, KPI cards, party summary, line cards, preview toggle, empty states, and paper-style preview.
+- [x] Dashboard PDF export alignment: inline SVG charts for CA/gain, service trend, commission-type trend, and recent sales.
+- [x] Dashboard Excel export alignment: graph-oriented worksheets for CA/gain, services, commission types, and recent sales using Excel-safe numeric + static `- vue` text-bar columns.
+- [x] Fixed Excel export corruption caused by ExcelJS `dataBar` conditional formatting; documented as a reporting-export gotcha.
+- [x] Fixed `getRecentSales()` payment rows so party names resolve through related invoices.
+
+**Still pending:** manual runtime smoke for mobile UI, document preview toggles, quick-view modals, dashboard toggles, and fresh PDF/Excel export open-test in real Excel/browser.
+
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 
 - [ ] End-to-end test pass — CRITICAL

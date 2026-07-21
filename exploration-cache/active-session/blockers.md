@@ -4,3 +4,7 @@
   oracle, not a production dataset to migrate.
 - Still open as business/product clarification, not a migration blocker:
   company-type party fields in real usage.
+- Product validation needed: freshly generated PDF/Excel reports should be
+  opened manually after the export repair. ExcelJS conditional-formatting
+  data bars caused Excel to repair the workbook and strip the visual layer, so
+  report graph sheets now use safe static text-bar columns instead.
