@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-21",
-  "currentSprint": "Sprint 11c UI Hardening — closed (11c-1/11c-2/11c-3); next up: 11d Notifications or 11e Journal d'audit",
+  "currentSprint": "Sprint 11e Journal d'audit — closed in code; next up: Sprint 11d Notifications",
   "files": [
     "index.md",
     "quick-ref.md",

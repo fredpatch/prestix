@@ -7,7 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { DataTable } from "@/components/ui/data-table";
@@ -25,7 +31,11 @@ import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 import { usersApi } from "@/lib/users.api";
 import type { AuditLogRow } from "@/lib/audit-log.api";
-import { useAuditLog, useAuditLogActions, useAuditLogEntityTypes } from "@/hooks/queries/useAuditLog";
+import {
+  useAuditLog,
+  useAuditLogActions,
+  useAuditLogEntityTypes,
+} from "@/hooks/queries/useAuditLog";
 import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { useAuth } from "@/App";
@@ -179,7 +189,9 @@ function CreditConversionTool() {
     setResult(null);
     try {
       const res = await savingsApi.triggerConversion();
-      setResult(`${res.data.converted} converti(s), ${res.data.heldForReview} en attente de révision.`);
+      setResult(
+        `${res.data.converted} converti(s), ${res.data.heldForReview} en attente de révision.`,
+      );
     } catch (err: unknown) {
       setResult(
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -201,8 +213,8 @@ function CreditConversionTool() {
             Conversion crédit expiré → épargne
           </p>
           <p className="text-[10.5px] text-neutral-500">
-            Déclenche manuellement la conversion des lots de crédit dont la fenêtre de décision
-            est expirée (normalement automatique, une fois par jour).
+            Déclenche manuellement la conversion des lots de crédit dont la fenêtre de décision est
+            expirée (normalement automatique, une fois par jour).
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={handleTrigger} disabled={running}>
@@ -372,7 +384,7 @@ function CatalogTab() {
 // (packages/server/src/modules/audit-log), stricter than reporting's
 // agent+ read, since this exposes every action by every user unfiltered.
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 function humanizeAction(action: string): string {
   const lower = action.replace(/_/g, " ").toLowerCase();

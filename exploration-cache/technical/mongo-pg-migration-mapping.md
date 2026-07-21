@@ -50,14 +50,14 @@ migration script around this from the start — not an afterthought.
   `ticketDetails` rows (one per passenger), per M8 decision. Real transformation logic
   the migration script must implement, not a straight copy.
 
-## Open decisions before Sprint 11 (Lucrèce/owner)
+## Historical open decisions before Sprint 11 (now moot for migration)
 
 1. Company-type parties — do they exist in real data? (schema gap if yes)
 2. Credit-lot decision-window backfill rule for pre-existing legacy credit
 3. Épargne inscription-fee/status backfill rule for pre-existing legacy savings
 
-## Still blocking a real dry-run
+## Final status
 
-- Beta prod data access (see TASKS.md "Waiting On") — needed for volume/pattern
-  validation of the épargne cancelled-status question above, and general sanity-check
-  of the ID-remapping approach at scale.
+- Sprint 11 Mongo->PG migration was cancelled on 2026-07-19 after confirming
+  the legacy tripwise-monorepo was a dev/test reference, not mature production
+  data. This mapping remains useful as historical/contextual reference only.

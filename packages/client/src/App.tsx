@@ -24,6 +24,7 @@ import CommissionEditQueuePage from "./pages/CommissionEditQueuePage";
 import DashboardPage from "./pages/DashboardPage";
 import EmployeeActivityDetailPage from "./pages/EmployeeActivityDetailPage";
 import AnalysePage from "./pages/AnalysePage";
+import AuditLogPage from "./pages/AuditLogPage";
 
 interface AuthUser {
   id: number;
@@ -172,6 +173,14 @@ export default function App() {
               element={
                 <AdminRoute>
                   <SettingsPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/audit-log"
+              element={
+                <AdminRoute>
+                  <AuditLogPage />
                 </AdminRoute>
               }
             />

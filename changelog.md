@@ -214,3 +214,13 @@
 - Retired `pages/dashboard/useDashboardData.ts` — its 5 fetches were already covered by hooks created for the `analyse` tabs (shared `useCaComposition`, `useDashboardSummary`, `useClientKpis`, `useApporteurKpis`, `useEmployeeKpis`); added one new `useRecentActivity` hook and moved `from`/`to`/`basis` state directly into `DashboardPage`.
 - Corrected a stale memory/handoff claim of "11 pages migrated to React Query" — audited against the actual repo and found only 8 were, with 3 dialogs described as "migrated in sandbox" never actually committed (sandbox containers don't persist between sessions). All redone and verified this pass.
 - Validation: `git apply --check` + `npm install` + `npx tsc --noEmit` clean for every diff in this migration, applied incrementally across 16 batches.
+
+## Sprint 11e Journal d'audit (2026-07-21)
+
+- Added a dedicated admin+ `/audit-log` page and sidebar navigation entry, instead of exposing the audit log only inside super_admin-only Paramètres.
+- Added `AuditLogPage` with filters for user, action, entity type, and date range; paginated `DataTable` display; loading/refetch indicator; and metadata inspection via popover.
+- Renamed the audit-log query hook from the typoed `useAditLog.ts` to `useAuditLog.ts` and updated imports.
+- Kept Settings' embedded audit-log tab smaller (`PAGE_SIZE = 10`) while the standalone page uses a roomier dedicated view (`PAGE_SIZE = 12`).
+- Slightly relaxed shared `Button` density back upward and tightened the Login card width/input alignment after the UI hardening pass.
+- Consolidated TypeScript deprecation handling back into `tsconfig.base.json` with the repo-compatible `ignoreDeprecations: "5.0"` value; the first validation run caught the attempted `6.0` bump as invalid for the installed TS version.
+- Validation: `npm run typecheck` passes; client build passes after elevated rerun for the known Vite/esbuild Windows `spawn EPERM`, with the existing chunk-size warning.

@@ -20,6 +20,7 @@ import {
   Package,
   Percent,
   ClipboardCheck,
+  History,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: ["admin", "super_admin"],
   },
   { to: "/users", label: "Utilisateurs", icon: Users, roles: ["admin", "super_admin"] },
+  { to: "/audit-log", label: "Journal d'audit", icon: History, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
 ];
 

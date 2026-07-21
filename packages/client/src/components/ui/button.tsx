@@ -7,16 +7,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-brand-gold-dark text-white hover:bg-brand-gold-dark/90",
+        default: "bg-brand-gold-dark text-white hover:bg-brand-gold-dark/90 ",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         outline: "border border-border bg-background hover:bg-accent",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         destructive: "bg-red-50 text-red-700 hover:bg-red-100",
       },
       size: {
-        default: "h-9.5 px-3",
-        sm: "h-8 px-3 text-xs",
-        icon: "h-8 w-8",
+        default: "h-10 px-3",
+        sm: "h-9.5 px-3 text-xs",
+        icon: "h-9.5 w-9.5",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

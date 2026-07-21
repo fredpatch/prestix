@@ -297,7 +297,7 @@
 
 - [ ] To be planned
 
-## Sprint 11e – Journal d'audit | scope TBD
+## Sprint 11e – Journal d'audit ✅ CLOSED IN CODE (2026-07-21) | scope TBD
 
 > Already logged as a backlog item during Sprint 10. Full filterable audit
 > log page (dedicated page or Paramètres tab), filters by user/action/date/
@@ -305,7 +305,12 @@
 > `logAudit()` — no new tracking needed, purely a display layer. Likely
 > benefits from the TanStack Table work in 11c-3 landing first.
 
-- [ ] To be planned
+- [x] Dedicated admin+ `/audit-log` route/nav entry, separate from super_admin-only Paramètres
+- [x] Filterable list over existing `/api/audit-log`: user, action, entity type, from/to dates
+- [x] Paginated `DataTable` display with metadata popover and refetch indicator
+- [x] React Query hook corrected/standardized as `useAuditLog.ts`
+
+**Still pending:** runtime smoke in a running app with admin and super_admin users.
 
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 
@@ -322,10 +327,7 @@
 
 ## Waiting On
 
-- [ ] Access to legacy Beta prod data for migration — owner/hosting
 - [ ] Company-type party fields decision — do real clients include COMPANY-type parties? (Sprint 2/M3)
-- [ ] Credit-lot decision-window backfill rule for pre-existing legacy credit — Lucrèce (Sprint 11)
-- [ ] Épargne inscription-fee/status backfill rule for legacy savings — Lucrèce (Sprint 11)
 
 ## Done
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { useId, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -126,7 +125,7 @@ export default function LoginPage() {
       <GridPattern />
 
       <motion.div
-        className="w-full max-w-[420px] relative z-10"
+        className="w-full max-w-[370px] relative z-10"
         initial="hidden"
         animate="visible"
         variants={fadeUp}
@@ -224,7 +223,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-neutral-400 text-[10px] mt-4 tracking-wide uppercase">
-          Le Prestigieux — Usage interne uniquement
+          Le Prestigieux - Usage interne uniquement
         </p>
       </motion.div>
     </div>
@@ -275,7 +274,7 @@ function LoginStep({
             autoComplete="username"
             spellCheck={false}
             aria-invalid={!!errors.email}
-            className={errorCls(!!errors.email)}
+            className={cn(errorCls(!!errors.email), "text-center")}
           />
         </FormField>
 
@@ -358,6 +357,7 @@ function LoginStep({
                     id={passwordId}
                     {...loginForm.register("password")}
                     type={showPassword ? "text" : "password"}
+                    placeholder="******"
                     autoComplete="current-password"
                     aria-invalid={
                       "password" in errors && !!(errors as { password?: unknown }).password
@@ -366,7 +366,7 @@ function LoginStep({
                       errorCls(
                         "password" in errors && !!(errors as { password?: unknown }).password,
                       ),
-                      "pr-10",
+                      "pr-10 text-center",
                     )}
                   />
                   <EyeToggle show={showPassword} onToggle={onTogglePassword} />

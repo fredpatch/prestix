@@ -22,7 +22,11 @@ const METHOD_LABELS: Record<string, string> = {
   epargne: "Épargne voyage",
 };
 
-const STOCK_TYPE_LABELS: Record<string, string> = { IN: "Entrée", OUT: "Sortie", ADJUST: "Ajustement" };
+const STOCK_TYPE_LABELS: Record<string, string> = {
+  IN: "Entrée",
+  OUT: "Sortie",
+  ADJUST: "Ajustement",
+};
 const SAVINGS_NATURE_LABELS: Record<string, string> = { deposit: "Dépôt", withdraw: "Retrait" };
 
 type InvoiceRow = EmployeeActivityDetail["invoices"][number];
@@ -32,26 +36,42 @@ type StockMovementRow = EmployeeActivityDetail["stockMovements"][number];
 type SavingsRow = EmployeeActivityDetail["savingsTransactions"][number];
 
 const invoiceColumns: ColumnDef<InvoiceRow, any>[] = [
-  { id: "invoice", header: "Facture", cell: ({ row }) => row.original.number ?? `#${row.original.id}` },
+  {
+    id: "invoice",
+    header: "Facture",
+    cell: ({ row }) => row.original.number ?? `#${row.original.id}`,
+  },
   { accessorKey: "partyName", header: "Client" },
   { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
   {
     id: "amount",
     header: "Montant (XAF)",
     meta: { align: "right" },
-    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+    cell: ({ row }) => (
+      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+    ),
   },
 ];
 
 const paymentColumns: ColumnDef<PaymentRow, any>[] = [
-  { id: "invoice", header: "Facture", cell: ({ row }) => row.original.invoiceNumber ?? `#${row.original.invoiceId}` },
-  { id: "method", header: "Méthode", cell: ({ row }) => METHOD_LABELS[row.original.method] ?? row.original.method },
+  {
+    id: "invoice",
+    header: "Facture",
+    cell: ({ row }) => row.original.invoiceNumber ?? `#${row.original.invoiceId}`,
+  },
+  {
+    id: "method",
+    header: "Méthode",
+    cell: ({ row }) => METHOD_LABELS[row.original.method] ?? row.original.method,
+  },
   { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
   {
     id: "amount",
     header: "Montant (XAF)",
     meta: { align: "right" },
-    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+    cell: ({ row }) => (
+      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+    ),
   },
 ];
 
@@ -62,25 +82,42 @@ const commissionColumns: ColumnDef<CommissionRow, any>[] = [
     id: "amount",
     header: "Montant (XAF)",
     meta: { align: "right" },
-    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+    cell: ({ row }) => (
+      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+    ),
   },
 ];
 
 const stockColumns: ColumnDef<StockMovementRow, any>[] = [
   { accessorKey: "articleName", header: "Article" },
-  { id: "type", header: "Type", cell: ({ row }) => STOCK_TYPE_LABELS[row.original.type] ?? row.original.type },
+  {
+    id: "type",
+    header: "Type",
+    cell: ({ row }) => STOCK_TYPE_LABELS[row.original.type] ?? row.original.type,
+  },
   { accessorKey: "quantity", header: "Quantité", meta: { align: "right" } },
-  { id: "date", header: "Date", meta: { align: "right" }, cell: ({ row }) => fmtDate(row.original.date) },
+  {
+    id: "date",
+    header: "Date",
+    meta: { align: "right" },
+    cell: ({ row }) => fmtDate(row.original.date),
+  },
 ];
 
 const savingsColumns: ColumnDef<SavingsRow, any>[] = [
-  { id: "nature", header: "Nature", cell: ({ row }) => SAVINGS_NATURE_LABELS[row.original.nature] ?? row.original.nature },
+  {
+    id: "nature",
+    header: "Nature",
+    cell: ({ row }) => SAVINGS_NATURE_LABELS[row.original.nature] ?? row.original.nature,
+  },
   { id: "date", header: "Date", cell: ({ row }) => fmtDate(row.original.date) },
   {
     id: "amount",
     header: "Montant (XAF)",
     meta: { align: "right" },
-    cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>,
+    cell: ({ row }) => (
+      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+    ),
   },
 ];
 
@@ -104,7 +141,7 @@ export default function EmployeeActivityDetailPage() {
   return (
     <div>
       <p className="text-neutral-500 text-sm mb-6">
-        Détail des transactions pour la période sélectionnée — utile pour les décisions de prime
+        Détail des transactions pour la période sélectionnée - utile pour les décisions de prime
         d'encouragement.
       </p>
 
