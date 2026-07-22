@@ -77,6 +77,7 @@ async function notifyUpcomingInstallments(): Promise<number> {
       sourceId: String(installment.id),
       actionUrl: `/invoices/${invoice.id}`,
       dedupeKey: `installment-due-soon:${installment.id}:${installment.expectedDate}`,
+      eventCode: "installment-due-soon",
       metadata,
     });
 
@@ -90,6 +91,7 @@ async function notifyUpcomingInstallments(): Promise<number> {
       sourceId: String(installment.id),
       actionUrl: `/invoices/${invoice.id}`,
       dedupeKey: `installment-due-soon:${installment.id}:${installment.expectedDate}`,
+      eventCode: "installment-due-soon",
       metadata,
     });
 
@@ -237,6 +239,7 @@ export function registerJobs(): void {
             sourceId: String(proforma.id),
             actionUrl: `/proformas/${proforma.id}`,
             dedupeKey: `proforma-expired:${proforma.id}`,
+            eventCode: "proforma-expired",
             metadata: { number: proforma.number, partyId: proforma.partyId },
           });
           await broadcastNotification({
@@ -249,6 +252,7 @@ export function registerJobs(): void {
             sourceId: String(proforma.id),
             actionUrl: `/proformas/${proforma.id}`,
             dedupeKey: `proforma-expired:${proforma.id}`,
+            eventCode: "proforma-expired",
             metadata: { number: proforma.number, partyId: proforma.partyId },
           });
         }
@@ -277,6 +281,7 @@ export function registerJobs(): void {
           sourceId: new Date().toISOString().slice(0, 10),
           actionUrl: "/creances",
           dedupeKey: `penalties-accrued:${new Date().toISOString().slice(0, 10)}`,
+          eventCode: "penalties-accrued",
           metadata: { count },
         });
       }
@@ -305,6 +310,7 @@ export function registerJobs(): void {
             sourceId: new Date().toISOString().slice(0, 10),
             actionUrl: "/parties",
             dedupeKey: `credit-auto-converted:${new Date().toISOString().slice(0, 10)}`,
+            eventCode: "credit-auto-converted",
             metadata: { converted },
           });
         }
@@ -319,6 +325,7 @@ export function registerJobs(): void {
             sourceId: new Date().toISOString().slice(0, 10),
             actionUrl: "/parties",
             dedupeKey: `credit-held-review:${new Date().toISOString().slice(0, 10)}`,
+            eventCode: "credit-held-review",
             metadata: { heldForReview },
           });
         }

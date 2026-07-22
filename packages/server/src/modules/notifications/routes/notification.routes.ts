@@ -15,6 +15,8 @@ router.get("/mail/outbox/template-keys", requireAdmin, notificationController.ma
 router.get("/mail/outbox/:id", requireAdmin, notificationController.mailOutboxDetail);
 router.post("/mail/outbox/:id/retry", requireAdmin, notificationController.mailOutboxRetry);
 router.post("/mail/test", requireAdmin, notificationController.sendTestMail);
+router.get("/preferences", requireAdmin, notificationController.preferencesList);
+router.patch("/preferences/:eventCode", requireAdmin, notificationController.preferencesUpdate);
 router.patch("/read-all", notificationController.markAllRead);
 router.patch("/:id/read", notificationController.markRead);
 router.delete("/:id", notificationController.dismiss);

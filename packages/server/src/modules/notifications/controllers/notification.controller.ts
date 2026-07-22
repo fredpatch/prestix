@@ -10,6 +10,10 @@ import {
   sendTrackedMail,
 } from "../services/mail-outbox.service.js";
 import type { MailOutboxStatus } from "../services/mail-outbox.types.js";
+import {
+  listNotificationPreferences,
+  updateNotificationPreference,
+} from "../services/notification-preferences.service.js";
 
 function requireUserId(req: Request): number {
   if (!req.user?.userId) throw new Error("AUTH_REQUIRED");
@@ -188,6 +192,32 @@ export async function mailOutboxRetry(req: Request, res: Response): Promise<void
       return;
     }
     console.error("[notifications:mail-outbox-retry]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function preferencesList(_req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await listNotificationPreferences());
+  } catch (error) {
+    console.error("[notifications:preferences-list]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function preferencesUpdate(req: Request, res: Response): Promise<void> {
+  try {
+    const { eventCode } = req.params;
+    const { inAppEnabled, emailEnabled } = req.body;
+    const result = await updateNotificationPreference(eventCode, { inAppEnabled, emailEnabled });
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "PREFERENCE_UPDATE_FAILED";
+    if (message === "NOTIFICATION_PREFERENCE_NOT_FOUND") {
+      res.status(404).json({ message });
+      return;
+    }
+    console.error("[notifications:preferences-update]", error);
     res.status(500).json({ message: "Erreur interne." });
   }
 }
