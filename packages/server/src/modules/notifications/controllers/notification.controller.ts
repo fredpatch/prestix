@@ -2,7 +2,14 @@ import { Request, Response } from "express";
 import * as notificationService from "../services/notification.service.js";
 import type { NotificationCategory, NotificationSeverity } from "../services/notification.types.js";
 import { getMailConfigStatus, verifyMailTransport } from "../../../utils/mailer.js";
-import { listMailOutbox, sendTrackedMail } from "../services/mail-outbox.service.js";
+import {
+  getMailOutboxById,
+  listDistinctTemplateKeys,
+  listMailOutbox,
+  retryMailOutboxItem,
+  sendTrackedMail,
+} from "../services/mail-outbox.service.js";
+import type { MailOutboxStatus } from "../services/mail-outbox.types.js";
 
 function requireUserId(req: Request): number {
   if (!req.user?.userId) throw new Error("AUTH_REQUIRED");
@@ -120,10 +127,67 @@ export async function sendTestMail(req: Request, res: Response): Promise<void> {
 
 export async function mailOutbox(req: Request, res: Response): Promise<void> {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-    res.json(await listMailOutbox(limit));
+    const { status, templateKey, sourceType, recipient, from, to, page, pageSize } = req.query;
+    const result = await listMailOutbox({
+      status: status as MailOutboxStatus | undefined,
+      templateKey: templateKey as string | undefined,
+      sourceType: sourceType as string | undefined,
+      recipient: recipient as string | undefined,
+      from: from as string | undefined,
+      to: to as string | undefined,
+      page: page ? parseInt(page as string) : undefined,
+      pageSize: pageSize ? parseInt(pageSize as string) : undefined,
+    });
+    res.json(result);
   } catch (error) {
     console.error("[notifications:mail-outbox]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function mailOutboxDetail(req: Request, res: Response): Promise<void> {
+  try {
+    const id = parseInt(req.params.id);
+    const row = await getMailOutboxById(id);
+    if (!row) {
+      res.status(404).json({ message: "MAIL_OUTBOX_ITEM_NOT_FOUND" });
+      return;
+    }
+    res.json(row);
+  } catch (error) {
+    console.error("[notifications:mail-outbox-detail]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function mailOutboxTemplateKeys(_req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await listDistinctTemplateKeys());
+  } catch (error) {
+    console.error("[notifications:mail-outbox-template-keys]", error);
+    res.status(500).json({ message: "Erreur interne." });
+  }
+}
+
+export async function mailOutboxRetry(req: Request, res: Response): Promise<void> {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await retryMailOutboxItem(id, requireUserId(req));
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "MAIL_OUTBOX_RETRY_FAILED";
+    const knownErrors = [
+      "MAIL_OUTBOX_ITEM_NOT_FOUND",
+      "MAIL_OUTBOX_ITEM_NOT_FAILED",
+      "MAIL_OUTBOX_ITEM_NOT_RETRYABLE",
+      "RECIPIENT_EMAIL_REQUIRED",
+    ];
+    if (knownErrors.includes(message)) {
+      const status = message === "MAIL_OUTBOX_ITEM_NOT_FOUND" ? 404 : 400;
+      res.status(status).json({ message });
+      return;
+    }
+    console.error("[notifications:mail-outbox-retry]", error);
     res.status(500).json({ message: "Erreur interne." });
   }
 }

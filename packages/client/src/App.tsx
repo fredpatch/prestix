@@ -25,6 +25,7 @@ import DashboardPage from "./pages/DashboardPage";
 import EmployeeActivityDetailPage from "./pages/EmployeeActivityDetailPage";
 import AnalysePage from "./pages/AnalysePage";
 import AuditLogPage from "./pages/AuditLogPage";
+import MailOutboxPage from "./pages/MailOutboxPage";
 import NotificationsPage from "./pages/NotificationsPage";
 
 interface AuthUser {
@@ -183,6 +184,14 @@ export default function App() {
               element={
                 <AdminRoute>
                   <AuditLogPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/mail-outbox"
+              element={
+                <AdminRoute>
+                  <MailOutboxPage />
                 </AdminRoute>
               }
             />

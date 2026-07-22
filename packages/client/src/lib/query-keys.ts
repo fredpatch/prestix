@@ -81,4 +81,6 @@ export const queryKeys = {
   notifications: (filters?: object) => ["notifications", filters ?? {}] as const,
   notificationUnreadCount: () => ["notifications", "unread-count"] as const,
   mailOutbox: () => ["notifications", "mail-outbox"] as const,
+  mailOutboxList: (filters?: object) => ["notifications", "mail-outbox", "list", filters ?? {}] as const,
+  mailOutboxTemplateKeys: () => ["notifications", "mail-outbox", "template-keys"] as const,
 } as const;

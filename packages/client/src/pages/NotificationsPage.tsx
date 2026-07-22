@@ -22,7 +22,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -521,10 +521,18 @@ function MailOutboxPanel() {
           </p>
           <h2 className="mt-1 text-sm font-semibold text-neutral-950">Historique d'envoi</h2>
         </div>
-        <Button type="button" variant="secondary" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          {isFetching ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-          Actualiser
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/mail-outbox"
+            className="text-[11px] font-medium text-blue-600 hover:underline"
+          >
+            Voir tout
+          </Link>
+          <Button type="button" variant="secondary" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       <div className="divide-y divide-neutral-100">

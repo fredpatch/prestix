@@ -85,6 +85,33 @@ export interface MailOutboxItem {
   updatedAt: string;
 }
 
+export interface MailOutboxFilters {
+  status?: "pending" | "sent" | "failed";
+  templateKey?: string;
+  sourceType?: string;
+  recipient?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MailOutboxListResponse {
+  data: MailOutboxItem[];
+  total: number;
+}
+
+// Same shape as invoice.api.ts's DocumentEmailResult — retry re-dispatches
+// into the same sendTrackedMail path, so the result shape is identical.
+export interface MailOutboxRetryResult {
+  success: boolean;
+  outbox: MailOutboxItem;
+  accepted: string[];
+  rejected: string[];
+  messageId?: string;
+  errorMessage?: string;
+}
+
 export const notificationApi = {
   list: (filters: NotificationFilters = {}) =>
     api.get<NotificationListResponse>("/notifications", { params: filters }),
@@ -94,6 +121,12 @@ export const notificationApi = {
   dismiss: (id: number) => api.delete<NotificationItem>(`/notifications/${id}`),
   mailStatus: () => api.get<MailConfigStatus>("/notifications/mail/status"),
   sendTestMail: (to: string) => api.post<MailTestResult>("/notifications/mail/test", { to }),
-  mailOutbox: (limit = 20) =>
-    api.get<MailOutboxItem[]>("/notifications/mail/outbox", { params: { limit } }),
+  mailOutbox: (filters: MailOutboxFilters = {}) =>
+    api.get<MailOutboxListResponse>("/notifications/mail/outbox", { params: filters }),
+  mailOutboxDetail: (id: number) =>
+    api.get<MailOutboxItem>(`/notifications/mail/outbox/${id}`),
+  mailOutboxTemplateKeys: () =>
+    api.get<string[]>("/notifications/mail/outbox/template-keys"),
+  mailOutboxRetry: (id: number) =>
+    api.post<MailOutboxRetryResult>(`/notifications/mail/outbox/${id}/retry`, {}, { timeout: 60_000 }),
 };
