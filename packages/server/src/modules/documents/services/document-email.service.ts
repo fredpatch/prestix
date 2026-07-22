@@ -63,7 +63,10 @@ async function auditDocumentEmail(kind: DocumentKind, id: number, userId: number
 async function listOwnerEmails(): Promise<string[]> {
   const ccEnabled = await getBoolValue("mail_owner_reminder_cc_enabled", true);
   if (!ccEnabled) return [];
-  const rows = await db.select({ email: users.email, role: users.role }).from(users).where(eq(users.active, true));
+  const rows = await db
+    .select({ email: users.email, role: users.role })
+    .from(users)
+    .where(eq(users.active, true));
   const admins = rows.filter((r) => roleLevel[r.role] >= roleLevel.admin);
   return [...new Set(admins.map((r) => r.email.trim()).filter(Boolean))];
 }
@@ -82,10 +85,28 @@ export async function sendInvoiceEmail(
   const rows: InfoRow[] = [
     { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
     { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
-    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)) },
-    { icon: "calendar-due-navy", label: "Échéance", value: escapeHtml(fmtDateLong(invoice.dueDate)), emphasis: "gold" },
-    { icon: "coin-navy", label: "Montant total", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
-    { icon: "info-circle-navy", label: "Statut", value: statusPill(invoice.paymentStatus === "paid" ? "Payée" : "À payer") },
+    {
+      icon: "calendar-event-navy",
+      label: "Date d'émission",
+      value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)),
+    },
+    {
+      icon: "calendar-due-navy",
+      label: "Échéance",
+      value: escapeHtml(fmtDateLong(invoice.dueDate)),
+      emphasis: "gold",
+    },
+    {
+      icon: "coin-navy",
+      label: "Montant total",
+      value: escapeHtml(money(invoice.totalAmount)),
+      emphasis: "gold",
+    },
+    {
+      icon: "info-circle-navy",
+      label: "Statut",
+      value: statusPill(invoice.paymentStatus === "paid" ? "Payée" : "À payer"),
+    },
   ];
 
   const html = emailShell({
@@ -93,10 +114,11 @@ export async function sendInvoiceEmail(
     heroIcon: "hero-receipt",
     bannerHeadline: "Votre facture est disponible",
     bodyGreetingName: buyer,
-    bodyIntro: "Nous vous remercions pour votre confiance. Veuillez trouver ci-joint votre facture, ainsi qu'un récapitulatif des informations essentielles ci-dessous.",
+    bodyIntro:
+      "Nous vous remercions pour votre confiance. Veuillez trouver ci-joint votre facture, ainsi qu'un récapitulatif des informations essentielles ci-dessous.",
     rows,
     attachmentLabel: "Facture PDF en pièce jointe",
-    ctaLabel: "Télécharger la facture",
+    // ctaLabel: "Télécharger la facture",
     closingHtml: "Merci de votre confiance.",
   });
 
@@ -139,8 +161,17 @@ export async function sendInvoicePaidEmail(
   const rows: InfoRow[] = [
     { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
     { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
-    { icon: "coin-navy", label: "Montant réglé", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
-    { icon: "calendar-event-navy", label: "Date de règlement", value: escapeHtml(fmtDateLong(new Date())) },
+    {
+      icon: "coin-navy",
+      label: "Montant réglé",
+      value: escapeHtml(money(invoice.totalAmount)),
+      emphasis: "gold",
+    },
+    {
+      icon: "calendar-event-navy",
+      label: "Date de règlement",
+      value: escapeHtml(fmtDateLong(new Date())),
+    },
     { icon: "info-circle-navy", label: "Statut", value: statusPill("Payée intégralement") },
   ];
 
@@ -149,7 +180,8 @@ export async function sendInvoicePaidEmail(
     heroIcon: "hero-circle-check",
     bannerHeadline: "Paiement reçu, merci !",
     bodyGreetingName: buyer,
-    bodyIntro: "Nous confirmons la réception de votre règlement. Cette facture est désormais soldée intégralement — aucune action supplémentaire n'est requise de votre part.",
+    bodyIntro:
+      "Nous confirmons la réception de votre règlement. Cette facture est désormais soldée intégralement — aucune action supplémentaire n'est requise de votre part.",
     rows,
     closingHtml: "Merci pour votre confiance renouvelée.",
   });
@@ -195,9 +227,23 @@ export async function sendInvoiceReminderEmail(
   const rows: InfoRow[] = [
     { icon: "file-invoice-navy", label: "Facture", value: escapeHtml(number), emphasis: "blue" },
     { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
-    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)) },
-    { icon: "calendar-due-navy", label: "Échéance dépassée", value: escapeHtml(daysLabel), emphasis: "red" },
-    { icon: "coin-navy", label: "Montant dû", value: escapeHtml(money(invoice.totalAmount)), emphasis: "red" },
+    {
+      icon: "calendar-event-navy",
+      label: "Date d'émission",
+      value: escapeHtml(fmtDateLong(invoice.issuedAt ?? invoice.createdAt)),
+    },
+    {
+      icon: "calendar-due-navy",
+      label: "Échéance dépassée",
+      value: escapeHtml(daysLabel),
+      emphasis: "red",
+    },
+    {
+      icon: "coin-navy",
+      label: "Montant dû",
+      value: escapeHtml(money(invoice.totalAmount)),
+      emphasis: "red",
+    },
     { icon: "info-circle-navy", label: "Statut", value: statusPill("En retard", "red") },
   ];
 
@@ -211,12 +257,14 @@ export async function sendInvoiceReminderEmail(
     heroIcon: "hero-alert-triangle",
     bannerHeadline: "Facture en retard de paiement",
     bodyGreetingName: buyer,
-    bodyIntro: "Notre système indique que le paiement de la facture ci-dessous n'a pas été reçu à la date d'échéance prévue. Merci de régulariser la situation dans les meilleurs délais.",
+    bodyIntro:
+      "Notre système indique que le paiement de la facture ci-dessous n'a pas été reçu à la date d'échéance prévue. Merci de régulariser la situation dans les meilleurs délais.",
     rows,
     calloutHtml: callout,
     attachmentLabel: "Facture PDF en pièce jointe",
-    ctaLabel: "Télécharger la facture",
-    closingHtml: "Une question ou un paiement déjà effectué&nbsp;? <a href=\"mailto:leprestigieuxv@gmail.com\" style=\"color:#1e5fbf;text-decoration:underline;\">Contactez l'agence</a>.",
+    // ctaLabel: "Télécharger la facture",
+    closingHtml:
+      'Une question ou un paiement déjà effectué&nbsp;? <a href="mailto:leprestigieuxv@gmail.com" style="color:#1e5fbf;text-decoration:underline;">Contactez l\'agence</a>.',
   });
 
   const pdf = await generateInvoicePdf(invoice.id, params.requestedByUserId);
@@ -238,7 +286,11 @@ export async function sendInvoiceReminderEmail(
     templateKey: "invoice_overdue_reminder",
     sourceType: "invoices",
     sourceId: String(invoice.id),
-    metadata: { ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger), daysOverdue: params.daysOverdue, audience: "client" },
+    metadata: {
+      ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger),
+      daysOverdue: params.daysOverdue,
+      audience: "client",
+    },
   });
 
   if (client.success) await auditDocumentEmail("invoice", invoice.id, params.requestedByUserId);
@@ -269,7 +321,11 @@ export async function sendInvoiceReminderEmail(
       templateKey: "invoice_overdue_reminder_owner",
       sourceType: "invoices",
       sourceId: String(invoice.id),
-      metadata: { ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger), daysOverdue: params.daysOverdue, audience: "owner" },
+      metadata: {
+        ...documentMetadata("invoice", invoice.id, invoice.number, params.trigger),
+        daysOverdue: params.daysOverdue,
+        audience: "owner",
+      },
     });
     owners.push(result);
   }
@@ -289,11 +345,30 @@ export async function sendProformaEmail(
   const pdf = await generateProformaPdf(proforma.id, params.requestedByUserId);
 
   const rows: InfoRow[] = [
-    { icon: "file-invoice-navy", label: "Proforma", value: escapeHtml(proforma.number), emphasis: "blue" },
+    {
+      icon: "file-invoice-navy",
+      label: "Proforma",
+      value: escapeHtml(proforma.number),
+      emphasis: "blue",
+    },
     { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
-    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(proforma.createdAt)) },
-    { icon: "calendar-due-navy", label: "Validité", value: escapeHtml(fmtDateLong(proforma.expiresAt)), emphasis: "gold" },
-    { icon: "coin-navy", label: "Montant total", value: escapeHtml(money(total)), emphasis: "gold" },
+    {
+      icon: "calendar-event-navy",
+      label: "Date d'émission",
+      value: escapeHtml(fmtDateLong(proforma.createdAt)),
+    },
+    {
+      icon: "calendar-due-navy",
+      label: "Validité",
+      value: escapeHtml(fmtDateLong(proforma.expiresAt)),
+      emphasis: "gold",
+    },
+    {
+      icon: "coin-navy",
+      label: "Montant total",
+      value: escapeHtml(money(total)),
+      emphasis: "gold",
+    },
     { icon: "info-circle-navy", label: "Statut", value: statusPill("À confirmer") },
   ];
 
@@ -302,10 +377,11 @@ export async function sendProformaEmail(
     heroIcon: "hero-receipt",
     bannerHeadline: "Votre proforma est disponible",
     bodyGreetingName: buyer,
-    bodyIntro: "Nous vous prions de trouver ci-joint la proforma préparée pour votre réservation. Elle reste valable jusqu'à la date de validité indiquée ci-dessous.",
+    bodyIntro:
+      "Nous vous prions de trouver ci-joint la proforma préparée pour votre réservation. Elle reste valable jusqu'à la date de validité indiquée ci-dessous.",
     rows,
     attachmentLabel: "Proforma PDF en pièce jointe",
-    ctaLabel: "Télécharger la proforma",
+    // ctaLabel: "Télécharger la proforma",
     closingHtml: "Merci de votre confiance.",
   });
 
@@ -345,11 +421,30 @@ export async function sendDeliveryNoteEmail(
   const pdf = await generateDeliveryNotePdf(invoice.id, params.requestedByUserId);
 
   const rows: InfoRow[] = [
-    { icon: "file-invoice-navy", label: "Bon de livraison", value: escapeHtml(number), emphasis: "blue" },
+    {
+      icon: "file-invoice-navy",
+      label: "Bon de livraison",
+      value: escapeHtml(number),
+      emphasis: "blue",
+    },
     { icon: "user-navy", label: "Client", value: escapeHtml(buyer) },
-    { icon: "file-invoice-navy", label: "Facture liée", value: escapeHtml(invoiceNumber), emphasis: "gold" },
-    { icon: "calendar-event-navy", label: "Date d'émission", value: escapeHtml(fmtDateLong(deliveryNote.issuedAt)) },
-    { icon: "coin-navy", label: "Montant facture", value: escapeHtml(money(invoice.totalAmount)), emphasis: "gold" },
+    {
+      icon: "file-invoice-navy",
+      label: "Facture liée",
+      value: escapeHtml(invoiceNumber),
+      emphasis: "gold",
+    },
+    {
+      icon: "calendar-event-navy",
+      label: "Date d'émission",
+      value: escapeHtml(fmtDateLong(deliveryNote.issuedAt)),
+    },
+    {
+      icon: "coin-navy",
+      label: "Montant facture",
+      value: escapeHtml(money(invoice.totalAmount)),
+      emphasis: "gold",
+    },
     { icon: "info-circle-navy", label: "Statut", value: statusPill("Document joint") },
   ];
 
@@ -358,10 +453,11 @@ export async function sendDeliveryNoteEmail(
     heroIcon: "hero-receipt",
     bannerHeadline: "Votre bon de livraison est disponible",
     bodyGreetingName: buyer,
-    bodyIntro: "Nous vous prions de trouver ci-joint le bon de livraison préparé pour votre réservation, rattaché à la facture référencée ci-dessous.",
+    bodyIntro:
+      "Nous vous prions de trouver ci-joint le bon de livraison préparé pour votre réservation, rattaché à la facture référencée ci-dessous.",
     rows,
     attachmentLabel: "Bon de livraison PDF en pièce jointe",
-    ctaLabel: "Télécharger le document",
+    // ctaLabel: "Télécharger le document",
     closingHtml: "Merci de votre confiance.",
   });
 
@@ -379,7 +475,12 @@ export async function sendDeliveryNoteEmail(
     templateKey: "delivery_note_pdf",
     sourceType: "delivery_notes",
     sourceId: String(deliveryNote.id),
-    metadata: documentMetadata("delivery_note", deliveryNote.id, deliveryNote.number, params.trigger),
+    metadata: documentMetadata(
+      "delivery_note",
+      deliveryNote.id,
+      deliveryNote.number,
+      params.trigger,
+    ),
   });
 
   if (result.success) {
