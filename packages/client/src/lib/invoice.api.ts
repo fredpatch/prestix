@@ -38,6 +38,15 @@ export interface DocumentEmailResult {
   errorMessage?: string;
 }
 
+// Reminder fans out to the client AND every admin/super_admin ("app owner"),
+// as two separate tracked sends — surfaced distinctly so the UI can report
+// "client notified" independently of "N owner(s) notified", since either
+// side can fail on its own (bad party email vs. SMTP hiccup on an owner cc).
+export interface ReminderResult {
+  client: DocumentEmailResult;
+  owners: DocumentEmailResult[];
+}
+
 export const invoiceApi = {
   list: (partyId?: number) => api.get<Invoice[]>("/invoices", { params: { partyId } }),
   getById: (id: number) => api.get<Invoice>(`/invoices/${id}`),
@@ -66,4 +75,6 @@ export const invoiceApi = {
     api.post<Invoice>(`/invoices/${invoiceId}/cancel`, { reason }),
   sendEmail: (invoiceId: number, to?: string) =>
     api.post<DocumentEmailResult>(`/invoices/${invoiceId}/email`, { to }, { timeout: 60_000 }),
+  sendReminder: (invoiceId: number, to?: string) =>
+    api.post<ReminderResult>(`/invoices/${invoiceId}/send-reminder`, { to }, { timeout: 60_000 }),
 };

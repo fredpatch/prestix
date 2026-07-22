@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import {
   Banknote,
+  BellRing,
   CalendarClock,
   Check,
   Download,
@@ -36,6 +37,7 @@ import { useRemoveInvoiceLineMutation } from "@/hooks/mutations/useRemoveInvoice
 import { useUpdateInvoiceLineMutation } from "@/hooks/mutations/useUpdateInvoiceLine";
 import { useCreateDeliveryNoteMutation } from "@/hooks/mutations/useCreateDeliveryNote";
 import { useSendDocumentEmailMutation } from "@/hooks/mutations/useSendDocumentEmail";
+import { useSendInvoiceReminderMutation } from "@/hooks/mutations/useSendInvoiceReminder";
 import { cn } from "@/lib/utils";
 import {
   DocumentKpiCard,
@@ -120,6 +122,7 @@ export default function InvoiceDetailPage() {
   const updateLineMutation = useUpdateInvoiceLineMutation(invoiceId);
   const createBLMutation = useCreateDeliveryNoteMutation();
   const sendEmailMutation = useSendDocumentEmailMutation();
+  const sendReminderMutation = useSendInvoiceReminderMutation();
 
   usePageHeader({
     title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
@@ -211,6 +214,11 @@ export default function InvoiceDetailPage() {
     sendEmailMutation.mutate({ kind: "invoice", id: invoice.id });
   }
 
+  function handleSendReminder() {
+    if (!invoice) return;
+    sendReminderMutation.mutate({ invoiceId: invoice.id });
+  }
+
   function handleSendDeliveryNoteEmail() {
     if (!invoice) return;
     sendEmailMutation.mutate({ kind: "delivery-note", invoiceId: invoice.id });
@@ -289,6 +297,27 @@ export default function InvoiceDetailPage() {
             >
               {sendEmailMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
               Email facture
+            </Button>
+          )}
+          {isOverdue && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+              onClick={handleSendReminder}
+              disabled={!hasRecipientEmail || sendReminderMutation.isPending}
+              title={
+                hasRecipientEmail
+                  ? "Envoyer un rappel de paiement au client (avec notification interne)"
+                  : "Email client manquant"
+              }
+            >
+              {sendReminderMutation.isPending ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <BellRing size={13} />
+              )}
+              Envoyer un rappel
             </Button>
           )}
           {canCancel && <CancelInvoiceDialog invoiceId={invoice.id} onCancelled={handleReload} />}
