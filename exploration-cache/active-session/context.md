@@ -21,8 +21,8 @@ Latest pushed commits:
 
 ## What's In Scope Today
 
-Apply the intended `docs/diffs/next-step.diff` documentation changes manually
-because the patch file is malformed, then update cache/changelog and commit.
+Update cache/changelog after the latest pushed application commits, then
+commit and push the documentation sync.
 
 ## State Of The Codebase
 
@@ -59,6 +59,17 @@ Document UI:
 - `InvoiceDetailPage` and `ProformaDetailPage` use a shared
   `DocumentWorkspace` module: KPI cards, status badges, party summary, line
   cards, paper preview, preview toggle, and empty states.
+- `/aide` provides bundled Markdown help content by module, and contextual
+  help panels can open from page headers using `helpTopic`.
+- Page headers can now expose short guide steps through `GuideTrigger`,
+  especially on dense operational pages and document create flows.
+
+Parties/documents:
+
+- Parties support `individual` vs `company`, with company `tradeName` and
+  optional `taxId`.
+- Document snapshots/PDFs resolve company buyers to trade name and print
+  RCCM/NIF when present.
 
 Dashboard/reporting:
 
@@ -85,4 +96,5 @@ Dashboard/reporting:
 - Health check is `/api/health`, not `/health`.
 - Sandbox containers used for diff generation/validation are ephemeral;
   nothing persists between chat sessions unless committed and pushed.
-- New migrations must be applied before notification/mail runtime smoke.
+- New migrations must be applied before notification/mail and company-party
+  runtime smoke.

@@ -1,26 +1,24 @@
 ## Task
 
-Apply the intended contents of `docs/diffs/next-step.diff`, update
-exploration-cache and `changelog.md`, then commit and push.
+Update exploration-cache and `changelog.md` after the latest pushed
+application updates, then commit and push the documentation sync.
 
 ## Current Project State
 
-The patch file was malformed, but its intended changes were doc-only and have
-been applied manually to `TASKS.md`.
+Latest pushed code adds:
 
-Verified code state:
-
-1. Overpayment-to-credit is now atomic: `createCreditLot()` accepts an optional
-   transaction handle and `recordPayment()` passes its own transaction.
-2. Auto-converted epargne deposits are labeled in party detail with a
-   `(converti)` badge when `agentId == null`.
-3. The remaining Sprint 9 hardening item is only the deeper independent
-   credit-conversion fee-pair verification.
+1. In-app Aide section with static Markdown topics and an `/aide` route.
+2. Contextual help/guide triggers across major pages using `PageHeaderProvider`
+   and a right-side `HelpPanel`.
+3. Company-party support via `partyType`, `tradeName`, and `taxId`, including
+   migration `20260723070400_sleepy_madame_web`.
+4. Company-aware document PDFs that print trade name and optional RCCM/NIF.
 
 ## Not Yet Done
 
-- Commit and push the documentation/cache/changelog sync.
 - Runtime smoke notification/mail migrations and document-email behavior.
+- Runtime smoke the Aide page, contextual guide triggers, and company-party
+  create/edit/document PDF flows.
 - Full reporting/analyse API-runtime smoke end-to-end.
 - Manual runtime smoke of the Sprint 11c/11e/11f UI flows still remains open.
 - Sprint 9 credit-conversion fee-pair deep check remains flagged.

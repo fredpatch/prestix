@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-23",
-  "currentSprint": "Notifications/mail delivery implemented; docs/cache sync for resolved hardening items",
+  "currentSprint": "Aide/help center and company-party support landed; runtime smoke pending",
   "files": [
     "index.md",
     "quick-ref.md",

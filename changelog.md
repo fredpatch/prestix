@@ -1,5 +1,13 @@
 # Changelog
 
+## Aide and Company Parties (2026-07-23)
+
+- Added bundled in-app Aide documentation at `/aide`, with module topics for operational workflows, administration, notifications/mail, audit log, and technical error codes.
+- Added contextual help/guide triggers through the shared page-header layer and a right-side `HelpPanel` sheet.
+- Added company-party support with `party_type`, `trade_name`, and `tax_id` fields plus migration `20260723070400_sleepy_madame_web`.
+- Updated party create/edit validation and UI so companies require a trade name and individual parties clear company-only fields.
+- Updated invoice/proforma/receipt PDF rendering so company buyers print trade name and optional RCCM/NIF.
+
 ## Documentation Sync (2026-07-23)
 
 - Manually applied the intended `docs/diffs/next-step.diff` changes after `git apply --check` reported a malformed patch.
