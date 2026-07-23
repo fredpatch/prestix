@@ -118,7 +118,16 @@ export default function CommissionEditQueuePage() {
   const [rejectNote, setRejectNote] = useState("");
   const isMobile = useIsMobile();
 
-  usePageHeader({ title: "Demandes de modification", helpTopic: "commissions" });
+  usePageHeader({
+    title: "Demandes de modification",
+    helpTopic: "commissions",
+    guide: {
+      steps: [
+        "Consultez les demandes de modification en attente.",
+        "Approuvez ou rejetez avec un motif — l'historique reste visible dans les deux cas.",
+      ],
+    },
+  });
 
   useEffect(() => {
     if (isMobile) setViewMode("grid");

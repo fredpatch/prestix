@@ -203,6 +203,14 @@ export default function CreateProformaPage() {
     backTo: "/proformas",
     badge: `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
     helpTopic: "documents",
+    guide: {
+      steps: [
+        "Sélectionnez la partie cliente.",
+        "Ajoutez une ou plusieurs lignes (billetterie, PrestiShop ou service).",
+        "Vérifiez le total puis émettez le document.",
+      ],
+      tip: "Tant que le document est en brouillon, les lignes restent librement modifiables.",
+    },
   });
 
   async function submit(formValues: ProformaFormValues) {

@@ -49,7 +49,17 @@ function employeeDetailUrl(userId: number): string {
 }
 
 export default function UsersPage() {
-  usePageHeader({ title: "Utilisateurs", helpTopic: "utilisateurs" });
+  usePageHeader({
+    title: "Utilisateurs",
+    helpTopic: "utilisateurs",
+    guide: {
+      steps: [
+        "« Nouvel utilisateur » crée le compte — la personne l'active elle-même par OTP à sa première connexion.",
+        "Seul un super_admin peut gérer les comptes admin ou super_admin.",
+      ],
+      tip: "Désactiver un compte ne supprime jamais son historique d'actions.",
+    },
+  });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "">("");
   const [editing, setEditing] = useState<User | null>(null);

@@ -151,6 +151,12 @@ export default function EmployeeActivityDetailPage() {
     title: employee?.fullName ?? "Détail employé",
     backTo: fromUsers ? "/users" : "/dashboard",
     helpTopic: "dashboard",
+    guide: {
+      steps: [
+        "Détail de l'activité d'un employé sur la période sélectionnée.",
+        "Utilisez la flèche en haut de page pour revenir à la liste.",
+      ],
+    },
   });
 
   const { data: detail, isLoading } = useEmployeeActivityDetail(numericAgentId, {

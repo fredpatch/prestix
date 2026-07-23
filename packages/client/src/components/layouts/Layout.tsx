@@ -36,6 +36,7 @@ import { useTheme } from "@/lib/theme";
 import { usePageHeaderValue } from "./lib/page-header";
 import { useNotificationUnreadCount } from "@/hooks/queries/useNotifications";
 import { HelpPanel } from "./HelpPanel";
+import { GuideTrigger } from "./GuideTrigger";
 
 interface NavItem {
   to: string;
@@ -344,6 +345,8 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
           <Outlet />
         </main>
       </div>
+
+      <GuideTrigger />
 
       <HelpPanel
         open={helpPanelOpen}

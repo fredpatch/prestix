@@ -118,7 +118,17 @@ export default function ProformasPage() {
   const [selected, setSelected] = useState<Proforma | null>(null);
   const isMobile = useIsMobile();
 
-  usePageHeader({ title: "Proformas", helpTopic: "documents" });
+  usePageHeader({
+    title: "Proformas",
+    helpTopic: "documents",
+    guide: {
+      steps: [
+        "Recherchez ou filtrez les proformas par statut.",
+        "Cliquez sur « Nouvelle proforma » pour en créer une.",
+      ],
+      tip: "Une proforma expire automatiquement 48h après sa création si elle n'est pas transformée en facture.",
+    },
+  });
 
   useEffect(() => {
     if (isMobile) setViewMode("grid");

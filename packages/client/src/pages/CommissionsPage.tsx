@@ -86,7 +86,17 @@ export default function CommissionsPage() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  usePageHeader({ title: "Commissions", helpTopic: "commissions" });
+  usePageHeader({
+    title: "Commissions",
+    helpTopic: "commissions",
+    guide: {
+      steps: [
+        "Choisissez le type de commission avant de saisir la transaction.",
+        "Le montant est toujours saisi manuellement — il n'y a pas de calcul automatique.",
+      ],
+      tip: "Une commission déjà enregistrée n'est pas modifiable directement — passez par une demande de modification.",
+    },
+  });
 
   const canDelete = user && ["admin", "super_admin"].includes(user.role);
 

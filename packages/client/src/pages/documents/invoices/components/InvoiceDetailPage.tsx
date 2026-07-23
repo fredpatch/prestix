@@ -128,6 +128,13 @@ export default function InvoiceDetailPage() {
     title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
     backTo: "/invoices",
     helpTopic: "paiements",
+    guide: {
+      steps: [
+        "« Enregistrer un paiement » pour régler tout ou partie du solde dû.",
+        "Un trop-perçu vous demandera explicitement de rendre la monnaie ou de créditer la partie.",
+        "Le bon de livraison est généré automatiquement une fois la facture entièrement payée.",
+      ],
+    },
   });
 
   useEffect(() => {

@@ -196,7 +196,17 @@ export default function CreancesPage() {
     },
   ];
 
-  usePageHeader({ title: "Créances", helpTopic: "creances" });
+  usePageHeader({
+    title: "Créances",
+    helpTopic: "creances",
+    guide: {
+      steps: [
+        "Cette page ne montre que les échéances réellement en retard, pas simplement impayées.",
+        "Principal dû et pénalités accumulées sont affichés séparément.",
+        "Pour reprogrammer une échéance, ouvrez la facture concernée.",
+      ],
+    },
+  });
 
   return (
     <div>

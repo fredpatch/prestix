@@ -101,7 +101,17 @@ function isOverdue(invoice: Invoice): boolean {
 }
 
 export default function InvoicesPage() {
-  usePageHeader({ title: "Factures", helpTopic: "documents" });
+  usePageHeader({
+    title: "Factures",
+    helpTopic: "documents",
+    guide: {
+      steps: [
+        "Recherchez ou filtrez les factures par statut de paiement.",
+        "« Nouvelle facture » crée un brouillon direct, sans passer par une proforma.",
+        "Cliquez sur une facture pour enregistrer un paiement ou consulter son détail.",
+      ],
+    },
+  });
   const { data: invoices = [], isLoading } = useInvoices();
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");

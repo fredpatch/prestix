@@ -27,7 +27,17 @@ export default function AnalysePage() {
   const [to, setTo] = useState(PRESETS[0].to);
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
 
-  usePageHeader({ title: "Analyse", helpTopic: "dashboard" });
+  usePageHeader({
+    title: "Analyse",
+    helpTopic: "dashboard",
+    guide: {
+      steps: [
+        "Six onglets, un par domaine d'analyse.",
+        "Les filtres de période sont partagés entre les onglets.",
+        "Export PDF/Excel disponible depuis l'onglet Rapports.",
+      ],
+    },
+  });
 
   return (
     <div>

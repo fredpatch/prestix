@@ -1,10 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
+export interface PageGuide {
+  steps: string[]; // short, concise — "what do I do on THIS page", not exhaustive reference
+  tip?: string;
+}
+
 export interface PageHeaderConfig {
   title: string;
   backTo?: string;
   badge?: string;
   helpTopic?: string; // Aide slug (content/aide/index.ts) — drives the header "?" button
+  guide?: PageGuide; // drives the floating "Besoin d'aide ?" popover trigger
 }
 
 interface PageHeaderContextType {
@@ -32,11 +38,15 @@ export function usePageHeaderValue() {
 
 export function usePageHeader(config: PageHeaderConfig) {
   const { setHeader } = useContext(PageHeaderContext);
-  const { title, backTo, badge, helpTopic } = config;
+  const { title, backTo, badge, helpTopic, guide } = config;
   const stableSetHeader = useCallback(setHeader, [setHeader]);
 
   useEffect(() => {
-    stableSetHeader({ title, backTo, badge, helpTopic });
+    stableSetHeader({ title, backTo, badge, helpTopic, guide });
     return () => stableSetHeader(null);
-  }, [title, backTo, badge, helpTopic, stableSetHeader]);
+    // guide/steps and guide/tip are plain arrays/strings re-created on every
+    // render at the call site (inline object literals) — depend on their
+    // serialized form, not object identity, or this would loop forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, backTo, badge, helpTopic, JSON.stringify(guide), stableSetHeader]);
 }

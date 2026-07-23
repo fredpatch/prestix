@@ -111,6 +111,13 @@ export default function ProformaDetailPage() {
     title: proforma?.number ?? "Proforma",
     backTo: "/proformas",
     helpTopic: "documents",
+    guide: {
+      steps: [
+        "« Transformer en facture » n'apparaît que si la proforma est encore valide (non expirée, non annulée).",
+        "Le document est verrouillé une fois émis — aucune ligne n'est modifiable ensuite.",
+        "L'export PDF est disponible depuis cette page.",
+      ],
+    },
   });
 
   function handlePromote() {

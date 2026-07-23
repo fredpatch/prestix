@@ -204,6 +204,13 @@ export default function CreateInvoiceDraftPage() {
     backTo: "/invoices",
     badge: `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
     helpTopic: "documents",
+    guide: {
+      steps: [
+        "Sélectionnez la partie cliente.",
+        "Ajoutez vos lignes puis émettez le document.",
+      ],
+      tip: "Besoin d'un échéancier ? Il se configure au moment de l'émission, pas avant.",
+    },
   });
 
   async function submit(formValues: InvoiceFormValues) {

@@ -66,7 +66,18 @@ export default function PartyDetailPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.savingsTransactions() });
   }
 
-  usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties", helpTopic: "parties" });
+  usePageHeader({
+    title: party?.fullName ?? "Partie",
+    backTo: "/parties",
+    helpTopic: "parties",
+    guide: {
+      steps: [
+        "Cliquez sur « Modifier » pour changer les informations de la partie.",
+        "« Désactiver »/« Activer » ne supprime jamais la partie — son historique reste intact.",
+        "L'historique commercial et épargne se trouve plus bas sur la page, en deux sections séparées.",
+      ],
+    },
+  });
 
   function handleToggleActivation() {
     if (!party) return;

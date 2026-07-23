@@ -93,7 +93,18 @@ export default function PartiesPage() {
   const parties = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  usePageHeader({ title: "Parties", helpTopic: "parties" });
+  usePageHeader({
+    title: "Parties",
+    helpTopic: "parties",
+    guide: {
+      steps: [
+        "Recherchez une partie par nom, téléphone, email ou code.",
+        "Filtrez par rôle (client/référent) ou par statut (actif/inactif).",
+        "Cliquez sur « Nouvelle partie » pour en créer une.",
+        "Cliquez sur une ligne pour ouvrir sa fiche détail.",
+      ],
+    },
+  });
 
   return (
     <div>

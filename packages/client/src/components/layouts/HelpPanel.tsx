@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Compass } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -28,21 +28,31 @@ interface HelpPanelProps {
 // different topic without leaving the page; "Voir la page complète" hands
 // off to the full /aide page (with sidebar) for when the panel's width is
 // too tight — e.g. long tables.
+//
+// IMPORTANT: topicSlug being undefined means "this page has no dedicated
+// Aide topic yet" (e.g. Notifications, Journal d'audit, Historique emails,
+// Demandes de modification). That must NOT silently fall back to the first
+// topic (Parties) — it's misleading, looks like a real answer. Show a
+// neutral browse-prompt instead until the person picks one explicitly.
 export function HelpPanel({ open, onOpenChange, topicSlug, onTopicChange }: HelpPanelProps) {
   const { user } = useAuth();
   const topics = visibleTopics(AIDE_TOPICS, user?.role);
   const groups = groupTopicsByModule(topics);
-  const active = topics.find((t) => t.slug === topicSlug) ?? topics[0];
+  const active = topicSlug ? topics.find((t) => t.slug === topicSlug) : undefined;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="sm:max-w-[440px]">
         <SheetHeader>
           <SheetTitle>Aide</SheetTitle>
-          <SheetDescription>Rubrique liée à la page en cours — changez-la si besoin.</SheetDescription>
+          <SheetDescription>
+            {active
+              ? "Rubrique liée à la page en cours — changez-la si besoin."
+              : "Cette page n'a pas encore de rubrique dédiée — choisissez-en une."}
+          </SheetDescription>
         </SheetHeader>
 
-        <Select value={active?.slug} onValueChange={onTopicChange}>
+        <Select value={active?.slug ?? ""} onValueChange={onTopicChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Choisir une rubrique" />
           </SelectTrigger>
@@ -63,16 +73,26 @@ export function HelpPanel({ open, onOpenChange, topicSlug, onTopicChange }: Help
         </Select>
 
         <div className="flex-1 overflow-y-auto pr-1">
-          <AideMarkdownView content={active?.content ?? null} />
+          {active ? (
+            <AideMarkdownView content={active.content} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full py-16 text-center text-neutral-400">
+              <Compass size={28} className="mb-2" />
+              <p className="text-[13px]">Pas de rubrique dédiée à cette page pour le moment.</p>
+              <p className="text-[11.5px] mt-1">Choisissez une rubrique ci-dessus pour parcourir l'aide.</p>
+            </div>
+          )}
         </div>
 
-        <Link
-          to={active ? `/aide?topic=${active.slug}` : "/aide"}
-          onClick={() => onOpenChange(false)}
-          className="flex items-center gap-1.5 text-[12px] font-medium text-brand-gold-dark hover:underline shrink-0"
-        >
-          <ExternalLink size={12} /> Voir la page complète
-        </Link>
+        {active && (
+          <Link
+            to={`/aide?topic=${active.slug}`}
+            onClick={() => onOpenChange(false)}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-brand-gold-dark hover:underline shrink-0"
+          >
+            <ExternalLink size={12} /> Voir la page complète
+          </Link>
+        )}
       </SheetContent>
     </Sheet>
   );

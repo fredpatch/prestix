@@ -91,7 +91,17 @@ export default function StockArticlesPage() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  usePageHeader({ title: "Stock", helpTopic: "stock" });
+  usePageHeader({
+    title: "Stock",
+    helpTopic: "stock",
+    guide: {
+      steps: [
+        "Consultez le stock disponible par article.",
+        "Utilisez « Réapprovisionner » pour enregistrer une entrée ou une correction.",
+      ],
+      tip: "Le stock ne peut jamais devenir négatif ici — contrairement à l'émission d'un document, où un manager+ peut passer outre.",
+    },
+  });
 
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
 
