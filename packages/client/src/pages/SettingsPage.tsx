@@ -181,7 +181,7 @@ const IMPACT_STYLES = {
     label: "Impact élevé",
     className: "border-danger-border bg-danger-bg text-danger-text",
     cardClassName:
-      "border-danger-border bg-[repeating-linear-gradient(135deg,#fef2f2_0,#fef2f2_10px,#fff_10px,#fff_22px)]",
+      "border-danger-border bg-[repeating-linear-gradient(135deg,var(--danger-bg)_0,var(--danger-bg)_10px,var(--card)_10px,var(--card)_22px)]",
     ruleClassName: "border-danger-border",
     icon: AlertTriangle,
   },
@@ -189,7 +189,7 @@ const IMPACT_STYLES = {
     label: "Impact moyen",
     className: "border-warning-border bg-warning-bg text-warning-text",
     cardClassName:
-      "border-warning-border bg-[repeating-linear-gradient(135deg,#fffbeb_0,#fffbeb_10px,#fff_10px,#fff_22px)]",
+      "border-warning-border bg-[repeating-linear-gradient(135deg,var(--warning-bg)_0,var(--warning-bg)_10px,var(--card)_10px,var(--card)_22px)]",
     ruleClassName: "border-warning-border",
     icon: SlidersHorizontal,
   },
@@ -197,7 +197,7 @@ const IMPACT_STYLES = {
     label: "Impact faible",
     className: "border-success-border bg-success-bg text-success-text",
     cardClassName:
-      "border-success-border bg-[repeating-linear-gradient(135deg,#ecfdf5_0,#ecfdf5_10px,#fff_10px,#fff_22px)]",
+      "border-success-border bg-[repeating-linear-gradient(135deg,var(--success-bg)_0,var(--success-bg)_10px,var(--card)_10px,var(--card)_22px)]",
     ruleClassName: "border-success-border",
     icon: ShieldCheck,
   },
