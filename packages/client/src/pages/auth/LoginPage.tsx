@@ -138,18 +138,21 @@ export default function LoginPage() {
       >
         <section className="flex min-h-[620px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
           <div className="w-full max-w-[390px]">
-            <div className="mb-8">
+            <div className="flex items-center mb-6">
               <motion.img
                 src="/brand/logo.jpg"
                 alt="Le Prestigieux"
-                className="mb-3 h-14 w-auto object-contain"
+                className="mb-3 h-20 w-auto object-contain"
                 whileHover={{ scale: 1.03 }}
                 transition={{ type: "spring", stiffness: 320, damping: 22 }}
               />
-              <h1 className="text-[24px] font-bold tracking-tight text-neutral-950">PrestiX</h1>
-              <p className="mt-1 text-[12px] italic leading-relaxed text-neutral-500">
-                Une autre idée du voyage
-              </p>
+
+              <div className="ml-4 -mt-1">
+                <h1 className="text-[24px] font-bold tracking-tight text-neutral-950">PrestiX</h1>
+                <p className="-mt-1 text-[12px] italic leading-relaxed text-neutral-500">
+                  Une autre idée du voyage
+                </p>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
