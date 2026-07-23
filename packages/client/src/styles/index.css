@@ -175,19 +175,25 @@ body {
      different color. Computed and contrast-checked 2026-07-23, not eyeballed. */
   --color-brand-gold-dark: #cc9c3c;
 
-  --background: oklch(0.145 0 0);
+  /* Dark theme "teal" (default) — chosen 2026-07-23 over two alternates
+     (see .dark[data-theme="blue"|"purple"] below). Every surface role
+     shares the same hue/chroma (h=230, c=0.022), stepped by lightness only,
+     so the whole app reads as one deliberate palette instead of flat gray.
+     Text tokens (foreground/muted-foreground) stay near-neutral on purpose
+     — tinting text as well as surfaces hurts legibility for no real gain. */
+  --background: #040f15;
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: #101d23;
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: #101d23;
   --popover-foreground: oklch(0.985 0 0);
   --primary: var(--color-brand-gold-dark);
   --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.269 0 0);
+  --secondary: #1b292f;
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
+  --muted: #1b292f;
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: #1b292f;
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
@@ -198,11 +204,11 @@ body {
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: #101d23;
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: var(--color-brand-gold-dark);
   --sidebar-primary-foreground: oklch(0.145 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: #1b292f;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: var(--color-brand-gold-dark);
@@ -212,8 +218,8 @@ body {
      already lighter than --background. Status pairs use the standard
      dark-mode convention: saturated-950 bg + bright-400 text, not a washed
      light-mode-50 bg that would be unreadable here. */
-  --surface-muted: var(--color-neutral-800);
-  --surface-subtle: var(--color-neutral-700);
+  --surface-muted: #223037;
+  --surface-subtle: #2c3a41;
   --body-text: var(--color-neutral-200);
   --subtle-text: var(--color-neutral-500);
   --danger-bg: var(--color-red-950);
@@ -228,6 +234,38 @@ body {
   --info-bg: var(--color-blue-950);
   --info-border: var(--color-blue-900);
   --info-text: var(--color-blue-400);
+}
+
+/* Alternate dark palettes — computed and contrast-checked alongside "teal"
+   (all >11:1 text contrast), not wired to any UI yet. A future Settings
+   theme-picker just needs to set document.documentElement.dataset.theme =
+   "blue" | "purple" (alongside the existing .dark class) — no further CSS
+   work required. Only the tinted surface roles are overridden; gold,
+   status colors, text tokens, and borders are shared with "teal" above. */
+.dark[data-theme="blue"] {
+  --background: #060e18;
+  --card: #131b26;
+  --popover: #131b26;
+  --sidebar: #131b26;
+  --secondary: #1e2733;
+  --muted: #1e2733;
+  --accent: #1e2733;
+  --sidebar-accent: #1e2733;
+  --surface-muted: #252f3a;
+  --surface-subtle: #2f3945;
+}
+
+.dark[data-theme="purple"] {
+  --background: #0f0a18;
+  --card: #1d1727;
+  --popover: #1d1727;
+  --sidebar: #1d1727;
+  --secondary: #292333;
+  --muted: #292333;
+  --accent: #292333;
+  --sidebar-accent: #292333;
+  --surface-muted: #302a3b;
+  --surface-subtle: #3a3545;
 }
 
 @layer base {
