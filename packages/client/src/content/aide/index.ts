@@ -6,6 +6,14 @@
 
 import partiesContent from "./parties.md?raw";
 import documentsContent from "./documents.md?raw";
+import paiementsContent from "./paiements.md?raw";
+import creancesContent from "./creances.md?raw";
+import stockContent from "./stock.md?raw";
+import commissionsContent from "./commissions.md?raw";
+import epargneContent from "./epargne.md?raw";
+import dashboardContent from "./dashboard.md?raw";
+import parametresContent from "./parametres.md?raw";
+import utilisateursContent from "./utilisateurs.md?raw";
 import errorCodesContent from "./error-codes.md?raw";
 
 export type AideRole = "agent" | "manager" | "admin" | "super_admin";
@@ -23,14 +31,14 @@ export interface AideTopic {
 export const AIDE_TOPICS: AideTopic[] = [
   { slug: "parties", title: "Parties (clients & référents)", moduleGroup: "Parties", content: partiesContent },
   { slug: "documents", title: "Proformas, factures & BL", moduleGroup: "Documents", content: documentsContent },
-  { slug: "paiements", title: "Paiements & échéancier", moduleGroup: "Documents", content: null },
-  { slug: "creances", title: "Créances & pénalités", moduleGroup: "Créances", content: null },
-  { slug: "stock", title: "Stock & PrestiShop", moduleGroup: "Stock", content: null },
-  { slug: "commissions", title: "Commissions diverses", moduleGroup: "Commissions", content: null },
-  { slug: "epargne", title: "Épargne Voyage", moduleGroup: "Épargne", content: null },
-  { slug: "dashboard", title: "Tableau de bord & Analyse", moduleGroup: "Reporting", content: null },
-  { slug: "parametres", title: "Paramètres", moduleGroup: "Administration", content: null },
-  { slug: "utilisateurs", title: "Utilisateurs & rôles", moduleGroup: "Administration", content: null },
+  { slug: "paiements", title: "Paiements & échéancier", moduleGroup: "Documents", content: paiementsContent },
+  { slug: "creances", title: "Créances & pénalités", moduleGroup: "Créances", content: creancesContent },
+  { slug: "stock", title: "Stock & PrestiShop", moduleGroup: "Stock", content: stockContent },
+  { slug: "commissions", title: "Commissions diverses", moduleGroup: "Commissions", content: commissionsContent },
+  { slug: "epargne", title: "Épargne Voyage", moduleGroup: "Épargne", content: epargneContent },
+  { slug: "dashboard", title: "Tableau de bord & Analyse", moduleGroup: "Reporting", content: dashboardContent },
+  { slug: "parametres", title: "Paramètres", moduleGroup: "Administration", content: parametresContent },
+  { slug: "utilisateurs", title: "Utilisateurs & rôles", moduleGroup: "Administration", content: utilisateursContent },
   {
     slug: "codes-erreur",
     title: "Codes d'erreur (référence technique)",
