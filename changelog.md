@@ -1,5 +1,13 @@
 # Changelog
 
+## Dark-Mode Semantic Token Retrofit (2026-07-23)
+
+- Added a fuller client design-token layer with brand-gold primary/ring/sidebar tokens, dark-mode variants, tinted dark surfaces, text tiers, and semantic status groups.
+- Retrofitted shared UI primitives, data tables, and read-only tables to use semantic tokens instead of fixed neutral/white palette classes.
+- Migrated document, party, dashboard/analyse, creance, stock, commission, user, notification, mail outbox, audit-log, aide, and Settings pages toward dark-aware semantic styling.
+- Updated Settings sensitive-impact card backgrounds to use CSS custom properties, preserving the warning/critical visual language in dark mode.
+- Closed the `TASKS.md` dark-mode retrofit item with validation notes and kept runtime visual smoke as the next verification step.
+
 ## Aide and Company Parties (2026-07-23)
 
 - Added bundled in-app Aide documentation at `/aide`, with module topics for operational workflows, administration, notifications/mail, audit log, and technical error codes.

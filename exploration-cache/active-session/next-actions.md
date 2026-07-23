@@ -23,9 +23,10 @@
 10. Runtime smoke Sprint 11c/11e/11f UI flows: React Query mutation toasts,
    audit-log filters, mobile sidebar/tabs, document detail preview toggles,
    invoice/proforma quick views, dashboard section toggles.
-11. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
+11. Runtime visual smoke dark/light theme switching on shared form controls,
+   tables, grids, charts, Settings impact cards, dense mobile pages, and modal
+   surfaces.
+12. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing.
-12. Deferred hardening item: retrofit remaining hardcoded neutral-/brand-
-   Tailwind pages to semantic tokens for fuller dark-mode coverage.
 13. Open question from Sprint 6: should PNR/GDS/ticket-number appear on the
    printed document itself, or stay internal-only?

@@ -26,7 +26,7 @@
 - [x] **OTP activation + password reset flow** (Nodemailer) — admin creates account → OTP email → user sets password — CRITICAL
 - [x] `authorize(level)` middleware (agent1/manager2/admin3/super_admin4) — CRITICAL
 - [x] Audit log (append-only) on all mutations — CRITICAL
-- [x] Settings: appearance (client-local) — `ThemeProvider`, localStorage, applied immediately, no backend call; Layout + Button retrofitted to semantic tokens — HIGH. Remaining pages (Login/Bootstrap/Settings/Users card surfaces) still hardcoded, not dark-mode aware — tracked for a later hardening pass, not blocking.
+- [x] Settings: appearance (client-local) — `ThemeProvider`, localStorage, applied immediately, no backend call; Layout + Button retrofitted to semantic tokens — HIGH. **Dark-mode retrofit fully closed 2026-07-23** (see "Dark-mode retrofit" section below) — all pages/shared UI primitives now on semantic tokens, visually confirmed by Fred.
 - [x] Financial params as settings rows — HIGH
 - [x] Data-driven commission-type catalog + feature flags; idempotent seed — HIGH — CRUD routes built and runtime-tested (create type, toggle module)
 - [x] Self-lockout guard (≥1 active super_admin, count-based) — HIGH — deviation from SICOT confirmed correct per M1 decision
@@ -373,6 +373,44 @@
 - [x] Fixed `getRecentSales()` payment rows so party names resolve through related invoices.
 
 **Still pending:** manual runtime smoke for mobile UI, document preview toggles, quick-view modals, dashboard toggles, and fresh PDF/Excel export open-test in real Excel/browser.
+
+## Dark-mode retrofit ✅ CLOSED (2026-07-23)
+
+> Root cause: most pages/components used raw Tailwind palette classes
+> (`neutral-NNN`, `bg-white`, `red/amber/emerald/blue-50/600/700`) that never
+> respond to the `.dark` class — only shadcn's own semantic tokens
+> (`bg-card`, `border-border`, `text-foreground`) did. Fixed with a new small
+> set of semantic tokens (surfaces, text tiers, 4 status groups) mapped 1:1
+> from an actual usage-frequency audit, reusing existing dark-aware shadcn
+> tokens wherever they already fit.
+
+- [x] Brand gold formalized as a real CSS custom property with a dark-mode
+      variant (oklch-computed, contrast-checked: 7.9:1 vs bg, 7.2:1 vs card —
+      not eyeballed) — previously hardcoded with no dark adaptation.
+      `--primary`/`--ring`/`--sidebar-primary` wired to it (were dead/unused
+      grayscale tokens before).
+- [x] Dark background palette redesigned after visual review — flat
+      grayscale replaced with a teal-tinted palette (3 candidates computed,
+      swatch-compared, teal chosen). Blue and purple variants kept as
+      ready-to-wire alternates (`.dark[data-theme="blue"|"purple"]`) for a
+      future theme picker — tracked as its own backlog item.
+- [x] Shared UI primitives retrofitted first (highest leverage): Input,
+      Select, Calendar, DatePicker, Popover, Tabs, Label, Button, and —
+      the component actually causing the most visible issue — the reusable
+      `DataTable`/`read-only-table` used by every list page.
+- [x] All pages retrofitted in two passes: Parties + Documents first, then
+      the remaining ~40 files (Dashboard, Analyse's 6 tabs, Créances, Stock,
+      Commissions + edit-queue, Users, Settings, Aide, Audit-log,
+      Mail-outbox) plus their dialogs/KPI cards/filters.
+- [x] One non-obvious pattern fixed: hardcoded hex colors baked into a
+      `repeating-linear-gradient` arbitrary Tailwind value (Settings'
+      "Impact" cards) — invisible to normal raw-color greps since it wasn't
+      a `bg-{color}-NN` class at all. Fixed by referencing the real CSS
+      custom properties inside the gradient (`var(--danger-bg)` etc.).
+
+**Validated:** every diff verified via `tsc --noEmit` + full `vite build` +
+real `git apply` (not just `--check`) against fresh clones of the actual
+pushed repo. Visually confirmed complete by Fred 2026-07-23.
 
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 

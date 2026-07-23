@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
   "lastUpdated": "2026-07-23",
-  "currentSprint": "Aide/help center and company-party support landed; runtime smoke pending",
+  "currentSprint": "Dark-mode semantic-token retrofit landed; runtime smoke pending",
   "files": [
     "index.md",
     "quick-ref.md",
