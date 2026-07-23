@@ -3,15 +3,19 @@ import {
   AlertTriangle,
   BadgeCheck,
   BellRing,
+  Check,
   Loader2,
   Mail,
+  Moon,
   Plus,
   Save,
   ShieldCheck,
   SlidersHorizontal,
+  Sun,
   ToggleLeft,
   WalletCards,
 } from "lucide-react";
+import { useTheme, DARK_VARIANTS, type DarkVariant } from "@/lib/theme";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -232,6 +236,7 @@ export default function SettingsPage() {
           <TabsTrigger value="modules">Modules</TabsTrigger>
           <TabsTrigger value="catalog">Catalogue commissions</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="appearance">Apparence</TabsTrigger>
         </TabsList>
 
         <TabsContent value="financial">
@@ -245,6 +250,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationsTab />
+        </TabsContent>
+        <TabsContent value="appearance">
+          <AppearanceTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -864,4 +872,93 @@ function LoadingLine({ label }: { label: string }) {
 
 function humanizeKey(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+// Swatch preview colors, matching the actual computed CSS values (not
+// re-derived here — same hex as styles/index.css's .dark[data-theme=...]).
+const VARIANT_PREVIEW: Record<DarkVariant, { bg: string; card: string }> = {
+  teal: { bg: "#040f15", card: "#101d23" },
+  blue: { bg: "#060e18", card: "#131b26" },
+  purple: { bg: "#0f0a18", card: "#1d1727" },
+};
+
+function AppearanceTab() {
+  const { theme, toggleTheme, darkVariant, setDarkVariant } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <div className="space-y-5">
+      <div className="border border-border bg-card rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-foreground mb-1">Mode</p>
+        <p className="text-[11.5px] text-muted-foreground mb-3">
+          Réglage local à cet appareil — pas synchronisé entre vos différents écrans.
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => isDark && toggleTheme()}
+            className={`flex items-center gap-1.5 rounded border px-3 py-2 text-[12px] font-medium transition-colors ${
+              !isDark
+                ? "border-brand-gold-dark bg-brand-gold-dark/10 text-brand-gold-dark"
+                : "border-border text-muted-foreground hover:text-body"
+            }`}
+          >
+            <Sun size={14} /> Clair
+          </button>
+          <button
+            type="button"
+            onClick={() => !isDark && toggleTheme()}
+            className={`flex items-center gap-1.5 rounded border px-3 py-2 text-[12px] font-medium transition-colors ${
+              isDark
+                ? "border-brand-gold-dark bg-brand-gold-dark/10 text-brand-gold-dark"
+                : "border-border text-muted-foreground hover:text-body"
+            }`}
+          >
+            <Moon size={14} /> Sombre
+          </button>
+        </div>
+      </div>
+
+      <div className={`border border-border bg-card rounded-lg p-4 ${!isDark ? "opacity-50" : ""}`}>
+        <p className="text-[11.5px] font-semibold text-foreground mb-1">Palette (mode sombre)</p>
+        <p className="text-[11.5px] text-muted-foreground mb-3">
+          {isDark
+            ? "S'applique immédiatement."
+            : "Passez en mode sombre pour choisir une palette."}
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {DARK_VARIANTS.map((variant) => {
+            const preview = VARIANT_PREVIEW[variant.value];
+            const active = darkVariant === variant.value;
+            return (
+              <button
+                key={variant.value}
+                type="button"
+                disabled={!isDark}
+                onClick={() => setDarkVariant(variant.value)}
+                className={`relative rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed ${
+                  active ? "border-brand-gold-dark" : "border-border hover:border-muted-foreground"
+                }`}
+                style={{ background: preview.bg }}
+              >
+                {active && (
+                  <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-gold-dark text-white">
+                    <Check size={10} />
+                  </span>
+                )}
+                <div
+                  className="rounded p-2 mb-2"
+                  style={{ background: preview.card }}
+                >
+                  <p className="text-[10.5px] font-medium text-white">Proforma</p>
+                  <p className="text-[9.5px] text-white/60">870 000 XAF</p>
+                </div>
+                <p className="text-[10.5px] font-medium text-white">{variant.label}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
