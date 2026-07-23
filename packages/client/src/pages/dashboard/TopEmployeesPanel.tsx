@@ -26,7 +26,7 @@ export function TopEmployeesPanel({ rows, from, to, basis }: TopEmployeesPanelPr
   return (
     <section className="rounded-lg border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
-        <p className="text-[13px] font-semibold text-foreground">Top employés</p>
+        <p className="text-[13px] font-semibold text-foreground">Meilleurs employés</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">Valeur et volume d'activité.</p>
       </div>
       <div className="divide-y divide-neutral-100">

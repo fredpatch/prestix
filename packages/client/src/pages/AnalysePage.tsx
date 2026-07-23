@@ -8,6 +8,7 @@ import { EmployeesTab } from "./analyse/EmployeesTab";
 import { ClientsReferrersTab } from "./analyse/ClientsReferrersTab";
 import { ServicesTab } from "./analyse/ServicesTab";
 import { CreancesEngagementsTab } from "./analyse/CreancesEngagementsTab";
+import { RewardsTab } from "./analyse/RewardsTab";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
 import { RapportsTab } from "./analyse/RapportsTab";
 
@@ -64,6 +65,7 @@ export default function AnalysePage() {
           <TabsTrigger value="employes">Employés</TabsTrigger>
           <TabsTrigger value="clients-referents">Clients & Référents</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
+          <TabsTrigger value="recompenses">Récompenses</TabsTrigger>
           <TabsTrigger value="creances">Créances & Engagements</TabsTrigger>
           <TabsTrigger value="rapports">Rapports</TabsTrigger>
         </TabsList>
@@ -79,6 +81,9 @@ export default function AnalysePage() {
         </TabsContent>
         <TabsContent value="services">
           <ServicesTab from={from} to={to} basis={basis} />
+        </TabsContent>
+        <TabsContent value="recompenses">
+          <RewardsTab from={from} to={to} />
         </TabsContent>
         <TabsContent value="creances">
           <CreancesEngagementsTab from={from} to={to} />

@@ -72,6 +72,14 @@ export const queryKeys = {
   recentActivity: (limit: number) => ["reporting", "recent-activity", limit] as const,
   recentSales: (limit: number) => ["reporting", "recent-sales", limit] as const,
 
+  // Rewards
+  rewardSummary: (params: { from: string; to: string }) =>
+    ["rewards", "summary", params.from, params.to] as const,
+  rewardRows: (
+    audience: "clients" | "referrers" | "employees",
+    params: { from: string; to: string },
+  ) => ["rewards", audience, params.from, params.to] as const,
+
   // Audit log
   auditLog: (filters?: object) => ["audit-log", filters ?? {}] as const,
   auditLogActions: () => ["audit-log", "actions"] as const,

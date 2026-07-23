@@ -265,7 +265,7 @@ export default function UsersPage() {
               )}
             >
               <Table2 size={13} />
-              Table
+              Tableau
             </Button>
             <Button
               type="button"

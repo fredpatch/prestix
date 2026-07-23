@@ -412,11 +412,27 @@
 real `git apply` (not just `--check`) against fresh clones of the actual
 pushed repo. Visually confirmed complete by Fred 2026-07-23.
 
+## Sprint 11g - Rewards Preview ✅ CLOSED IN CODE (2026-07-23)
+
+> First pass only: informational reward preview, not a payout or crediting
+> engine. Business rules still need to be decided with Lucrèce before adding
+> saved periods, approval, payout, or credit conversion. Current basis is gain,
+> with month/default date-range support via Analyse.
+
+- [x] Backend `/api/rewards` module: summary, clients, referrers, employees.
+- [x] Gain-based aggregation for clients, référents/apporteurs, and employees from invoices + commissions.
+- [x] Settings seed for global/client/referrer/employee enablement, thresholds, rates, and fixed amounts.
+- [x] Analyse → Récompenses tab with KPI cards, rule preview, top beneficiary lanes, and detailed tables.
+- [x] Settings copy hardening for all reward options: French labels/descriptions, `Récompenses` module name, and demo-safe wording.
+- [x] UI language hardening pass before Lucrèce demo: `Tableau`, `Meilleurs...`, `Fermer`, e-mail wording, and removal of visible English reward-setting fallbacks.
+
+**Deferred until Lucrèce decision:** reward policy formula, reward history/saved periods, approval workflow, payout/credit ledger posting, employee promotion/advantage policy.
+
 ## Sprint 12 – Testing & UAT | 2 weeks (+20% buffer)
 
 - [ ] End-to-end test pass — CRITICAL
 - [ ] Money cross-compare gates (penalties, ledgers, CA) — CRITICAL
-- [ ] **UAT with Lucrèce + Agency Manager; sign-off** — CRITICAL
+- [ ] **UAT with Lucrèce + Agency Manager; sign-off** — CRITICAL — include Rewards Preview scope/rules decision
 - [ ] Correction buffer — HIGH
 
 ## Sprint 13 – Deploy & Training | 1 week
@@ -427,7 +443,7 @@ pushed repo. Visually confirmed complete by Fred 2026-07-23.
 
 ## Waiting On
 
-- [ ] Company-type party fields decision — do real clients include COMPANY-type parties? (Sprint 2/M3)
+- [ ] Reward policy decision with Lucrèce — formula, thresholds, eligible beneficiaries, and whether rewards become payouts, credits, or internal advantages.
 
 ## Done
 

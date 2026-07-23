@@ -394,7 +394,7 @@ export default function CommissionEditQueuePage() {
             className={cn("h-8 gap-1.5", viewMode === "table" && "bg-surface-subtle text-foreground")}
           >
             <Table2 size={13} />
-            Table
+            Tableau
           </Button>
           <Button
             type="button"

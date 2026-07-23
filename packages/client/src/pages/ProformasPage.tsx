@@ -367,7 +367,7 @@ export default function ProformasPage() {
               )}
             >
               <Table2 size={13} />
-              Table
+              Tableau
             </Button>
             <Button
               type="button"

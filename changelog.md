@@ -1,5 +1,15 @@
 # Changelog
 
+## Rewards Preview and French UI Hardening (2026-07-23)
+
+- Added a read-only rewards backend module at `/api/rewards` with summary, client, referrer, and employee preview endpoints.
+- Added gain-based reward aggregation from invoices and commissions, with date-range support and no payout/credit/accounting side effects.
+- Seeded reward settings for global/client/referrer/employee enablement, thresholds, percentage points, and fixed amounts.
+- Added Analyse > Récompenses with KPI cards, rule preview, top beneficiary lanes, and detailed tables.
+- Added French Settings copy for the full Récompenses module and all reward options, avoiding fallback technical/English labels before the Lucrèce demo.
+- Harmonized visible UI language for the demo pass (`Tableau`, `Meilleurs...`, `Fermer`, and e-mail wording).
+- Updated Notion project dashboard/backlog and `TASKS.md`; deferred reward history, approval, and payout/credit conversion until Lucrèce validates the real policy.
+
 ## Settings Theme Selector (2026-07-23)
 
 - Added Settings > Apparence controls for light/dark mode and palette selection.

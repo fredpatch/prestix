@@ -53,7 +53,8 @@ const MODULE_LABELS: Record<string, string> = {
   M3: "Crédits client",
   M6: "Créances et pénalités",
   M11: "Épargne voyage",
-  MAIL: "Emails et notifications",
+  MAIL: "E-mails et notifications",
+  REWARDS: "Récompenses",
   auth: "Authentification",
   settings: "Paramètres",
   party: "Clients et référents",
@@ -75,7 +76,8 @@ const MODULE_DESCRIPTIONS: Record<string, string> = {
   M3: "Comportement des crédits client lorsqu'ils arrivent en fin de période de décision.",
   M6: "Montants et délais utilisés pour calculer les pénalités de créances.",
   M11: "Paramètres d'inscription et conversion vers l'épargne voyage.",
-  MAIL: "Contrôle des envois email et des futurs rappels automatiques.",
+  MAIL: "Contrôle des envois par e-mail et des futurs rappels automatiques.",
+  REWARDS: "Règles utilisées pour prévisualiser les récompenses clients, référents et employés.",
 };
 
 const SETTING_COPY: Record<
@@ -159,23 +161,97 @@ const SETTING_COPY: Record<
     impact: "warning",
   },
   mail_enabled: {
-    label: "Envoi email activé",
-    helper: "Interrupteur global. Désactive tous les emails sortants sans modifier la configuration SMTP.",
+    label: "Envoi d'e-mails activé",
+    helper: "Interrupteur global. Désactive tous les e-mails sortants sans modifier la configuration SMTP.",
     impact: "critical",
   },
   mail_automatic_reminders_enabled: {
     label: "Rappels automatiques",
-    helper: "Autorise les futurs envois automatiques pour échéances proches, paiements en retard et relances.",
+    helper: "Autorise les futurs envois automatiques pour les échéances proches, les paiements en retard et les relances.",
     impact: "critical",
   },
   mail_document_auto_send_enabled: {
     label: "Envoi automatique des documents",
-    helper: "Autorise l'envoi email automatique des proformas, factures et bons de livraison à la génération.",
+    helper: "Autorise l'envoi automatique par e-mail des proformas, factures et bons de livraison à la génération.",
     impact: "critical",
   },
   mail_sender_name: {
     label: "Nom d'expéditeur",
-    helper: "Nom affiché dans les emails générés par l'application.",
+    helper: "Nom affiché dans les e-mails générés par l'application.",
+    impact: "warning",
+  },
+  rewards_enabled: {
+    label: "Prévisualisation des récompenses",
+    helper: "Active le suivi informatif des récompenses. Aucun paiement, crédit ou mouvement comptable n'est créé.",
+    impact: "warning",
+  },
+  rewards_client_enabled: {
+    label: "Récompenses clients",
+    helper: "Inclut les clients dans le classement et le calcul estimatif des récompenses.",
+    impact: "warning",
+  },
+  rewards_client_threshold_gain: {
+    label: "Seuil client",
+    helper: "Gain minimum à atteindre avant qu'un client soit considéré comme éligible.",
+    unit: "XAF",
+    impact: "warning",
+  },
+  rewards_client_rate_bps: {
+    label: "Taux client",
+    helper: "Taux appliqué au gain client pour l'estimation. 100 points = 1 %.",
+    unit: "points",
+    impact: "warning",
+  },
+  rewards_client_fixed_amount: {
+    label: "Forfait client",
+    helper: "Montant fixe ajouté à l'estimation lorsqu'un client est éligible.",
+    unit: "XAF",
+    impact: "warning",
+  },
+  rewards_referrer_enabled: {
+    label: "Récompenses référents",
+    helper: "Inclut les référents et apporteurs dans le classement et le calcul estimatif.",
+    impact: "warning",
+  },
+  rewards_referrer_threshold_gain: {
+    label: "Seuil référent",
+    helper: "Gain minimum à atteindre avant qu'un référent soit considéré comme éligible.",
+    unit: "XAF",
+    impact: "warning",
+  },
+  rewards_referrer_rate_bps: {
+    label: "Taux référent",
+    helper: "Taux appliqué au gain référent pour l'estimation. 100 points = 1 %.",
+    unit: "points",
+    impact: "warning",
+  },
+  rewards_referrer_fixed_amount: {
+    label: "Forfait référent",
+    helper: "Montant fixe ajouté à l'estimation lorsqu'un référent est éligible.",
+    unit: "XAF",
+    impact: "warning",
+  },
+  rewards_employee_enabled: {
+    label: "Suivi interne employés",
+    helper: "Inclut les employés dans la comparaison interne des avantages ou primes possibles.",
+    impact: "warning",
+  },
+  rewards_employee_threshold_gain: {
+    label: "Seuil employé",
+    helper: "Gain minimum à atteindre avant qu'un employé soit considéré comme éligible dans la simulation.",
+    unit: "XAF",
+    impact: "warning",
+  },
+  rewards_employee_rate_bps: {
+    label: "Taux employé",
+    helper: "Taux appliqué au gain employé pour l'estimation interne. 100 points = 1 %.",
+    unit: "points",
+    impact: "warning",
+  },
+  rewards_employee_fixed_amount: {
+    label: "Forfait employé",
+    helper: "Montant fixe ajouté à l'estimation lorsqu'un employé est éligible.",
+    unit: "XAF",
     impact: "warning",
   },
 };
@@ -392,7 +468,7 @@ function SettingControl({
           </span>
         </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.helper}</p>
-        <p className="mt-1 text-[11px] text-subtle">Clé technique: {setting.key}</p>
+        <p className="mt-1 text-[11px] text-subtle">Identifiant interne : {setting.key}</p>
       </div>
 
       <div className={`my-3 border-t border-dashed ${impact.ruleClassName}`} />
@@ -632,8 +708,8 @@ function NotificationsTab() {
     <div className="space-y-5">
       <div className="grid gap-3 md:grid-cols-3">
         <SettingsKpi icon={BellRing} label="Événements suivis" value={String(prefs.length)} />
-        <SettingsKpi icon={BadgeCheck} label="Notifications in-app actives" value={String(prefs.filter((p) => p.inAppEnabled).length)} />
-        <SettingsKpi icon={Mail} label="Emails activés" value={String(emailCount)} tone={emailCount > 0 ? undefined : "warning"} />
+        <SettingsKpi icon={BadgeCheck} label="Notifications dans l'application" value={String(prefs.filter((p) => p.inAppEnabled).length)} />
+        <SettingsKpi icon={Mail} label="E-mails activés" value={String(emailCount)} tone={emailCount > 0 ? undefined : "warning"} />
       </div>
 
       <section className="border border-border bg-card">
@@ -641,7 +717,7 @@ function NotificationsTab() {
           <h3 className="text-sm font-semibold text-foreground">Préférences par événement</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Contrôle, pour chaque événement système, s'il crée une notification dans
-            l'application et/ou envoie un email. Ne concerne pas les emails de documents
+            l'application et/ou envoie un e-mail. Ne concerne pas les e-mails de documents
             (factures, proformas, bons de livraison), gérés séparément dans l'onglet Règles
             financières.
           </p>
@@ -657,7 +733,7 @@ function NotificationsTab() {
               </div>
               <div className="flex shrink-0 items-center gap-5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-muted-foreground">In-app</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">Application</span>
                   <Switch
                     checked={pref.inAppEnabled}
                     disabled={pendingKey === `${pref.eventCode}:inAppEnabled`}
@@ -761,7 +837,7 @@ function CatalogTab() {
               <div className="space-y-3">
                 <div>
                   <label className="mb-1.5 block text-[11.5px] font-medium text-body">
-                    Code technique
+                    Identifiant interne
                   </label>
                   <Input
                     value={newCode}
@@ -769,7 +845,7 @@ function CatalogTab() {
                     placeholder="partenariat_hotel"
                   />
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Utilisé par l'API et les rapports. Préférez minuscules, chiffres et tirets bas.
+                    Utilisé pour relier ce type aux rapports. Préférez minuscules, chiffres et tirets bas.
                   </p>
                 </div>
                 <div>
@@ -815,7 +891,7 @@ function CatalogTab() {
                     {type.active ? "Actif" : "Désactivé"}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Code technique: {type.code}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Identifiant interne : {type.code}</p>
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-dashed border-border pt-3">
                 <EditCommissionTypeDialog type={type} onUpdated={reload} />

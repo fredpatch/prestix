@@ -12,7 +12,7 @@ export function TopServicesPanel({ composition }: TopServicesPanelProps) {
   return (
     <section className="rounded-lg border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
-        <p className="text-[13px] font-semibold text-foreground">Top services</p>
+        <p className="text-[13px] font-semibold text-foreground">Meilleurs services</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">Classés par CA brut.</p>
       </div>
       <div className="divide-y divide-neutral-100">

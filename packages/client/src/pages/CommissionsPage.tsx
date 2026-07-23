@@ -371,7 +371,7 @@ export default function CommissionsPage() {
               )}
             >
               <Table2 size={13} />
-              Table
+              Tableau
             </Button>
             <Button
               type="button"

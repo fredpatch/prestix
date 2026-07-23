@@ -47,7 +47,7 @@ export function TopPartiesPanel({ clients, referrers }: TopPartiesPanelProps) {
   return (
     <section className="rounded-lg border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
-        <p className="text-[13px] font-semibold text-foreground">Top parties</p>
+        <p className="text-[13px] font-semibold text-foreground">Meilleurs clients et référents</p>
         <p className="mt-0.5 text-[11px] text-muted-foreground">Clients et référents les plus actifs.</p>
       </div>
       <Tabs defaultValue="clients">
