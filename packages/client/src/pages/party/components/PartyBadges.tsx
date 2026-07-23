@@ -5,7 +5,7 @@ export function PartyRoleBadges({ party }: { party: Pick<Party, "isClient" | "is
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       {party.isClient && (
-        <span className="inline-flex items-center rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 text-[10.5px] font-medium text-blue-700">
+        <span className="inline-flex items-center rounded border border-info-border bg-info-bg px-1.5 py-0.5 text-[10.5px] font-medium text-info-text">
           Client
         </span>
       )}
@@ -24,8 +24,8 @@ export function PartyStatusBadge({ active }: { active: boolean }) {
       className={cn(
         "inline-flex items-center rounded border px-1.5 py-0.5 text-[10.5px] font-semibold",
         active
-          ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-          : "border-red-100 bg-red-50 text-red-700",
+          ? "border-success-border bg-success-bg text-success-text"
+          : "border-danger-border bg-danger-bg text-danger-text",
       )}
     >
       {active ? "Actif" : "Désactivé"}

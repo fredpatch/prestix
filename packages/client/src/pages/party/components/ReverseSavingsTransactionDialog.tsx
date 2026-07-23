@@ -52,7 +52,7 @@ export function ReverseSavingsTransactionDialog({
     >
       <DialogTrigger>
         <Button variant="ghost" size="icon" title="Annuler (contre-passation)">
-          <Undo2 size={13} className="text-red-500" />
+          <Undo2 size={13} className="text-danger-text" />
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -64,7 +64,7 @@ export function ReverseSavingsTransactionDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Raison</label>
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">Raison</label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
           </div>
         </div>

@@ -179,7 +179,7 @@ export default function InvoicesPage() {
             >
               {invoiceLabel(row.original)}
             </Link>
-            <p className="mt-0.5 text-[10.5px] text-neutral-500">{lineSummary(row.original.lines)}</p>
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">{lineSummary(row.original.lines)}</p>
           </div>
         ),
       },
@@ -188,10 +188,10 @@ export default function InvoicesPage() {
         header: "Client",
         cell: ({ row }) => (
           <div>
-            <p className="text-[12px] font-medium text-neutral-800">
+            <p className="text-[12px] font-medium text-body">
               {row.original.partySnapshot?.fullName ?? "-"}
             </p>
-            <p className="mt-0.5 text-[10.5px] text-neutral-500">
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">
               {row.original.partySnapshot?.phone ??
                 row.original.partySnapshot?.email ??
                 "Contact non renseigne"}
@@ -204,7 +204,7 @@ export default function InvoicesPage() {
         header: "Total",
         meta: { align: "right" },
         cell: ({ row }) => (
-          <span className="text-[12px] font-semibold tabular-nums text-neutral-900">
+          <span className="text-[12px] font-semibold tabular-nums text-foreground">
             {money(row.original.totalAmount)}
           </span>
         ),
@@ -213,7 +213,7 @@ export default function InvoicesPage() {
         id: "dates",
         header: "Dates",
         cell: ({ row }) => (
-          <div className="text-[12px] text-neutral-500">
+          <div className="text-[12px] text-muted-foreground">
             <p>Creee: {fmtDate(row.original.createdAt)}</p>
             <p>Echeance: {fmtDate(row.original.dueDate)}</p>
           </div>
@@ -255,7 +255,7 @@ export default function InvoicesPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Suivi des factures, paiements, echeances et documents issus des proformas.
         </p>
         <div className="flex flex-wrap gap-2">
@@ -306,12 +306,12 @@ export default function InvoicesPage() {
         />
       </div>
 
-      <div className="mb-4 grid gap-3 border-y border-neutral-200 py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+      <div className="mb-4 grid gap-3 border-y border-border py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
         <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(240px,420px)_180px_180px_auto]">
           <div className="relative min-w-0">
             <Search
               size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
             />
             <Input
               value={search}
@@ -363,17 +363,17 @@ export default function InvoicesPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:justify-end">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {filteredInvoices.length} resultat{filteredInvoices.length !== 1 ? "s" : ""}
             {filteredInvoices.length !== invoices.length ? ` sur ${invoices.length}` : ""}
           </p>
-          <div className="inline-flex w-fit rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex w-fit rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("table")}
-              className={cn("h-8 gap-1.5", viewMode === "table" && "bg-neutral-100 text-neutral-900")}
+              className={cn("h-8 gap-1.5", viewMode === "table" && "bg-surface-subtle text-foreground")}
             >
               <Table2 size={13} />
               Table
@@ -383,7 +383,7 @@ export default function InvoicesPage() {
               variant="ghost"
               size="sm"
               onClick={() => setViewMode("grid")}
-              className={cn("h-8 gap-1.5", viewMode === "grid" && "bg-neutral-100 text-neutral-900")}
+              className={cn("h-8 gap-1.5", viewMode === "grid" && "bg-surface-subtle text-foreground")}
             >
               <LayoutGrid size={13} />
               Grille
@@ -393,7 +393,7 @@ export default function InvoicesPage() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-subtle" size={18} />
       ) : viewMode === "grid" ? (
         <InvoiceGrid invoices={filteredInvoices} onSelect={setSelected} />
       ) : (
@@ -420,7 +420,7 @@ function InvoiceGrid({
 }) {
   if (invoices.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucune facture.
       </div>
     );
@@ -432,8 +432,8 @@ function InvoiceGrid({
         <div
           key={invoice.id}
           className={cn(
-            "rounded-lg border bg-white p-4",
-            isOverdue(invoice) ? "border-red-200 bg-red-50/30" : "border-neutral-200",
+            "rounded-lg border bg-card p-4",
+            isOverdue(invoice) ? "border-danger-border bg-danger-bg/30" : "border-border",
           )}
         >
           <div className="flex items-start justify-between gap-3">
@@ -441,7 +441,7 @@ function InvoiceGrid({
               <p className="truncate text-[13px] font-semibold text-brand-gold-dark">
                 {invoiceLabel(invoice)}
               </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 {invoice.partySnapshot?.fullName ?? "Client non renseigne"}
               </p>
             </button>
@@ -453,13 +453,13 @@ function InvoiceGrid({
           </div>
 
           <div className="mt-4">
-            <p className="text-[22px] font-bold leading-tight tabular-nums text-neutral-950">
+            <p className="text-[22px] font-bold leading-tight tabular-nums text-foreground">
               {money(invoice.totalAmount)}
             </p>
-            <p className="mt-1 text-[11px] text-neutral-500">{lineSummary(invoice.lines)}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{lineSummary(invoice.lines)}</p>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
             <MiniCard label="Creee" value={fmtDate(invoice.createdAt)} />
             <MiniCard label="Echeance" value={fmtDate(invoice.dueDate)} />
           </div>
@@ -490,16 +490,16 @@ function InvoiceQuickView({
 }) {
   return (
     <Dialog open={Boolean(invoice)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-3xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-3xl">
         {invoice && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     {invoiceLabel(invoice)}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {invoice.partySnapshot?.fullName ?? "Client non renseigne"} / creee le{" "}
                     {fmtDateTime(invoice.createdAt)}
                   </DialogDescription>
@@ -518,9 +518,9 @@ function InvoiceQuickView({
               <MiniStat label="Echeance" value={fmtDate(invoice.dueDate)} />
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="border-b border-border bg-surface-muted px-4 py-2">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Contenu de la facture
                 </p>
               </div>
@@ -566,20 +566,20 @@ function InvoiceQuickView({
 
 function MiniCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{label}</p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+    <div className="min-w-0 rounded-lg border border-border bg-surface-muted px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-subtle">{label}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }

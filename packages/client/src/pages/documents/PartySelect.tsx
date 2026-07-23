@@ -39,15 +39,15 @@ export function PartySelect({ value, onChange, filterReferrer, placeholder }: Pa
 
   if (value) {
     return (
-      <div className="flex items-center justify-between bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2">
+      <div className="flex items-center justify-between bg-surface-muted border border-border rounded-lg px-3 py-2">
         <div>
-          <p className="text-[12px] font-medium text-neutral-800">{value.fullName}</p>
-          <p className="text-[10.5px] text-neutral-500">{value.phone ?? value.email ?? "—"}</p>
+          <p className="text-[12px] font-medium text-body">{value.fullName}</p>
+          <p className="text-[10.5px] text-muted-foreground">{value.phone ?? value.email ?? "—"}</p>
         </div>
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="text-neutral-400 hover:text-red-500"
+          className="text-subtle hover:text-danger-text"
         >
           <X size={14} />
         </button>
@@ -58,7 +58,7 @@ export function PartySelect({ value, onChange, filterReferrer, placeholder }: Pa
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -68,7 +68,7 @@ export function PartySelect({ value, onChange, filterReferrer, placeholder }: Pa
         />
       </div>
       {open && results.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-200 rounded-lg shadow-md max-h-52 overflow-y-auto">
+        <div className="absolute z-10 mt-1 w-full bg-card border border-border rounded-lg shadow-md max-h-52 overflow-y-auto">
           {results.map((p) => (
             <button
               key={p.id}
@@ -78,10 +78,10 @@ export function PartySelect({ value, onChange, filterReferrer, placeholder }: Pa
                 setOpen(false);
                 setQuery("");
               }}
-              className="w-full text-left px-3 py-2 hover:bg-neutral-50 text-[12px]"
+              className="w-full text-left px-3 py-2 hover:bg-surface-muted text-[12px]"
             >
-              <span className="font-medium text-neutral-800">{p.fullName}</span>
-              <span className="text-neutral-500 ml-2">{p.phone ?? p.email ?? ""}</span>
+              <span className="font-medium text-body">{p.fullName}</span>
+              <span className="text-muted-foreground ml-2">{p.phone ?? p.email ?? ""}</span>
             </button>
           ))}
         </div>

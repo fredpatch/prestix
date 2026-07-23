@@ -8,9 +8,9 @@ interface PaymentPlanCardProps {
 }
 
 const STATUS_STYLES: Record<Installment["status"], string> = {
-  unpaid: "bg-neutral-100 text-neutral-600",
-  partial: "bg-amber-50 text-amber-700",
-  paid: "bg-emerald-50 text-emerald-700",
+  unpaid: "bg-surface-subtle text-body",
+  partial: "bg-warning-bg text-warning-text",
+  paid: "bg-success-bg text-success-text",
 };
 
 const STATUS_LABELS: Record<Installment["status"], string> = {
@@ -26,29 +26,29 @@ export function PaymentPlanCard({ installments, onChanged }: PaymentPlanCardProp
   if (installments.length === 0) return null;
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden mb-4">
-      <div className="px-4 py-2.5 border-b border-neutral-200">
-        <p className="text-[11.5px] font-semibold text-neutral-800">Échéancier</p>
+    <div className="bg-card border border-border rounded-lg overflow-hidden mb-4">
+      <div className="px-4 py-2.5 border-b border-border">
+        <p className="text-[11.5px] font-semibold text-body">Échéancier</p>
       </div>
       <table className="w-full text-left">
-        <thead className="bg-neutral-50 border-b border-neutral-200">
+        <thead className="bg-surface-muted border-b border-border">
           <tr>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Échéance
             </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Date prévue
             </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
               Attendu
             </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
               Payé
             </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
               Pénalité due
             </th>
-            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Statut
             </th>
             {canReschedule && <th className="px-4 py-2 w-10"></th>}
@@ -56,37 +56,37 @@ export function PaymentPlanCard({ installments, onChanged }: PaymentPlanCardProp
         </thead>
         <tbody>
           {installments.map((inst) => (
-            <tr key={inst.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-2 text-[12px] text-neutral-800">
+            <tr key={inst.id} className="border-b border-border last:border-0">
+              <td className="px-4 py-2 text-[12px] text-body">
                 #{inst.sequence}
                 {inst.sequence === 1 && (
-                  <span className="text-[10px] text-neutral-500 ml-1">(avance)</span>
+                  <span className="text-[10px] text-muted-foreground ml-1">(avance)</span>
                 )}
               </td>
-              <td className="px-4 py-2 text-[12px] text-neutral-500">
+              <td className="px-4 py-2 text-[12px] text-muted-foreground">
                 {new Date(inst.expectedDate).toLocaleDateString("fr-FR")}
                 {inst.rescheduledFrom && (
-                  <span className="text-[10px] text-amber-600 ml-1">
+                  <span className="text-[10px] text-warning-text ml-1">
                     (reprogrammée, était le{" "}
                     {new Date(inst.rescheduledFrom).toLocaleDateString("fr-FR")})
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2 text-[12px] text-neutral-500 text-right">
+              <td className="px-4 py-2 text-[12px] text-muted-foreground text-right">
                 {parseFloat(inst.expectedAmount).toLocaleString("fr-FR")}
               </td>
-              <td className="px-4 py-2 text-[12px] text-neutral-800 text-right">
+              <td className="px-4 py-2 text-[12px] text-body text-right">
                 {parseFloat(inst.paidAmount).toLocaleString("fr-FR")}
               </td>
               <td className="px-4 py-2 text-[12px] text-right">
                 {parseFloat(inst.penaltyDue) > 0 ? (
-                  <span className="text-red-600 font-medium">
+                  <span className="text-danger-text font-medium">
                     {parseFloat(inst.penaltyDue).toLocaleString("fr-FR")} XAF
                   </span>
                 ) : parseFloat(inst.penaltyAccrued) > 0 ? (
-                  <span className="text-neutral-400">réglée</span>
+                  <span className="text-subtle">réglée</span>
                 ) : (
-                  <span className="text-neutral-300">—</span>
+                  <span className="text-subtle">—</span>
                 )}
               </td>
               <td className="px-4 py-2">

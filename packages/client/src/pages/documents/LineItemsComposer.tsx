@@ -37,7 +37,7 @@ export const TRAVEL_CLASSES: { value: TicketDetailsInput["travelClass"]; label: 
 
 export function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="mt-1 text-[10.5px] text-red-600">{message}</p>;
+  return <p className="mt-1 text-[10.5px] text-danger-text">{message}</p>;
 }
 
 export function lineSummary(line: DocumentLineInput): string {
@@ -168,9 +168,9 @@ export function ShopFields<T extends FieldValues>({ index, line }: ShopFieldsPro
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.16 }}
-      className="mt-4 border-t border-neutral-200 pt-4"
+      className="mt-4 border-t border-border pt-4"
     >
-      <h3 className="text-[12px] font-semibold text-neutral-900 mb-3">Informations article</h3>
+      <h3 className="text-[12px] font-semibold text-foreground mb-3">Informations article</h3>
 
       <div className="grid gap-3 md:grid-cols-2">
         <div>
@@ -203,7 +203,7 @@ export function ShopFields<T extends FieldValues>({ index, line }: ShopFieldsPro
       </div>
 
       {stockWarning && (
-        <p className="mt-2 flex gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+        <p className="mt-2 flex gap-1.5 text-[11px] text-warning-text bg-warning-bg border border-warning-border rounded px-2.5 py-1.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
           <span>
             {stockWarning} — l'émission de la facture nécessitera l'autorisation d'un manager si le
@@ -275,16 +275,16 @@ export function TicketFields<T extends FieldValues>({ index, line, error }: Tick
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.16 }}
-      className="mt-4 border-t border-neutral-200 pt-4"
+      className="mt-4 border-t border-border pt-4"
     >
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-[12px] font-semibold text-neutral-900">Informations billet</h3>
-          <p className="mt-0.5 text-[11px] text-neutral-500">
+          <h3 className="text-[12px] font-semibold text-foreground">Informations billet</h3>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             Ces champs génèrent la description de la ligne et les références du dossier.
           </p>
         </div>
-        <span className="rounded border border-neutral-200 bg-white px-2 py-1 text-[10.5px] font-medium text-neutral-500">
+        <span className="rounded border border-border bg-card px-2 py-1 text-[10.5px] font-medium text-muted-foreground">
           Ligne {index + 1}
         </span>
       </div>
@@ -477,12 +477,12 @@ export function LineItemsComposer<T extends FieldValues>({ contentLabel }: LineI
   }
 
   return (
-    <section className="border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 px-4 py-3">
+    <section className="border border-border bg-card">
+      <div className="border-b border-border px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">02 / Lignes</p>
-            <h2 className="mt-1 text-[14px] font-semibold text-neutral-900">{contentLabel}</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">02 / Lignes</p>
+            <h2 className="mt-1 text-[14px] font-semibold text-foreground">{contentLabel}</h2>
           </div>
           <Button type="button" size="sm" onClick={() => append(defaultTicketLine() as any)}>
             <Plus size={13} /> Ajouter une ligne
@@ -510,19 +510,19 @@ export function LineItemsComposer<T extends FieldValues>({ contentLabel }: LineI
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded border border-neutral-200 bg-neutral-50 text-brand-gold-dark">
+                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded border border-border bg-surface-muted text-brand-gold-dark">
                       <LineIcon size={15} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[13px] font-semibold text-neutral-900">Ligne {index + 1}</p>
-                        <span className="text-[10.5px] font-medium text-neutral-500">{selectedType?.label}</span>
+                        <p className="text-[13px] font-semibold text-foreground">Ligne {index + 1}</p>
+                        <span className="text-[10.5px] font-medium text-muted-foreground">{selectedType?.label}</span>
                       </div>
-                      <p className="mt-0.5 truncate text-[11px] text-neutral-500">{lineSummary(line)}</p>
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{lineSummary(line)}</p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <span className="mr-1 hidden text-[12px] font-semibold text-neutral-800 sm:inline">
+                    <span className="mr-1 hidden text-[12px] font-semibold text-body sm:inline">
                       {lineTotal(line).toLocaleString("fr-FR")} XAF
                     </span>
                     <Button
@@ -539,7 +539,7 @@ export function LineItemsComposer<T extends FieldValues>({ contentLabel }: LineI
                       variant="ghost"
                       size="icon"
                       onClick={() => remove(index)}
-                      className="text-red-500 hover:bg-red-50"
+                      className="text-danger-text hover:bg-danger-bg"
                       title="Supprimer la ligne"
                     >
                       <Trash2 size={13} />
@@ -645,8 +645,8 @@ export function LineItemsComposer<T extends FieldValues>({ contentLabel }: LineI
 
         {fields.length === 0 && (
           <div className="px-4 py-8 text-center">
-            <p className="text-[12px] font-medium text-neutral-800">Aucune ligne ajoutée.</p>
-            <p className="mt-1 text-[11px] text-neutral-500">
+            <p className="text-[12px] font-medium text-body">Aucune ligne ajoutée.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">
               Ajoutez une ligne billetterie ou PrestiShop pour continuer.
             </p>
             <Button type="button" size="sm" className="mt-3" onClick={() => append(defaultTicketLine() as any)}>
@@ -656,11 +656,11 @@ export function LineItemsComposer<T extends FieldValues>({ contentLabel }: LineI
         )}
       </div>
 
-      <div className="flex justify-between border-t border-neutral-200 bg-neutral-50 px-4 py-3">
+      <div className="flex justify-between border-t border-border bg-surface-muted px-4 py-3">
         <Button type="button" variant="outline" size="sm" onClick={() => append(defaultShopLine() as any)}>
           <Plus size={13} /> Ligne PrestiShop
         </Button>
-        <p className="text-[12px] font-semibold text-neutral-900">
+        <p className="text-[12px] font-semibold text-foreground">
           Total lignes :{" "}
           {lines.reduce((sum, line) => sum + lineTotal(line), 0).toLocaleString("fr-FR")} XAF
         </p>

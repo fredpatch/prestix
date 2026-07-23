@@ -54,7 +54,7 @@ export function CancelInvoiceDialog({ invoiceId, onCancelled }: CancelInvoiceDia
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Raison
             </label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />

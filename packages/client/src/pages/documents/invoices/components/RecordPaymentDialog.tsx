@@ -135,7 +135,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
 
         {overpaymentPending !== null ? (
           <div className="space-y-3">
-            <p className="text-[12px] text-neutral-800">
+            <p className="text-[12px] text-body">
               Ce montant dépasse le solde dû. Que faire de l'excédent ?
             </p>
             <div className="flex gap-2">
@@ -161,7 +161,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-3">
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Montant reçu
                 </label>
                 <Input
@@ -171,7 +171,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                 />
               </div>
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Méthode
                 </label>
                 <Controller
@@ -194,7 +194,7 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
                 />
               </div>
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Échéance ciblée (optionnel)
                 </label>
                 <Controller
@@ -227,27 +227,27 @@ export function RecordPaymentDialog({ invoiceId, onRecorded }: RecordPaymentDial
               </div>
               {anyPenaltyDue && (
                 <div>
-                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                  <label className="block text-[11.5px] font-medium text-body mb-1.5">
                     Allouer en priorité à
                   </label>
-                  <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+                  <div className="grid grid-cols-2 rounded-lg border border-border overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setValue("allocationTarget", "principal")}
-                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "principal" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "principal" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
                     >
                       Principal
                     </button>
                     <button
                       type="button"
                       onClick={() => setValue("allocationTarget", "penalty")}
-                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "penalty" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+                      className={`px-3 py-2 text-[12px] font-medium ${allocationTarget === "penalty" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
                     >
                       Pénalité
                     </button>
                   </div>
                   {allocationTarget === "penalty" && (
-                    <p className="flex items-start gap-1.5 text-[10.5px] text-amber-600 mt-1.5">
+                    <p className="flex items-start gap-1.5 text-[10.5px] text-warning-text mt-1.5">
                       <AlertTriangle size={13} className="mt-0.5 shrink-0" />
                       <span>
                         Le principal restera dû et l'accumulation de pénalité continuera tant

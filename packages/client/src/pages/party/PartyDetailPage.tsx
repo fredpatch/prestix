@@ -85,7 +85,7 @@ export default function PartyDetailPage() {
   }
 
   if (isLoading || !party) {
-    return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+    return <Loader2 className="animate-spin text-subtle" size={18} />;
   }
 
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
@@ -164,20 +164,20 @@ export default function PartyDetailPage() {
 
         <TabsContent value="overview">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div>
-                  <p className="text-[12px] font-semibold text-neutral-900">
+                  <p className="text-[12px] font-semibold text-foreground">
                     Activité commerciale récente
                   </p>
-                  <p className="text-[10.5px] text-neutral-500">
+                  <p className="text-[10.5px] text-muted-foreground">
                     Factures et proformas liés à cette partie
                   </p>
                 </div>
-                <FileText size={15} className="text-neutral-400" />
+                <FileText size={15} className="text-subtle" />
               </div>
               {recentCommercial.length === 0 ? (
-                <p className="px-4 py-6 text-[12px] text-neutral-500">
+                <p className="px-4 py-6 text-[12px] text-muted-foreground">
                   Aucun document commercial pour cette partie.
                 </p>
               ) : (
@@ -190,18 +190,18 @@ export default function PartyDetailPage() {
                           ? `/invoices/${entry.id}`
                           : `/proformas/${entry.id}`
                       }
-                      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-50"
+                      className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-muted"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium text-neutral-800">
+                        <p className="truncate text-[12px] font-medium text-body">
                           {entry.docType === "invoice" ? "Facture" : "Proforma"}{" "}
                           {entry.number ?? `#${entry.id}`}
                         </p>
-                        <p className="text-[10.5px] text-neutral-500">
+                        <p className="text-[10.5px] text-muted-foreground">
                           {new Date(entry.date).toLocaleDateString("fr-FR")} · {entry.status}
                         </p>
                       </div>
-                      <p className="shrink-0 text-[12.5px] font-semibold text-neutral-900">
+                      <p className="shrink-0 text-[12.5px] font-semibold text-foreground">
                         {money(entry.amount)}
                       </p>
                     </Link>
@@ -210,19 +210,19 @@ export default function PartyDetailPage() {
               )}
             </div>
 
-            <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+            <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div>
-                  <p className="text-[12px] font-semibold text-neutral-900">Épargne récente</p>
-                  <p className="text-[10.5px] text-neutral-500">
+                  <p className="text-[12px] font-semibold text-foreground">Épargne récente</p>
+                  <p className="text-[10.5px] text-muted-foreground">
                     Derniers mouvements du compte voyage
                   </p>
                 </div>
-                <Wallet size={15} className="text-neutral-400" />
+                <Wallet size={15} className="text-subtle" />
               </div>
               {!savingsAccount ? (
                 <div className="px-4 py-6">
-                  <p className="text-[12px] text-neutral-500">
+                  <p className="text-[12px] text-muted-foreground">
                     Aucun compte épargne pour cette partie.
                   </p>
                   {canManage && (
@@ -232,7 +232,7 @@ export default function PartyDetailPage() {
                   )}
                 </div>
               ) : recentSavings.length === 0 ? (
-                <p className="px-4 py-6 text-[12px] text-neutral-500">
+                <p className="px-4 py-6 text-[12px] text-muted-foreground">
                   Aucun mouvement pour ce compte.
                 </p>
               ) : (
@@ -240,19 +240,19 @@ export default function PartyDetailPage() {
                   {recentSavings.map((t) => (
                     <div key={t.id} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium text-neutral-800">
+                        <p className="truncate text-[12px] font-medium text-body">
                           {NATURE_LABELS[t.nature]}
                           {t.receiptNumber && (
-                            <span className="ml-1 text-[10.5px] text-neutral-500">
+                            <span className="ml-1 text-[10.5px] text-muted-foreground">
                               {t.receiptNumber}
                             </span>
                           )}
                         </p>
-                        <p className="text-[10.5px] text-neutral-500">
+                        <p className="text-[10.5px] text-muted-foreground">
                           {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}
                         </p>
                       </div>
-                      <p className="shrink-0 text-[12.5px] font-semibold text-neutral-900">
+                      <p className="shrink-0 text-[12.5px] font-semibold text-foreground">
                         {money(t.totalAmount)}
                       </p>
                     </div>
@@ -265,7 +265,7 @@ export default function PartyDetailPage() {
 
         <TabsContent value="credit">
           {creditLots.length === 0 ? (
-            <p className="text-[12px] text-neutral-500 py-4">
+            <p className="text-[12px] text-muted-foreground py-4">
               Aucun lot de crédit pour cette partie.
             </p>
           ) : (
@@ -273,21 +273,21 @@ export default function PartyDetailPage() {
               {creditLots.map((lot) => (
                 <div
                   key={lot.id}
-                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                  className="bg-card border border-border rounded-lg px-4 py-3 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-[12px] font-medium text-neutral-800">
+                    <p className="text-[12px] font-medium text-body">
                       {parseFloat(lot.remainingAmount).toLocaleString("fr-FR")} /{" "}
                       {parseFloat(lot.amount).toLocaleString("fr-FR")} XAF
                     </p>
-                    <p className="text-[10.5px] text-neutral-500">
+                    <p className="text-[10.5px] text-muted-foreground">
                       Créé le {new Date(lot.createdAt).toLocaleDateString("fr-FR")} · Fenêtre
                       jusqu'au {new Date(lot.decisionWindowExpiresAt).toLocaleDateString("fr-FR")}
                       {lot.convertedAt && " · Converti en épargne"}
                     </p>
                   </div>
                   {!lot.convertedAt && parseFloat(lot.remainingAmount) > 0 && (
-                    <span className="text-[10.5px] text-emerald-600 font-medium">Ouvert</span>
+                    <span className="text-[10.5px] text-success-text font-medium">Ouvert</span>
                   )}
                 </div>
               ))}
@@ -297,7 +297,7 @@ export default function PartyDetailPage() {
 
         <TabsContent value="commercial">
           {!history || history.commercial.data.length === 0 ? (
-            <p className="text-[12px] text-neutral-500 py-4">
+            <p className="text-[12px] text-muted-foreground py-4">
               Aucun document commercial pour cette partie.
             </p>
           ) : (
@@ -308,18 +308,18 @@ export default function PartyDetailPage() {
                   to={
                     entry.docType === "invoice" ? `/invoices/${entry.id}` : `/proformas/${entry.id}`
                   }
-                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between hover:border-brand-gold-dark transition-colors"
+                  className="bg-card border border-border rounded-lg px-4 py-3 flex items-center justify-between hover:border-brand-gold-dark transition-colors"
                 >
                   <div>
-                    <p className="text-[12px] font-medium text-neutral-800">
+                    <p className="text-[12px] font-medium text-body">
                       {entry.docType === "invoice" ? "Facture" : "Proforma"}{" "}
                       {entry.number ?? `#${entry.id}`}
                     </p>
-                    <p className="text-[10.5px] text-neutral-500">
+                    <p className="text-[10.5px] text-muted-foreground">
                       {new Date(entry.date).toLocaleDateString("fr-FR")} · {entry.status}
                     </p>
                   </div>
-                  <p className="text-[13px] font-semibold text-neutral-800">
+                  <p className="text-[13px] font-semibold text-body">
                     {parseFloat(entry.amount).toLocaleString("fr-FR")} XAF
                   </p>
                 </Link>
@@ -331,39 +331,39 @@ export default function PartyDetailPage() {
         <TabsContent value="epargne">
           {!savingsAccount ? (
             <div className="py-4 space-y-3">
-              <p className="text-[12px] text-neutral-500">
+              <p className="text-[12px] text-muted-foreground">
                 Aucun compte épargne pour cette partie.
               </p>
               {canManage && <SubscribeButton partyId={partyId} onSubscribed={handleReload} />}
             </div>
           ) : savingsTransactions.length === 0 ? (
-            <p className="text-[12px] text-neutral-500 py-4">Aucun mouvement pour ce compte.</p>
+            <p className="text-[12px] text-muted-foreground py-4">Aucun mouvement pour ce compte.</p>
           ) : (
             <div className="space-y-2 py-2">
               {savingsTransactions.map((t) => (
                 <div
                   key={t.id}
-                  className="bg-white border border-neutral-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                  className="bg-card border border-border rounded-lg px-4 py-3 flex items-center justify-between"
                 >
                   <div>
-                    <p className="text-[12px] font-medium text-neutral-800">
+                    <p className="text-[12px] font-medium text-body">
                       {NATURE_LABELS[t.nature]} —{" "}
                       {parseFloat(t.totalAmount).toLocaleString("fr-FR")} XAF
                       {t.reversalOfTransactionId && (
-                        <span className="text-[10.5px] text-amber-600 ml-2">
+                        <span className="text-[10.5px] text-warning-text ml-2">
                           (contre-passation)
                         </span>
                       )}
                       {!t.agentId && !t.reversalOfTransactionId && (
                         <span
-                          className="text-[10.5px] text-blue-600 ml-2"
+                          className="text-[10.5px] text-info-text ml-2"
                           title="Converti automatiquement depuis un lot de crédit expiré, pas un dépôt en espèces"
                         >
                           (converti)
                         </span>
                       )}
                     </p>
-                    <p className="text-[10.5px] text-neutral-500">
+                    <p className="text-[10.5px] text-muted-foreground">
                       {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}
                       {t.appliedToInvoiceId && ` · appliqué à la facture #${t.appliedToInvoiceId}`}
                       {t.receiptNumber && ` · ${t.receiptNumber}`}

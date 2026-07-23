@@ -115,13 +115,13 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+    <section className="border border-border bg-card">
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           {index}
         </p>
-        <h2 className="mt-1 text-[14px] font-semibold text-neutral-900">{title}</h2>
-        <p className="mt-0.5 text-[11px] text-neutral-500">{description}</p>
+        <h2 className="mt-1 text-[14px] font-semibold text-foreground">{title}</h2>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
       </div>
       <div className="p-4">{children}</div>
     </section>
@@ -135,12 +135,12 @@ function CompletionRow({ done, label }: { done: boolean; label: string }) {
         className={`flex size-4 items-center justify-center rounded-full border ${
           done
             ? "border-brand-gold-dark bg-brand-gold-dark text-white"
-            : "border-neutral-300 bg-white text-neutral-300"
+            : "border-border bg-card text-subtle"
         }`}
       >
         {done && <Check size={10} />}
       </span>
-      <span className={done ? "text-neutral-800" : "text-neutral-500"}>{label}</span>
+      <span className={done ? "text-body" : "text-muted-foreground"}>{label}</span>
     </li>
   );
 }
@@ -155,10 +155,10 @@ function SummaryPanel({ values, isValid }: { values: InvoiceFormValues; isValid:
     .every((line) => Boolean(line.ticketDetails?.references?.pnr));
 
   return (
-    <aside className="border border-neutral-200 bg-white lg:sticky lg:top-6">
-      <div className="border-b border-neutral-200 px-4 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Resume</p>
-        <p className="mt-1 text-[20px] font-bold text-neutral-900">
+    <aside className="border border-border bg-card lg:sticky lg:top-6">
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Resume</p>
+        <p className="mt-1 text-[20px] font-bold text-foreground">
           {total.toLocaleString("fr-FR")} XAF
         </p>
       </div>
@@ -169,7 +169,7 @@ function SummaryPanel({ values, isValid }: { values: InvoiceFormValues; isValid:
           <CompletionRow done={hasTicketReference} label="PNR renseigné pour chaque billet" />
           <CompletionRow done={isValid} label="Formulaire prêt à créer" />
         </ul>
-        <div className="flex items-start gap-2 border-t border-neutral-200 pt-3 text-[11px] text-neutral-500">
+        <div className="flex items-start gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
           <p>La facture reste en brouillon (modifiable) jusqu'à son émission.</p>
         </div>
@@ -279,7 +279,7 @@ export default function CreateInvoiceDraftPage() {
                             initial={{ opacity: 0, y: -3 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -3 }}
-                            className="mt-1 text-[10.5px] text-red-600"
+                            className="mt-1 text-[10.5px] text-danger-text"
                           >
                             {errors.party.message}
                           </motion.p>
@@ -300,7 +300,7 @@ export default function CreateInvoiceDraftPage() {
                         filterReferrer
                         placeholder="Rechercher un référent..."
                       />
-                      <p className="mt-1 text-[10.5px] text-neutral-500">
+                      <p className="mt-1 text-[10.5px] text-muted-foreground">
                         Optionnel. Utilisé pour le suivi commercial.
                       </p>
                     </div>
@@ -317,14 +317,14 @@ export default function CreateInvoiceDraftPage() {
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700"
+                  className="border border-danger-border bg-danger-bg px-4 py-3 text-[12px] text-danger-text"
                 >
                   {serverError ?? errors.lines?.message}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
               <Button type="button" variant="secondary" onClick={() => navigate("/invoices")}>
                 Annuler
               </Button>

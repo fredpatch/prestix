@@ -42,10 +42,10 @@ type ViewMode = "table" | "grid";
 type StatusFilter = "all" | Proforma["status"];
 
 const STATUS_STYLES: Record<Proforma["status"], string> = {
-  draft: "border-blue-100 bg-blue-50 text-blue-700",
-  issued: "border-emerald-100 bg-emerald-50 text-emerald-700",
-  expired: "border-neutral-200 bg-neutral-100 text-neutral-500",
-  cancelled: "border-red-100 bg-red-50 text-red-700",
+  draft: "border-info-border bg-info-bg text-info-text",
+  issued: "border-success-border bg-success-bg text-success-text",
+  expired: "border-border bg-surface-subtle text-muted-foreground",
+  cancelled: "border-danger-border bg-danger-bg text-danger-text",
 };
 
 const STATUS_LABELS: Record<Proforma["status"], string> = {
@@ -189,7 +189,7 @@ export default function ProformasPage() {
             >
               {row.original.number}
             </Link>
-            <p className="mt-0.5 text-[10.5px] text-neutral-500">{proformaSummary(row.original)}</p>
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">{proformaSummary(row.original)}</p>
           </div>
         ),
       },
@@ -198,10 +198,10 @@ export default function ProformasPage() {
         header: "Client",
         cell: ({ row }) => (
           <div>
-            <p className="text-[12px] font-medium text-neutral-800">
+            <p className="text-[12px] font-medium text-body">
               {row.original.partySnapshot?.fullName ?? "-"}
             </p>
-            <p className="mt-0.5 text-[10.5px] text-neutral-500">
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">
               {row.original.partySnapshot?.phone ??
                 row.original.partySnapshot?.email ??
                 "Contact non renseigné"}
@@ -214,7 +214,7 @@ export default function ProformasPage() {
         header: "Total",
         meta: { align: "right" },
         cell: ({ row }) => (
-          <span className="text-[12px] font-semibold tabular-nums text-neutral-900">
+          <span className="text-[12px] font-semibold tabular-nums text-foreground">
             {money(totalOf(row.original))}
           </span>
         ),
@@ -223,7 +223,7 @@ export default function ProformasPage() {
         id: "dates",
         header: "Dates",
         cell: ({ row }) => (
-          <div className="text-[12px] text-neutral-500">
+          <div className="text-[12px] text-muted-foreground">
             <p>Créée: {fmtDate(row.original.createdAt)}</p>
             <p>Expire: {fmtDate(row.original.expiresAt)}</p>
           </div>
@@ -260,7 +260,7 @@ export default function ProformasPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Suivi des proformas générées, de leur validité et de leur contenu avant émission de
           facture.
         </p>
@@ -304,12 +304,12 @@ export default function ProformasPage() {
         />
       </div>
 
-      <div className="mb-4 grid gap-3 border-y border-neutral-200 py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+      <div className="mb-4 grid gap-3 border-y border-border py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
         <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(240px,420px)_180px_auto]">
           <div className="relative min-w-0">
             <Search
               size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
             />
             <Input
               value={search}
@@ -351,11 +351,11 @@ export default function ProformasPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between xl:justify-end">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {filteredProformas.length} résultat{filteredProformas.length !== 1 ? "s" : ""}
             {filteredProformas.length !== proformas.length ? ` sur ${proformas.length}` : ""}
           </p>
-          <div className="inline-flex w-fit rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex w-fit rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -363,7 +363,7 @@ export default function ProformasPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+                viewMode === "table" && "bg-surface-subtle text-foreground",
               )}
             >
               <Table2 size={13} />
@@ -376,7 +376,7 @@ export default function ProformasPage() {
               onClick={() => setViewMode("grid")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+                viewMode === "grid" && "bg-surface-subtle text-foreground",
               )}
             >
               <LayoutGrid size={13} />
@@ -387,7 +387,7 @@ export default function ProformasPage() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-subtle" size={18} />
       ) : viewMode === "grid" ? (
         <ProformaGrid proformas={filteredProformas} onSelect={setSelected} />
       ) : (
@@ -414,7 +414,7 @@ function ProformaGrid({
 }) {
   if (proformas.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucune proforma.
       </div>
     );
@@ -423,13 +423,13 @@ function ProformaGrid({
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {proformas.map((proforma) => (
-        <div key={proforma.id} className="rounded-lg border border-neutral-200 bg-white p-4">
+        <div key={proforma.id} className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <button type="button" className="min-w-0 text-left" onClick={() => onSelect(proforma)}>
               <p className="truncate text-[13px] font-semibold text-brand-gold-dark">
                 {proforma.number}
               </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 {proforma.partySnapshot?.fullName ?? "Client non renseigné"}
               </p>
             </button>
@@ -437,13 +437,13 @@ function ProformaGrid({
           </div>
 
           <div className="mt-4">
-            <p className="text-[22px] font-bold leading-tight tabular-nums text-neutral-950">
+            <p className="text-[22px] font-bold leading-tight tabular-nums text-foreground">
               {money(totalOf(proforma))}
             </p>
-            <p className="mt-1 text-[11px] text-neutral-500">{proformaSummary(proforma)}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{proformaSummary(proforma)}</p>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
             <MiniFact label="Créée" value={fmtDate(proforma.createdAt)} />
             <MiniFact label="Expiration" value={fmtDate(proforma.expiresAt)} />
           </div>
@@ -476,16 +476,16 @@ function ProformaQuickView({
 
   return (
     <Dialog open={Boolean(proforma)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-3xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-3xl">
         {proforma && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     {proforma.number}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {proforma.partySnapshot?.fullName ?? "Client non renseigné"} · créée le{" "}
                     {fmtDateTime(proforma.createdAt)}
                   </DialogDescription>
@@ -501,15 +501,15 @@ function ProformaQuickView({
               <MiniStat label="Expiration" value={fmtDate(proforma.expiresAt)} />
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="border-b border-border bg-surface-muted px-4 py-2">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Contenu de la proforma
                 </p>
               </div>
               <div className="divide-y divide-neutral-100">
                 {proforma.lines.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                  <p className="px-4 py-8 text-center text-[12px] text-muted-foreground">
                     Aucune ligne.
                   </p>
                 ) : (
@@ -519,15 +519,15 @@ function ProformaQuickView({
                       className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium text-neutral-900">
+                        <p className="truncate text-[12px] font-medium text-foreground">
                           {line.description}
                         </p>
-                        <p className="mt-0.5 text-[10.5px] text-neutral-500">
+                        <p className="mt-0.5 text-[10.5px] text-muted-foreground">
                           {lineTypeLabel(line.lineType)} · quantité {line.quantity} · unité{" "}
                           {money(line.unitPrice)}
                         </p>
                       </div>
-                      <p className="text-[12px] font-semibold tabular-nums text-neutral-900">
+                      <p className="text-[12px] font-semibold tabular-nums text-foreground">
                         {money(line.lineTotal)}
                       </p>
                     </div>
@@ -576,22 +576,22 @@ function ProformaKpi({
     tone === "gold"
       ? "border-brand-gold-light/60 bg-brand-gold-light/20 text-brand-gold-dark"
       : tone === "success"
-        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+        ? "border-success-border bg-success-bg text-success-text"
         : tone === "danger"
-          ? "border-red-100 bg-red-50 text-red-700"
-          : "border-neutral-200 bg-neutral-50 text-neutral-600";
+          ? "border-danger-border bg-danger-bg text-danger-text"
+          : "border-border bg-surface-muted text-body";
 
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-4 py-3">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="mt-1 break-words text-[clamp(16px,5vw,20px)] font-bold leading-tight text-neutral-950">
+          <p className="mt-1 break-words text-[clamp(16px,5vw,20px)] font-bold leading-tight text-foreground">
             {value}
           </p>
-          <p className="mt-1 truncate text-[10.5px] text-neutral-500">{detail}</p>
+          <p className="mt-1 truncate text-[10.5px] text-muted-foreground">{detail}</p>
         </div>
         <span
           className={cn(
@@ -608,20 +608,20 @@ function ProformaKpi({
 
 function MiniFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{label}</p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+    <div className="min-w-0 rounded-lg border border-border bg-surface-muted px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-subtle">{label}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }

@@ -105,25 +105,25 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+          <div className="grid grid-cols-2 rounded-lg border border-border overflow-hidden">
             <button
               type="button"
               onClick={() => setMode("full")}
-              className={`px-3 py-2 text-[12px] font-medium ${mode === "full" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+              className={`px-3 py-2 text-[12px] font-medium ${mode === "full" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             >
               Paiement complet
             </button>
             <button
               type="button"
               onClick={() => setMode("installments")}
-              className={`px-3 py-2 text-[12px] font-medium ${mode === "installments" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+              className={`px-3 py-2 text-[12px] font-medium ${mode === "installments" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             >
               Échéancier (≤3)
             </button>
           </div>
 
           {mode === "full" ? (
-            <p className="text-[11.5px] text-neutral-500">
+            <p className="text-[11.5px] text-muted-foreground">
               Un seul paiement attendu de {totalAmount.toLocaleString("fr-FR")} XAF, échéance
               calculée automatiquement.
             </p>
@@ -132,9 +132,9 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
               {installments.map((inst, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-12 gap-2 items-center bg-neutral-50 rounded-lg p-2.5"
+                  className="grid grid-cols-12 gap-2 items-center bg-surface-muted rounded-lg p-2.5"
                 >
-                  <span className="col-span-1 text-[11px] font-medium text-neutral-500">
+                  <span className="col-span-1 text-[11px] font-medium text-muted-foreground">
                     #{i + 1}
                   </span>
                   <Input
@@ -158,7 +158,7 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
                     size="icon"
                     onClick={() => removeInstallment(i)}
                     disabled={i === 0}
-                    className="col-span-2 text-red-500 hover:bg-red-50 disabled:opacity-30"
+                    className="col-span-2 text-danger-text hover:bg-danger-bg disabled:opacity-30"
                   >
                     <Trash2 size={13} />
                   </Button>
@@ -170,15 +170,15 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
                 </Button>
               )}
               <div className="flex justify-between text-[11.5px] pt-1">
-                <span className={sumMatches ? "text-emerald-600" : "text-red-600"}>
+                <span className={sumMatches ? "text-success-text" : "text-danger-text"}>
                   Total échéancier : {sum.toLocaleString("fr-FR")} XAF
                 </span>
-                <span className="text-neutral-500">
+                <span className="text-muted-foreground">
                   Facture : {totalAmount.toLocaleString("fr-FR")} XAF
                 </span>
               </div>
               {!sumMatches && (
-                <p className="text-[10.5px] text-red-600">
+                <p className="text-[10.5px] text-danger-text">
                   La somme des échéances doit égaler le total de la facture.
                 </p>
               )}
@@ -186,8 +186,8 @@ export function IssueInvoiceDialog({ invoiceId, totalAmount, onIssued }: IssueIn
           )}
 
           {stockOverridePending && (
-            <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 space-y-2">
-              <p className="text-[12px] text-amber-800">
+            <div className="border border-warning-border bg-warning-bg rounded-lg p-3 space-y-2">
+              <p className="text-[12px] text-warning-text">
                 Stock insuffisant pour au moins un article. En tant que manager, vous pouvez forcer
                 l'émission - cela enregistrera un mouvement de stock négatif, audité.
               </p>

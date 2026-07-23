@@ -232,7 +232,7 @@ export default function InvoiceDetailPage() {
     sendEmailMutation.mutate({ kind: "delivery-note", invoiceId: invoice.id });
   }
 
-  if (isLoading || !invoice) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading || !invoice) return <Loader2 className="animate-spin text-subtle" size={18} />;
 
   const isDraft = invoice.status === "draft";
   const isEditableDraft = isDraft && !invoice.proformaId;
@@ -249,7 +249,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 border-b border-neutral-200 pb-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+      <div className="grid gap-4 border-b border-border pb-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <DocumentStatusBadge label={STATUS_LABELS[invoice.status]} tone={STATUS_TONES[invoice.status]} />
@@ -257,13 +257,13 @@ export default function InvoiceDetailPage() {
             {isOverdue && <DocumentStatusBadge label="En retard" tone="danger" />}
             {invoice.proformaId && <DocumentStatusBadge label="Issue d'un proforma" tone="blue" />}
           </div>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-500">
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             {invoice.partySnapshot?.fullName ?? "Client non renseigne"} / creee le {fmtDateTime(invoice.createdAt)}
             {invoice.dueDate ? ` / echeance ${fmtDate(invoice.dueDate)}` : ""}
             {referrer ? ` / referent : ${referrer.fullName}` : ""}
           </p>
           {invoice.status === "cancelled" && invoice.cancelReason && (
-            <p className="mt-1 text-[11px] text-red-600">Raison : {invoice.cancelReason}</p>
+            <p className="mt-1 text-[11px] text-danger-text">Raison : {invoice.cancelReason}</p>
           )}
         </div>
 
@@ -311,7 +311,7 @@ export default function InvoiceDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+              className="border-danger-border text-danger-text hover:bg-danger-bg hover:text-danger-text"
               onClick={handleSendReminder}
               disabled={!hasRecipientEmail || sendReminderMutation.isPending}
               title={
@@ -364,14 +364,14 @@ export default function InvoiceDetailPage() {
       </div>
 
       {isDraft && !isEditableDraft && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] text-amber-800">
+        <p className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-[11.5px] text-warning-text">
           Cette facture provient d'un proforma valide par le client. Ses lignes sont verrouillees.
           Pour un changement, creez un nouveau proforma.
         </p>
       )}
 
       {deliveryNote && (
-        <div className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12px] text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-lg border border-success-border bg-success-bg px-4 py-3 text-[12px] text-success-text sm:flex-row sm:items-center sm:justify-between">
           <span>
             Bon de livraison {deliveryNote.number} genere le {fmtDate(deliveryNote.issuedAt)}
           </span>
@@ -380,7 +380,7 @@ export default function InvoiceDetailPage() {
             href={`/api/delivery-notes/invoice/${invoice.id}/pdf`}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-emerald-800 underline hover:text-emerald-900"
+            className="font-medium text-success-text underline hover:text-success-text"
           >
             Voir le PDF
           </a>
@@ -409,11 +409,11 @@ export default function InvoiceDetailPage() {
 
           {isIssued && <PaymentPlanCard installments={installments} onChanged={handleReload} />}
 
-          <section className="rounded-lg border border-neutral-200 bg-white">
-            <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+          <section className="rounded-lg border border-border bg-card">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div>
-                <h2 className="text-[13px] font-bold text-neutral-950">Lignes de facture</h2>
-                <p className="mt-0.5 text-[11px] text-neutral-500">
+                <h2 className="text-[13px] font-bold text-foreground">Lignes de facture</h2>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Services factures, quantites, remises et totaux.
                 </p>
               </div>
@@ -421,21 +421,21 @@ export default function InvoiceDetailPage() {
 
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-left">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
+                <thead className="bg-surface-muted border-b border-border">
                   <tr>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Description
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Qte
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Prix unitaire
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Remise
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Total
                     </th>
                     {isEditableDraft && <th className="px-4 py-2.5 w-20" />}
@@ -444,7 +444,7 @@ export default function InvoiceDetailPage() {
                 <tbody>
                   {invoice.lines.length === 0 ? (
                     <tr>
-                      <td colSpan={isEditableDraft ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                      <td colSpan={isEditableDraft ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-muted-foreground">
                         Aucune ligne.
                       </td>
                     </tr>
@@ -468,10 +468,10 @@ export default function InvoiceDetailPage() {
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-neutral-50">
+                  <tr className="bg-surface-muted">
                     <td
                       colSpan={isEditableDraft ? 5 : 4}
-                      className="px-4 py-2.5 text-right text-[12px] font-semibold text-neutral-800"
+                      className="px-4 py-2.5 text-right text-[12px] font-semibold text-body"
                     >
                       Total
                     </td>
@@ -501,7 +501,7 @@ export default function InvoiceDetailPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveLine(line.id)}
-                            className="text-red-500 hover:bg-red-50"
+                            className="text-danger-text hover:bg-danger-bg"
                             title="Supprimer"
                           >
                             <Trash2 size={13} />
@@ -516,8 +516,8 @@ export default function InvoiceDetailPage() {
           </section>
 
           {isEditableDraft && (
-            <section className="rounded-lg border border-neutral-200 bg-white p-4">
-              <p className="text-[12px] font-semibold text-neutral-900">Ajouter une ligne</p>
+            <section className="rounded-lg border border-border bg-card p-4">
+              <p className="text-[12px] font-semibold text-foreground">Ajouter une ligne</p>
               <div className="mt-3 grid gap-2 md:grid-cols-[minmax(0,1fr)_90px_140px_120px_auto]">
                 <Input
                   placeholder="Description"
@@ -553,7 +553,7 @@ export default function InvoiceDetailPage() {
                   {addLineMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
                 </Button>
               </div>
-              <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10.5px] text-amber-800">
+              <p className="mt-3 rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-[10.5px] text-warning-text">
                 Pour un billet ou un article de stock avec passager designe, la capture complete se fait a la
                 creation de la facture.
               </p>
@@ -612,7 +612,7 @@ function LineRow({
 }) {
   if (isEditing) {
     return (
-      <tr className="border-b border-neutral-100 bg-amber-50/40 last:border-0">
+      <tr className="border-b border-border bg-warning-bg/40 last:border-0">
         <td className="px-4 py-2">
           <Input
             value={editDraft.description}
@@ -646,7 +646,7 @@ function LineRow({
             disabled={!canDiscount}
           />
         </td>
-        <td className="px-4 py-2 text-right text-[12px] font-medium text-neutral-800">
+        <td className="px-4 py-2 text-right text-[12px] font-medium text-body">
           {money((editDraft.unitPrice || 0) * (editDraft.quantity || 1) - (editDraft.discount || 0))}
         </td>
         <td className="px-4 py-2 text-right whitespace-nowrap">
@@ -662,14 +662,14 @@ function LineRow({
   }
 
   return (
-    <tr className="border-b border-neutral-100 last:border-0">
-      <td className="px-4 py-2.5 text-[12px] text-neutral-800">{line.description}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">{line.quantity}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">{money(line.unitPrice)}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">
+    <tr className="border-b border-border last:border-0">
+      <td className="px-4 py-2.5 text-[12px] text-body">{line.description}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">{line.quantity}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">{money(line.unitPrice)}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">
         {parseFloat(line.discount) > 0 ? `-${money(line.discount)}` : "-"}
       </td>
-      <td className="px-4 py-2.5 text-right text-[12px] font-medium text-neutral-800">
+      <td className="px-4 py-2.5 text-right text-[12px] font-medium text-body">
         {money(line.lineTotal)}
       </td>
       {canEdit && (
@@ -681,7 +681,7 @@ function LineRow({
             variant="ghost"
             size="icon"
             onClick={onRemove}
-            className="text-red-500 hover:bg-red-50"
+            className="text-danger-text hover:bg-danger-bg"
             title="Supprimer"
           >
             <Trash2 size={13} />

@@ -90,7 +90,7 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
         {party && (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+              <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
                 <input
                   type="checkbox"
                   {...register("isClient")}
@@ -98,7 +98,7 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
                 />
                 Client
               </label>
-              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+              <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
                 <input
                   type="checkbox"
                   {...register("isReferrer")}
@@ -108,20 +108,20 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
               </label>
             </div>
             {!isClient && !isReferrer && (
-              <p className="text-[10.5px] text-amber-600">
+              <p className="text-[10.5px] text-warning-text">
                 Une partie doit être au moins client ou référent.
               </p>
             )}
 
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Nom complet
               </label>
               <Input {...register("fullName")} autoFocus />
             </div>
 
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+              <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
                 <input
                   type="radio"
                   value="individual"
@@ -130,7 +130,7 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
                 />
                 Particulier
               </label>
-              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+              <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
                 <input
                   type="radio"
                   value="company"
@@ -143,13 +143,13 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
             {partyType === "company" && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                  <label className="block text-[11.5px] font-medium text-body mb-1.5">
                     Raison sociale
                   </label>
                   <Input {...register("tradeName")} />
                 </div>
                 <div>
-                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                  <label className="block text-[11.5px] font-medium text-body mb-1.5">
                     RCCM / NIF (optionnel)
                   </label>
                   <Input {...register("taxId")} />
@@ -159,26 +159,26 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Code
                 </label>
                 <Input {...register("code")} />
               </div>
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Téléphone
                 </label>
                 <Input {...register("phone")} />
               </div>
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Email
               </label>
               <Input {...register("email")} type="email" />
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Adresse
               </label>
               <Input {...register("address")} />

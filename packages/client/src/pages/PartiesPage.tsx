@@ -44,7 +44,7 @@ const columns: ColumnDef<Party, any>[] = [
           {row.original.fullName}
         </Link>
         {row.original.code && (
-          <span className="text-[10.5px] text-neutral-500 ml-1.5">{row.original.code}</span>
+          <span className="text-[10.5px] text-muted-foreground ml-1.5">{row.original.code}</span>
         )}
       </>
     ),
@@ -53,7 +53,7 @@ const columns: ColumnDef<Party, any>[] = [
     id: "contact",
     header: "Contact",
     cell: ({ row }) => (
-      <span className="text-[12px] text-neutral-500">
+      <span className="text-[12px] text-muted-foreground">
         {row.original.phone ?? row.original.email ?? "—"}
       </span>
     ),
@@ -109,7 +109,7 @@ export default function PartiesPage() {
   return (
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Répertoire des clients et référents utilisés dans les documents, commissions, crédits et
           mouvements d'épargne.
         </p>
@@ -147,7 +147,7 @@ export default function PartiesPage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Rechercher par nom, email, téléphone, code..."
@@ -173,10 +173,10 @@ export default function PartiesPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {total} résultat{total !== 1 ? "s" : ""}
           </p>
-          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -184,7 +184,7 @@ export default function PartiesPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+                viewMode === "table" && "bg-surface-subtle text-foreground",
               )}
             >
               <Table2 size={13} />
@@ -197,7 +197,7 @@ export default function PartiesPage() {
               onClick={() => setViewMode("grid")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+                viewMode === "grid" && "bg-surface-subtle text-foreground",
               )}
             >
               <LayoutGrid size={13} />
@@ -208,7 +208,7 @@ export default function PartiesPage() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-subtle" size={18} />
       ) : viewMode === "grid" ? (
         <PartyGrid parties={parties} />
       ) : (

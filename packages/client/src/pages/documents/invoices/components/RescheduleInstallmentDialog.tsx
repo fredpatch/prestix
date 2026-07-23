@@ -53,7 +53,7 @@ export function RescheduleInstallmentDialog({
           variant="ghost"
           size="icon"
           title="Reprogrammer"
-          className="text-neutral-500 hover:text-brand-gold-dark"
+          className="text-muted-foreground hover:text-brand-gold-dark"
         >
           <CalendarClock size={13} />
         </Button>
@@ -63,12 +63,12 @@ export function RescheduleInstallmentDialog({
           <DialogTitle>Reprogrammer l'échéance {installment.sequence}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-[11px] text-neutral-500">
+          <p className="text-[11px] text-muted-foreground">
             Date actuelle : {new Date(installment.expectedDate).toLocaleDateString("fr-FR")}. La
             nouvelle date doit être ultérieure.
           </p>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Nouvelle date
             </label>
             <Input
@@ -79,12 +79,12 @@ export function RescheduleInstallmentDialog({
             />
           </div>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Raison
             </label>
             <Input value={reason} onChange={(e) => setReason(e.target.value)} />
           </div>
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
+          {error && <p className="text-[11px] text-danger-text">{error}</p>}
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => setOpen(false)}>

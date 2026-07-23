@@ -66,13 +66,13 @@ export function QuickAddPartyDialog({ role, onCreated, trigger }: QuickAddPartyD
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Nom complet
             </label>
             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} autoFocus />
           </div>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Téléphone (optionnel)
             </label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} />

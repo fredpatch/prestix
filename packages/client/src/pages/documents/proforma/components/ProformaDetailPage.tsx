@@ -163,7 +163,7 @@ export default function ProformaDetailPage() {
     sendEmailMutation.mutate({ kind: "proforma", id: proforma.id });
   }
 
-  if (isLoading || !proforma) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (isLoading || !proforma) return <Loader2 className="animate-spin text-subtle" size={18} />;
 
   const total = documentTotal(proforma.lines);
   const canPromote = proforma.status === "draft";
@@ -175,13 +175,13 @@ export default function ProformaDetailPage() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 border-b border-neutral-200 pb-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+      <div className="grid gap-4 border-b border-border pb-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <DocumentStatusBadge label={STATUS_LABELS[proforma.status]} tone={STATUS_TONES[proforma.status]} />
             {isExpiredSoon && <DocumentStatusBadge label="Expiration proche" tone="warning" />}
           </div>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-500">
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
             {proforma.partySnapshot?.fullName ?? "Client non renseigne"} / creee le{" "}
             {fmtDateTime(proforma.createdAt)}
             {proforma.expiresAt ? ` / expire le ${fmtDate(proforma.expiresAt)}` : ""}
@@ -254,12 +254,12 @@ export default function ProformaDetailPage() {
       </div>
 
       {proforma.status === "expired" && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] text-amber-800">
+        <p className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-[11.5px] text-warning-text">
           Cette proforma est expiree. Creez une nouvelle proforma si le client confirme la demande.
         </p>
       )}
       {proforma.status === "cancelled" && (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11.5px] text-red-700">
+        <p className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-[11.5px] text-danger-text">
           Cette proforma est annulee. Les actions de modification et de promotion sont bloquees.
         </p>
       )}
@@ -274,11 +274,11 @@ export default function ProformaDetailPage() {
             referrer={referrer?.fullName}
           />
 
-          <section className="rounded-lg border border-neutral-200 bg-white">
-            <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+          <section className="rounded-lg border border-border bg-card">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <div>
-                <h2 className="text-[13px] font-bold text-neutral-950">Lignes de proforma</h2>
-                <p className="mt-0.5 text-[11px] text-neutral-500">
+                <h2 className="text-[13px] font-bold text-foreground">Lignes de proforma</h2>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Services, billets et articles inclus dans cette proforma.
                 </p>
               </div>
@@ -291,21 +291,21 @@ export default function ProformaDetailPage() {
 
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[720px] text-left">
-                <thead className="bg-neutral-50 border-b border-neutral-200">
+                <thead className="bg-surface-muted border-b border-border">
                   <tr>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Description
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Qte
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Prix unitaire
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Remise
                     </th>
-                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 text-right">
+                    <th className="px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground text-right">
                       Total
                     </th>
                     {canEdit && <th className="px-4 py-2.5 w-20" />}
@@ -314,7 +314,7 @@ export default function ProformaDetailPage() {
                 <tbody>
                   {proforma.lines.length === 0 ? (
                     <tr>
-                      <td colSpan={canEdit ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-neutral-500">
+                      <td colSpan={canEdit ? 6 : 5} className="px-4 py-8 text-center text-[12px] text-muted-foreground">
                         Aucune ligne.
                       </td>
                     </tr>
@@ -337,10 +337,10 @@ export default function ProformaDetailPage() {
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-neutral-50">
+                  <tr className="bg-surface-muted">
                     <td
                       colSpan={canEdit ? 5 : 4}
-                      className="px-4 py-2.5 text-right text-[12px] font-semibold text-neutral-800"
+                      className="px-4 py-2.5 text-right text-[12px] font-semibold text-body"
                     >
                       Total
                     </td>
@@ -370,7 +370,7 @@ export default function ProformaDetailPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveLine(line.id)}
-                            className="text-red-500 hover:bg-red-50"
+                            className="text-danger-text hover:bg-danger-bg"
                             title="Supprimer"
                           >
                             <Trash2 size={13} />
@@ -385,12 +385,12 @@ export default function ProformaDetailPage() {
           </section>
 
           {canEdit && (
-            <section className="rounded-lg border border-neutral-200 bg-white p-4">
+            <section className="rounded-lg border border-border bg-card p-4">
               {adding ? (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[12px] font-semibold text-neutral-900">Nouvelle ligne</p>
-                    <p className="mt-0.5 text-[10.5px] text-neutral-500">
+                    <p className="text-[12px] font-semibold text-foreground">Nouvelle ligne</p>
+                    <p className="mt-0.5 text-[10.5px] text-muted-foreground">
                       Ajout generique pour service ou article simple.
                     </p>
                   </div>
@@ -426,7 +426,7 @@ export default function ProformaDetailPage() {
                       Annuler
                     </Button>
                   </div>
-                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10.5px] text-amber-800">
+                  <p className="rounded-lg border border-warning-border bg-warning-bg px-3 py-2 text-[10.5px] text-warning-text">
                     Pour un billet ou un article de stock avec passager designe, utilisez une nouvelle proforma.
                     Le formulaire complet n'est pas encore disponible en edition.
                   </p>
@@ -484,7 +484,7 @@ function LineRow({
 }) {
   if (isEditing) {
     return (
-      <tr className="border-b border-neutral-100 bg-amber-50/40 last:border-0">
+      <tr className="border-b border-border bg-warning-bg/40 last:border-0">
         <td className="px-4 py-2">
           <Input
             value={editDraft.description}
@@ -517,7 +517,7 @@ function LineRow({
             className="h-8 text-right text-[12px]"
           />
         </td>
-        <td className="px-4 py-2 text-right text-[12px] font-medium text-neutral-800">
+        <td className="px-4 py-2 text-right text-[12px] font-medium text-body">
           {money((editDraft.unitPrice || 0) * (editDraft.quantity || 1) - (editDraft.discount || 0))}
         </td>
         <td className="px-4 py-2 text-right whitespace-nowrap">
@@ -533,14 +533,14 @@ function LineRow({
   }
 
   return (
-    <tr className="border-b border-neutral-100 last:border-0">
-      <td className="px-4 py-2.5 text-[12px] text-neutral-800">{line.description}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">{line.quantity}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">{money(line.unitPrice)}</td>
-      <td className="px-4 py-2.5 text-right text-[12px] text-neutral-500">
+    <tr className="border-b border-border last:border-0">
+      <td className="px-4 py-2.5 text-[12px] text-body">{line.description}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">{line.quantity}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">{money(line.unitPrice)}</td>
+      <td className="px-4 py-2.5 text-right text-[12px] text-muted-foreground">
         {parseFloat(line.discount) > 0 ? `-${money(line.discount)}` : "-"}
       </td>
-      <td className="px-4 py-2.5 text-right text-[12px] font-medium text-neutral-800">
+      <td className="px-4 py-2.5 text-right text-[12px] font-medium text-body">
         {money(line.lineTotal)}
       </td>
       {canEdit && (
@@ -552,7 +552,7 @@ function LineRow({
             variant="ghost"
             size="icon"
             onClick={onRemove}
-            className="text-red-500 hover:bg-red-50"
+            className="text-danger-text hover:bg-danger-bg"
             title="Supprimer"
           >
             <Trash2 size={13} />

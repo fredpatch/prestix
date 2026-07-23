@@ -70,18 +70,18 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             Solde actuel :{" "}
-            <span className="font-medium text-neutral-800">
+            <span className="font-medium text-body">
               {parseFloat(account.balance).toLocaleString("fr-FR")} XAF
             </span>
           </p>
 
-          <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+          <div className="grid grid-cols-2 rounded-lg border border-border overflow-hidden">
             <button
               type="button"
               onClick={() => setNature("deposit")}
-              className={`px-3 py-2 text-[12px] font-medium ${nature === "deposit" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+              className={`px-3 py-2 text-[12px] font-medium ${nature === "deposit" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             >
               Dépôt
             </button>
@@ -89,20 +89,20 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
               type="button"
               onClick={() => canWithdraw && setNature("withdraw")}
               disabled={!canWithdraw}
-              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-red-600 text-white" : "bg-white text-neutral-500"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
+              className={`px-3 py-2 text-[12px] font-medium ${nature === "withdraw" ? "bg-red-600 text-white" : "bg-card text-muted-foreground"} ${!canWithdraw ? "opacity-40 cursor-not-allowed" : ""}`}
             >
               Retrait exceptionnel
             </button>
           </div>
 
           {nature === "withdraw" && !canWithdraw && (
-            <p className="text-[10.5px] text-amber-600">
+            <p className="text-[10.5px] text-warning-text">
               Le retrait direct nécessite un rôle admin. En temps normal, l'épargne se dépense sur un
               billet ou un article — jamais retirée en espèces.
             </p>
           )}
           {nature === "withdraw" && canWithdraw && (
-            <div className="flex items-start gap-1.5 text-[10.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
+            <div className="flex items-start gap-1.5 text-[10.5px] text-danger-text bg-danger-bg border border-danger-border rounded px-2.5 py-1.5">
               <AlertTriangle size={13} className="mt-0.5 shrink-0" />
               <span>
                 Retrait direct exceptionnel — l'épargne ne devrait normalement jamais sortir en espèces,
@@ -112,7 +112,7 @@ export function SavingsTransactionDialog({ account, onRecorded }: SavingsTransac
           )}
 
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Montant</label>
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">Montant</label>
             <Input type="number" value={amount || ""} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} />
           </div>
         </div>

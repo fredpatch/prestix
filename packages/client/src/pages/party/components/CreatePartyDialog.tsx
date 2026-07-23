@@ -83,11 +83,11 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+            <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
               <input type="checkbox" {...register("isClient")} className="accent-brand-gold-dark" />
               Client
             </label>
-            <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+            <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
               <input
                 type="checkbox"
                 {...register("isReferrer")}
@@ -97,20 +97,20 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
             </label>
           </div>
           {!isClient && !isReferrer && (
-            <p className="text-[10.5px] text-amber-600">
+            <p className="text-[10.5px] text-warning-text">
               Une partie doit être au moins client ou référent.
             </p>
           )}
 
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Nom complet
             </label>
             <Input {...register("fullName")} autoFocus />
           </div>
 
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+            <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
               <input
                 type="radio"
                 value="individual"
@@ -119,7 +119,7 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
               />
               Particulier
             </label>
-            <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+            <label className="flex items-center gap-2 text-[12px] text-body cursor-pointer">
               <input
                 type="radio"
                 value="company"
@@ -132,13 +132,13 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
           {partyType === "company" && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   Raison sociale
                 </label>
                 <Input {...register("tradeName")} />
               </div>
               <div>
-                <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                <label className="block text-[11.5px] font-medium text-body mb-1.5">
                   RCCM / NIF (optionnel)
                 </label>
                 <Input {...register("taxId")} />
@@ -148,26 +148,26 @@ export function CreatePartyDialog({ onCreated }: CreatePartyDialogProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Code (optionnel)
               </label>
               <Input {...register("code")} />
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Téléphone
               </label>
               <Input {...register("phone")} />
             </div>
           </div>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Email (optionnel)
             </label>
             <Input {...register("email")} type="email" />
           </div>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               Adresse (optionnel)
             </label>
             <Input {...register("address")} />
