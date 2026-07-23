@@ -246,12 +246,12 @@ body {
   --info-text: #59c8e8;
 }
 
-/* Alternate dark palettes — computed and contrast-checked alongside "teal"
-   (all >11:1 text contrast), not wired to any UI yet. A future Settings
-   theme-picker just needs to set document.documentElement.dataset.theme =
-   "blue" | "purple" (alongside the existing .dark class) — no further CSS
-   work required. Only the tinted surface roles are overridden; gold,
-   status colors, text tokens, and borders are shared with "teal" above. */
+/* Alternate dark palettes — wired to the Apparence tab in Settings via
+   document.documentElement.dataset.theme = "blue" | "purple" (alongside the
+   existing .dark class). Only the tinted surface roles are overridden;
+   gold, status colors, text tokens, and borders are shared with "teal"
+   above — the button color intentionally stays gold across all 3 dark
+   variants (unlike the light variants below, which also vary it). */
 .dark[data-theme="blue"] {
   --background: #060e18;
   --card: #131b26;
@@ -276,6 +276,43 @@ body {
   --sidebar-accent: #292333;
   --surface-muted: #302a3b;
   --surface-subtle: #3a3545;
+}
+
+/* Light-mode variants — same idea as the dark ones above, but the tint sits
+   on near-white surfaces so chroma is far lower (0.012 vs 0.022-0.030) to
+   avoid looking muddy. Also recolor the accent for "warm"/"cool" — same
+   mechanism dark mode already uses: override --color-brand-gold-dark
+   itself, not --primary/--ring (buttons and most components reference the
+   brand-gold-dark class directly, bypassing --primary entirely — confirmed
+   in components/ui/button.tsx — so overriding --primary alone would have
+   had zero visible effect). This cascades correctly to every button, link,
+   icon, and border using bg/text/border-brand-gold-dark, not just Button.
+   :not(.dark) so these never apply while a dark palette is active —
+   data-light-theme and data-theme are independent attributes (theme.tsx). */
+:root[data-light-theme="warm"]:not(.dark) {
+  --surface-muted: #f9f4ec;
+  --surface-subtle: #eae6dd;
+  --border: #ddd8d0;
+  --input: #ddd8d0;
+  --secondary: #f9f4ec;
+  --muted: #f9f4ec;
+  --accent: #f9f4ec;
+  --sidebar-accent: #f9f4ec;
+  --sidebar-border: #ddd8d0;
+  --color-brand-gold-dark: #8a5c00;
+}
+
+:root[data-light-theme="cool"]:not(.dark) {
+  --surface-muted: #ecf7fa;
+  --surface-subtle: #dee8ec;
+  --border: #d1dbdf;
+  --input: #d1dbdf;
+  --secondary: #ecf7fa;
+  --muted: #ecf7fa;
+  --accent: #ecf7fa;
+  --sidebar-accent: #ecf7fa;
+  --sidebar-border: #d1dbdf;
+  --color-brand-gold-dark: #00648a;
 }
 
 @layer base {

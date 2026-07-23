@@ -15,7 +15,7 @@ import {
   ToggleLeft,
   WalletCards,
 } from "lucide-react";
-import { useTheme, DARK_VARIANTS, type DarkVariant } from "@/lib/theme";
+import { useTheme, DARK_VARIANTS, LIGHT_VARIANTS, type DarkVariant, type LightVariant } from "@/lib/theme";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -875,15 +875,25 @@ function humanizeKey(value: string): string {
 }
 
 // Swatch preview colors, matching the actual computed CSS values (not
-// re-derived here — same hex as styles/index.css's .dark[data-theme=...]).
-const VARIANT_PREVIEW: Record<DarkVariant, { bg: string; card: string }> = {
-  teal: { bg: "#040f15", card: "#101d23" },
-  blue: { bg: "#060e18", card: "#131b26" },
-  purple: { bg: "#0f0a18", card: "#1d1727" },
+// re-derived here — same hex as styles/index.css's palette blocks).
+// `accent` is the button/link color for that variant — stays gold across
+// all 3 dark variants, but varies for light (warm→deep gold, cool→deep
+// brand-blue), per Fred's approval on 2026-07-24.
+const DARK_PREVIEW: Record<DarkVariant, { bg: string; card: string; accent: string }> = {
+  teal: { bg: "#040f15", card: "#101d23", accent: "#cc9c3c" },
+  blue: { bg: "#060e18", card: "#131b26", accent: "#cc9c3c" },
+  purple: { bg: "#0f0a18", card: "#1d1727", accent: "#cc9c3c" },
+};
+
+const LIGHT_PREVIEW: Record<LightVariant, { bg: string; card: string; accent: string }> = {
+  neutral: { bg: "#ffffff", card: "#f5f5f5", accent: "#a77800" },
+  warm: { bg: "#ffffff", card: "#f9f4ec", accent: "#8a5c00" },
+  cool: { bg: "#ffffff", card: "#ecf7fa", accent: "#00648a" },
 };
 
 function AppearanceTab() {
-  const { theme, toggleTheme, darkVariant, setDarkVariant } = useTheme();
+  const { theme, toggleTheme, darkVariant, setDarkVariant, lightVariant, setLightVariant } =
+    useTheme();
   const isDark = theme === "dark";
 
   return (
@@ -919,46 +929,93 @@ function AppearanceTab() {
         </div>
       </div>
 
-      <div className={`border border-border bg-card rounded-lg p-4 ${!isDark ? "opacity-50" : ""}`}>
-        <p className="text-[11.5px] font-semibold text-foreground mb-1">Palette (mode sombre)</p>
+      <div className="border border-border bg-card rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-foreground mb-1">Palette</p>
         <p className="text-[11.5px] text-muted-foreground mb-3">
-          {isDark
-            ? "S'applique immédiatement."
-            : "Passez en mode sombre pour choisir une palette."}
+          S'applique immédiatement, indépendamment pour chaque mode — changer de palette en mode{" "}
+          {isDark ? "clair" : "sombre"} ne change rien ici.
         </p>
         <div className="grid grid-cols-3 gap-3">
-          {DARK_VARIANTS.map((variant) => {
-            const preview = VARIANT_PREVIEW[variant.value];
-            const active = darkVariant === variant.value;
-            return (
-              <button
-                key={variant.value}
-                type="button"
-                disabled={!isDark}
-                onClick={() => setDarkVariant(variant.value)}
-                className={`relative rounded-lg border p-2.5 text-left transition-colors disabled:cursor-not-allowed ${
-                  active ? "border-brand-gold-dark" : "border-border hover:border-muted-foreground"
-                }`}
-                style={{ background: preview.bg }}
-              >
-                {active && (
-                  <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-gold-dark text-white">
-                    <Check size={10} />
-                  </span>
-                )}
-                <div
-                  className="rounded p-2 mb-2"
-                  style={{ background: preview.card }}
-                >
-                  <p className="text-[10.5px] font-medium text-white">Proforma</p>
-                  <p className="text-[9.5px] text-white/60">870 000 XAF</p>
-                </div>
-                <p className="text-[10.5px] font-medium text-white">{variant.label}</p>
-              </button>
-            );
-          })}
+          {isDark
+            ? DARK_VARIANTS.map((variant) => {
+                const preview = DARK_PREVIEW[variant.value];
+                const active = darkVariant === variant.value;
+                return (
+                  <VariantSwatch
+                    key={variant.value}
+                    label={variant.label}
+                    preview={preview}
+                    active={active}
+                    onClick={() => setDarkVariant(variant.value)}
+                  />
+                );
+              })
+            : LIGHT_VARIANTS.map((variant) => {
+                const preview = LIGHT_PREVIEW[variant.value];
+                const active = lightVariant === variant.value;
+                return (
+                  <VariantSwatch
+                    key={variant.value}
+                    label={variant.label}
+                    preview={preview}
+                    active={active}
+                    onClick={() => setLightVariant(variant.value)}
+                  />
+                );
+              })}
         </div>
       </div>
     </div>
+  );
+}
+
+function VariantSwatch({
+  label,
+  preview,
+  active,
+  onClick,
+}: {
+  label: string;
+  preview: { bg: string; card: string; accent: string };
+  active: boolean;
+  onClick: () => void;
+}) {
+  const textColor = preview.bg === "#ffffff" ? "#171717" : "#ffffff";
+  const mutedTextColor = preview.bg === "#ffffff" ? "#737373" : "rgba(255,255,255,0.6)";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative rounded-lg border p-2.5 text-left transition-colors ${
+        active ? "border-brand-gold-dark" : "border-border hover:border-muted-foreground"
+      }`}
+      style={{ background: preview.bg }}
+    >
+      {active && (
+        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand-gold-dark text-white">
+          <Check size={10} />
+        </span>
+      )}
+      <div
+        className="rounded p-2 mb-2 border"
+        style={{ background: preview.card, borderColor: preview.bg === "#ffffff" ? "#e5e5e5" : "transparent" }}
+      >
+        <p className="text-[10.5px] font-medium" style={{ color: textColor }}>
+          Proforma
+        </p>
+        <p className="text-[9.5px]" style={{ color: mutedTextColor }}>
+          870 000 XAF
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-full"
+          style={{ background: preview.accent }}
+        />
+        <p className="text-[10.5px] font-medium" style={{ color: textColor }}>
+          {label}
+        </p>
+      </div>
+    </button>
   );
 }
