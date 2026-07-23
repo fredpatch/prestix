@@ -1,5 +1,5 @@
 import { db } from "../../../db/index.js";
-import { notifications, roleLevel, users } from "../../../db/schema.js";
+import { notificationPreferences, notifications, roleLevel, users } from "../../../db/schema.js";
 import { and, desc, eq, ilike, inArray, isNotNull, isNull, or } from "drizzle-orm";
 import type {
   BroadcastNotificationInput,
@@ -94,7 +94,71 @@ export async function getUnreadCount(recipientUserId: number): Promise<number> {
   );
 }
 
+// Pass 6 gating. No row for a given eventCode (not yet seeded, or the
+// caller passed a code outside NOTIFICATION_EVENT_CODES) defaults to
+// "in-app on, email off" — today's behavior — rather than silently
+// dropping a notification because the catalog is momentarily out of sync
+// with the code.
+async function getPreference(
+  eventCode?: string,
+): Promise<{ inAppEnabled: boolean; emailEnabled: boolean }> {
+  if (!eventCode) return { inAppEnabled: true, emailEnabled: false };
+  const [row] = await db
+    .select({ inAppEnabled: notificationPreferences.inAppEnabled, emailEnabled: notificationPreferences.emailEnabled })
+    .from(notificationPreferences)
+    .where(eq(notificationPreferences.eventCode, eventCode))
+    .limit(1);
+  return row ?? { inAppEnabled: true, emailEnabled: false };
+}
+
+// Fire-and-forget, best-effort — mirrors the non-blocking pattern used
+// everywhere else mail is queued off the back of another action. A failed
+// preference-driven email never blocks or rolls back notification creation.
+// Dynamic import avoids a circular dependency risk with the documents module.
+async function queuePreferenceEmail(input: CreateNotificationInput): Promise<void> {
+  try {
+    const [recipient] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, input.recipientUserId))
+      .limit(1);
+    if (!recipient?.email) return;
+
+    const { sendTrackedMail } = await import("./mail-outbox.service.js");
+    const { emailShell, emailIconAttachments, escapeHtml } = await import(
+      "../../documents/services/email-shell.js"
+    );
+
+    const html = emailShell({
+      tone: "amber",
+      heroIcon: "hero-bell-ringing",
+      bannerHeadline: escapeHtml(input.title),
+      bodyGreetingName: "équipe",
+      bodyIntro: escapeHtml(input.body),
+      rows: [],
+      closingHtml: "Notification automatique — PrestiX.",
+    });
+
+    await sendTrackedMail({
+      to: recipient.email,
+      subject: `PrestiX - ${input.title}`,
+      text: input.body,
+      html,
+      attachments: emailIconAttachments(),
+      templateKey: `notification_${input.eventCode ?? "generic"}`,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      metadata: { eventCode: input.eventCode, recipientUserId: input.recipientUserId },
+    });
+  } catch (error) {
+    console.warn("[notifications:preference-email]", error);
+  }
+}
+
 export async function createNotification(input: CreateNotificationInput): Promise<NotificationView | null> {
+  const preference = await getPreference(input.eventCode);
+  if (!preference.inAppEnabled) return null;
+
   const values = {
     recipientUserId: input.recipientUserId,
     title: input.title,
@@ -112,7 +176,14 @@ export async function createNotification(input: CreateNotificationInput): Promis
     ? await db.insert(notifications).values(values).onConflictDoNothing().returning()
     : await db.insert(notifications).values(values).returning();
 
-  return inserted[0] ? toView(inserted[0]) : null;
+  const row = inserted[0] ? toView(inserted[0]) : null;
+
+  // Only email on an actual new row — onConflictDoNothing() returning
+  // empty means this was a dedupe hit, and we must not re-email for an
+  // event that already fired.
+  if (row && preference.emailEnabled) void queuePreferenceEmail(input);
+
+  return row;
 }
 
 async function listRecipients(minRole?: NotificationRole, explicitUserIds?: number[]): Promise<number[]> {

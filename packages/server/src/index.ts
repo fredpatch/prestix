@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import { seedDefaultSettings } from "./start/services/parameters-seed.service.js";
+import { seedNotificationPreferences } from "./start/services/notification-preferences-seed.service.js";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -130,6 +131,7 @@ app.listen(PORT, async () => {
 
   // Seed default settings if they don't exist yet
   await seedDefaultSettings();
+  await seedNotificationPreferences();
   await seedFeatureFlags();
   await seedCommissionTypes();
   await seedCounters();

@@ -169,6 +169,29 @@ export const mailOutbox = pgTable("mail_outbox", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Pass 6 — per-event notification preferences. eventCode is the same stable
+// string every producer already uses as its dedupeKey prefix (e.g.
+// "installment-due-soon", "commission-edit-requested") — not a new taxonomy,
+// just making the existing convention queryable/configurable. One row per
+// known event code, seeded at boot. inAppEnabled gates whether
+// createNotification/broadcastNotification fires at all for that event;
+// emailEnabled gates a NEW capability — sending an email alongside the
+// in-app row for events that today only ever create in-app notifications.
+// Deliberately separate from mail_document_auto_send_enabled /
+// mail_automatic_reminders_enabled, which remain blanket settings governing
+// the 6 client-facing document-email templateKeys (invoice_pdf, proforma_pdf,
+// etc.) — those are a different system (mail_outbox-only, no notifications
+// row) and out of scope for this table.
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  eventCode: varchar("event_code", { length: 80 }).notNull().unique(),
+  label: varchar("label", { length: 180 }).notNull(),
+  description: text("description"),
+  inAppEnabled: boolean("in_app_enabled").notNull().default(true),
+  emailEnabled: boolean("email_enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ─────────────────────────────────────────────────────────────────
 // M2 — Settings & Catalog
 // ─────────────────────────────────────────────────────────────────
