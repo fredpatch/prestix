@@ -94,9 +94,9 @@
 - Sprint 3's `cancelInvoice(paidAmountToCredit)` placeholder param replaced with a real computed value.
 - Sprint 3's `issueInvoice()` extended (not replaced) to create installments inside the same atomic transaction as numbering.
 
-### Known follow-up (filed in Notion, Sprint 12 hardening)
+### Known follow-up (filed in Notion, Sprint 12 hardening) — ✅ RESOLVED (2026-07-22)
 
-- `recordPayment`'s overpayment→credit path calls `createCreditLot()` in a second transaction after the payment transaction commits. A failure in that second call after a successful payment commit would leave `creditedAmount` set with no matching lot — rare, not reproduced, flagged for the Sprint 12 cross-compare hardening pass.
+- `recordPayment`'s overpayment→credit path calls `createCreditLot()` in a second transaction after the payment transaction commits. A failure in that second call after a successful payment commit would leave `creditedAmount` set with no matching lot — rare, not reproduced, flagged for the Sprint 12 cross-compare hardening pass. **Fixed:** `createCreditLot()` now accepts an optional `dbOrTx` param (defaults to `db`, backward-compatible); `recordPayment` passes its own transaction so credit-lot creation happens atomically with the payment. Verified in `packages/server/src/modules/credit/services/credit.service.ts` + `payment.service.ts`.
 
 ## Sprint 5 – Créances & Pénalités (M6) | 1.5 weeks
 
@@ -189,7 +189,7 @@
 
 - [x] **Savings accounts + append-only ledger; derived balance; withdrawal guard (SERIALIZABLE)** — CRITICAL — runtime-tested: deposit/balance derivation confirmed correct, withdrawal balance guard confirmed (blocked over-balance attempt with a clean translated error, not a raw code)
 - [x] **Subscription: direct + credit-conversion paths; inscription fee → CA** — CRITICAL — direct subscription runtime-tested including the corrected fee-visibility fix (real deposit+withdrawal pair, confirmed in the ledger). ⚠️ Credit-conversion path's fee-pair specifically flagged for deeper testing later — code mirrors the direct-subscription fix but wasn't independently re-verified with the same rigor after the correction.
-- [x] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — runtime-tested via manual trigger: new-account branch (fee deducted, account created) and existing-account branch (no second fee, straight deposit) both confirmed working. Found via testing: auto-converted deposits show as generic "Dépôt," indistinguishable from a cash deposit — logged as a hardening item, not blocking.
+- [x] **Credit-window auto-conversion cron** (consumes S2 credit lots; underfee policy) — CRITICAL — runtime-tested via manual trigger: new-account branch (fee deducted, account created) and existing-account branch (no second fee, straight deposit) both confirmed working. Found via testing: auto-converted deposits show as generic "Dépôt," indistinguishable from a cash deposit — **fixed 2026-07-22**, see below.
 - [x] Withdrawal (**admin+, corrected from manager+**, receipt); épargne-as-payment (wire into M5) — HIGH — épargne-as-payment runtime-tested end-to-end on a real invoice (success case and over-balance-blocked case both confirmed). Standalone withdrawal confirmed working, role gate corrected to admin+ mid-sprint per real business clarification — this is a deliberate deviation from the spec's literal wording, not an oversight.
 - [x] Reversal (compensating entry); party history épargne section — HIGH — reversal mechanics built (compensating entry, never mutates original, admin+ gated); party-history épargne section fills in the Sprint-2-scaffolded placeholder correctly. Noted in passing, not this sprint's job: the "commercial" half of party-history is *also* still an unfilled Sprint-3 TODO — pre-existing gap, flagged not fixed.
 
@@ -202,7 +202,9 @@
 
 ### Explicitly flagged, not closed
 - Credit-conversion path's fee-visibility fix needs deeper independent verification (see note above).
-- Auto-converted deposits need a visible "Converti" distinction from ordinary cash deposits (UI/status hardening, deferred).
+
+### Resolved post-sprint (2026-07-22)
+- Auto-converted deposits now show a "(converti)" badge in `PartyDetailPage.tsx`, gated on `agentId == null` (confirmed exclusively set by `savings-conversion.service.ts`; no schema change needed).
 
 ## Sprint 10 – Dashboard & Reporting (M12) ✅ CLOSED (2026-07-19) | 2 weeks
 
@@ -230,7 +232,7 @@
 ### Still flagged, not closed
 
 - Full reporting/analyse API-runtime smoke is still needed end-to-end before beta confidence.
-- Sprint 9 credit-conversion fee-pair verification and auto-converted epargne deposit labeling remain open hardening items.
+- Sprint 9 credit-conversion fee-pair verification remains an open hardening item (auto-converted épargne deposit labeling was closed 2026-07-22 — see Sprint 9 notes).
 
 ## Sprint 11 – Data migration ❌ NOT NEEDED (2026-07-19)
 

@@ -16,11 +16,13 @@ Latest pushed commits:
 - `0870d10 feat: refine admin UI and dashboard workflows`
 - `2c64d26 feat: rework invoice and proforma document views`
 - `9ecd434 feat: align dashboard report exports`
+- `9cd6342 feat: add notifications and mail foundation`
+- `a57eb19 feat: add document email delivery`
 
 ## What's In Scope Today
 
-Cache/changelog sync for the notification/mail session, then commit and push
-all current changes.
+Apply the intended `docs/diffs/next-step.diff` documentation changes manually
+because the patch file is malformed, then update cache/changelog and commit.
 
 ## State Of The Codebase
 
@@ -36,8 +38,17 @@ Notifications/mail:
   admin+ endpoints for SMTP readiness and delivery diagnostics.
 - Mail delivery is guarded both by environment config and the Settings-backed
   `mail_enabled` toggle.
-- Automatic document sending and reminders are deliberately seeded as
-  disabled toggles until templates, attachments, and retry UX are implemented.
+- Document email delivery exists for invoice/proforma/BL manual sends, with
+  PDF attachments, mail outbox rows, and automatic document sends guarded by
+  `mail_document_auto_send_enabled`.
+
+Resolved hardening/doc state:
+
+- `recordPayment()` overpayment-to-credit now creates the credit lot inside
+  the payment transaction.
+- Auto-converted epargne deposits now display a `(converti)` badge on party
+  detail when `agentId == null`.
+- Sprint 9 credit-conversion fee-pair verification remains open.
 
 Document UI:
 
@@ -61,7 +72,7 @@ Dashboard/reporting:
   conditional formatting; Excel repaired/removed it in real use.
 - `getRecentSales()` now resolves payment party names via related invoices.
 
-## Validation Snapshot (2026-07-21)
+## Validation Snapshot
 
 - `npm run typecheck`: PASS.
 - Root `npm run build`: PASS after elevated rerun for the known Vite/esbuild

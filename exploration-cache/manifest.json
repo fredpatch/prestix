@@ -1,7 +1,7 @@
 {
   "project": "PrestiX",
-  "lastUpdated": "2026-07-21",
-  "currentSprint": "Sprint 11d Notifications/mail foundation implemented; runtime smoke and mail automation pass next",
+  "lastUpdated": "2026-07-23",
+  "currentSprint": "Notifications/mail delivery implemented; docs/cache sync for resolved hardening items",
   "files": [
     "index.md",
     "quick-ref.md",
@@ -22,6 +22,7 @@
     "sessions/2026-07-17.md",
     "sessions/2026-07-19.md",
     "sessions/2026-07-21.md",
+    "sessions/2026-07-23.md",
     "tasks/backlog.md",
     "tasks/sprint-0.md",
     "technical/brand-reference.md",

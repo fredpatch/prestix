@@ -1,5 +1,12 @@
 # Changelog
 
+## Documentation Sync (2026-07-23)
+
+- Manually applied the intended `docs/diffs/next-step.diff` changes after `git apply --check` reported a malformed patch.
+- Updated `TASKS.md` to mark `recordPayment()` overpayment-to-credit atomicity as resolved.
+- Updated `TASKS.md` to mark auto-converted epargne deposit labeling as resolved.
+- Kept Sprint 9 credit-conversion fee-pair verification open as the remaining hardening item.
+
 ## Sprint 0
 
 - Monorepo scaffold created (npm workspaces, packages/shared/types, packages/server, packages/client)

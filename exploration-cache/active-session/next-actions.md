@@ -19,11 +19,7 @@
    invoice/proforma quick views, dashboard section toggles.
 8. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing.
-9. FLAGGED, not closed (Sprint 9): auto-converted epargne deposits need a
-   visible "Converti" distinction from ordinary cash deposits in the ledger UI.
-10. Sprint 12 hardening item: recordPayment -> createCreditLot
-   cross-transaction risk on overpayment.
-11. Deferred hardening item: retrofit remaining hardcoded neutral-/brand-
+9. Deferred hardening item: retrofit remaining hardcoded neutral-/brand-
    Tailwind pages to semantic tokens for fuller dark-mode coverage.
-12. Open question from Sprint 6: should PNR/GDS/ticket-number appear on the
+10. Open question from Sprint 6: should PNR/GDS/ticket-number appear on the
    printed document itself, or stay internal-only?
