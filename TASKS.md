@@ -287,15 +287,47 @@
 
 **Correction during this sprint:** an earlier session's handoff/memory claimed "11 pages migrated to React Query." Audited against the actual repo — only 8 were, and 3 dialogs described as "migrated in sandbox" had never actually been committed (sandbox containers are ephemeral; that work was silently lost between sessions). All were redone and verified in this sprint.
 
-## Sprint 11d – Notifications | scope TBD
+## Sprint 11d – Notifications & Mail ✅ CLOSED (2026-07-22)
 
-> Third of Fred's three real next priorities, replacing the cancelled
-> migration sprint. Not yet scoped — no design decisions made (which events
-> to notify on, in-app vs. email, real-time vs. polling, etc.). Sequenced
-> after UI hardening since Sonner (installed in 11c-1) will likely be part
-> of how in-app notifications actually render.
+> In-app notifications + client-facing document email templates, built as
+> one connected body of work across several passes rather than split
+> in-app/email as originally framed. Runtime-smoke confirmed by Fred:
+> migrations applied, real SMTP test send, PDF attachments received intact,
+> icons render (fixed a real prod-path bug — see below), 07:00 cron verified.
 
-- [ ] To be planned
+- [x] **Pass 3 — automatic document sending** — verified already correct
+  from Sprint 11f: fire-and-forget, `mail_document_auto_send_enabled`-gated,
+  never blocks the main transaction, across invoice/proforma/delivery-note
+- [x] **Pass 4 — richer templates** — shared `email-shell.ts` (gradient
+  banner, Tabler-derived icons only, CID attachments — no photo assets, no
+  brand-logo raster dependency), applied to 7 scenarios: invoice issued,
+  invoice paid, proforma, delivery note, installment due-soon (+3j),
+  installment overdue (auto + manual), reminder fan-out to client + owner
+- [x] **New scenario — invoice paid** — fires only on full payment
+  (`recordPayment` now returns `becamePaid`), green/success template
+- [x] **New scenario — overdue reminder** — automatic (07:00 cron,
+  `notifyOverdueInstallments`, dedupes once/day/invoice) and manual
+  ("Envoyer un rappel" button on `InvoiceDetailPage`, admin+ backend route)
+- [x] **Owner cc** — reminder emails also notify every active admin/
+  super_admin, gated by new `mail_owner_reminder_cc_enabled` setting
+- [x] **Pass 5 — outbox operations** — `/mail-outbox` admin page: filters
+  (status/template/source/recipient/date), pagination, retry (failed-only,
+  re-generates from current document state via the same send functions),
+  detail modal, source links to `/invoices/:id` / `/proformas/:id`
+- [x] **Pass 6 — notification preferences** — `notification_preferences`
+  table, 8 real event codes (derived from existing `dedupeKey` prefixes,
+  not invented), per-event in-app/email toggle, Settings → Notifications
+  tab, idempotent boot seed
+- [x] **Prod bug found and fixed**: icon `ICON_DIR` was resolved
+  `src`-relative — worked in dev (`tsx` runs from `src/`) but silently
+  missing after `tsc` build (`dist/` has no copied assets), so every sent
+  email showed broken-image checkboxes in production. Fixed by moving
+  icons to `packages/server/email-assets/icons` (package-root-relative,
+  same convention as the existing PDF logo path) — verified correct in
+  both dev and prod cwd before shipping.
+- [x] CTA "Télécharger la facture" button removed from all templates —
+  redundant given the PDF is already a mail attachment; attachment pill
+  copy strengthened instead ("téléchargez-la depuis les pièces jointes")
 
 ## Sprint 11e – Journal d'audit ✅ CLOSED IN CODE (2026-07-21) | scope TBD
 
