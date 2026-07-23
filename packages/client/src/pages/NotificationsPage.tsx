@@ -81,10 +81,10 @@ const SEVERITY_LABELS: Record<NotificationSeverity, string> = {
 };
 
 const SEVERITY_CLASSES: Record<NotificationSeverity, string> = {
-  info: "border-blue-100 bg-blue-50 text-blue-700",
-  success: "border-emerald-100 bg-emerald-50 text-emerald-700",
-  warning: "border-amber-100 bg-amber-50 text-amber-700",
-  danger: "border-red-100 bg-red-50 text-red-700",
+  info: "border-info-border bg-info-bg text-info-text",
+  success: "border-success-border bg-success-bg text-success-text",
+  warning: "border-warning-border bg-warning-bg text-warning-text",
+  danger: "border-danger-border bg-danger-bg text-danger-text",
 };
 
 const CATEGORY_ICONS: Record<NotificationCategory, ElementType> = {
@@ -225,9 +225,9 @@ export default function NotificationsPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="rounded-lg border border-neutral-200 bg-white p-2">
-          <div className="border-b border-neutral-100 px-2 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">
+        <aside className="rounded-lg border border-border bg-card p-2">
+          <div className="border-b border-border px-2 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
               Boîte de réception
             </p>
           </div>
@@ -244,7 +244,7 @@ export default function NotificationsPage() {
                     "flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-[12px] transition-colors",
                     active
                       ? "bg-brand-gold-dark text-white"
-                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-950",
+                      : "text-body hover:bg-surface-muted hover:text-foreground",
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">
@@ -255,7 +255,7 @@ export default function NotificationsPage() {
                     <span
                       className={cn(
                         "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-                        active ? "bg-white/20 text-white" : "bg-brand-gold-light text-brand-gold-dark",
+                        active ? "bg-card/20 text-white" : "bg-brand-gold-light text-brand-gold-dark",
                       )}
                     >
                       {unread}
@@ -267,13 +267,13 @@ export default function NotificationsPage() {
           </div>
         </aside>
 
-        <section className="min-w-0 rounded-lg border border-neutral-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-neutral-200 p-3 lg:flex-row lg:items-center lg:justify-between">
+        <section className="min-w-0 rounded-lg border border-border bg-card">
+          <div className="flex flex-col gap-3 border-b border-border p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid flex-1 gap-2 sm:grid-cols-[minmax(220px,360px)_180px_170px]">
               <div className="relative">
                 <Search
                   size={13}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
                 />
                 <Input
                   value={search}
@@ -320,7 +320,7 @@ export default function NotificationsPage() {
 
             <div className="flex items-center gap-2">
               {isFetching && (
-                <span className="hidden items-center gap-1.5 text-[11px] text-neutral-400 sm:flex">
+                <span className="hidden items-center gap-1.5 text-[11px] text-subtle sm:flex">
                   <Loader2 size={12} className="animate-spin" />
                   Actualisation
                 </span>
@@ -345,15 +345,15 @@ export default function NotificationsPage() {
           <div className="divide-y divide-neutral-100">
             {isLoading ? (
               <div className="flex h-44 items-center justify-center">
-                <Loader2 className="animate-spin text-neutral-400" size={18} />
+                <Loader2 className="animate-spin text-subtle" size={18} />
               </div>
             ) : notifications.length === 0 ? (
               <div className="px-4 py-12 text-center">
-                <Inbox className="mx-auto text-neutral-300" size={24} />
-                <p className="mt-3 text-[13px] font-medium text-neutral-800">
+                <Inbox className="mx-auto text-subtle" size={24} />
+                <p className="mt-3 text-[13px] font-medium text-body">
                   Aucune notification
                 </p>
-                <p className="mt-1 text-[12px] text-neutral-500">
+                <p className="mt-1 text-[12px] text-muted-foreground">
                   Les alertes système apparaîtront ici dès qu'un événement sera détecté.
                 </p>
               </div>
@@ -370,8 +370,8 @@ export default function NotificationsPage() {
             )}
           </div>
 
-          <div className="flex flex-col gap-2 border-t border-neutral-200 bg-neutral-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-neutral-500">
+          <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[11px] text-muted-foreground">
               {total} notification{total !== 1 ? "s" : ""}
             </p>
             <div className="flex items-center justify-between gap-2 sm:justify-end">
@@ -385,7 +385,7 @@ export default function NotificationsPage() {
                 <ChevronLeft size={13} />
                 Précédent
               </Button>
-              <span className="text-[11px] text-neutral-500">
+              <span className="text-[11px] text-muted-foreground">
                 Page {page} / {pageCount}
               </span>
               <Button
@@ -467,18 +467,18 @@ function MailTestPanel() {
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-4">
+    <section className="rounded-lg border border-border bg-card p-4">
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(240px,320px)_auto_auto] xl:items-end">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-gold-dark">
             SMTP
           </p>
-          <h2 className="mt-1 text-sm font-semibold text-neutral-950">Test d'envoi email</h2>
-          <p className="mt-1 text-xs text-neutral-500">
+          <h2 className="mt-1 text-sm font-semibold text-foreground">Test d'envoi email</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
             Vérifie la configuration Gmail/SMTP avant de brancher les envois automatiques.
           </p>
           {status && (
-            <p className="mt-2 text-[11px] text-neutral-500">
+            <p className="mt-2 text-[11px] text-muted-foreground">
               {status.host ?? "SMTP non configuré"}:{status.port} - {status.from ?? "expéditeur manquant"}
             </p>
           )}
@@ -506,9 +506,9 @@ function MailTestPanel() {
         <div
           className={cn(
             "mt-3 border px-3 py-2 text-[12px]",
-            messageTone === "success" && "border-emerald-200 bg-emerald-50 text-emerald-700",
-            messageTone === "warning" && "border-amber-200 bg-amber-50 text-amber-700",
-            messageTone === "danger" && "border-red-200 bg-red-50 text-red-700",
+            messageTone === "success" && "border-success-border bg-success-bg text-success-text",
+            messageTone === "warning" && "border-warning-border bg-warning-bg text-warning-text",
+            messageTone === "danger" && "border-danger-border bg-danger-bg text-danger-text",
           )}
         >
           {message}
@@ -522,18 +522,18 @@ function MailOutboxPanel() {
   const { data = [], isLoading, isFetching, refetch } = useMailOutbox();
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+    <section className="rounded-lg border border-border bg-card">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-gold-dark">
             Emails
           </p>
-          <h2 className="mt-1 text-sm font-semibold text-neutral-950">Historique d'envoi</h2>
+          <h2 className="mt-1 text-sm font-semibold text-foreground">Historique d'envoi</h2>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/mail-outbox"
-            className="text-[11px] font-medium text-blue-600 hover:underline"
+            className="text-[11px] font-medium text-info-text hover:underline"
           >
             Voir tout
           </Link>
@@ -546,12 +546,12 @@ function MailOutboxPanel() {
 
       <div className="divide-y divide-neutral-100">
         {isLoading ? (
-          <div className="flex items-center gap-2 px-4 py-5 text-[12px] text-neutral-500">
+          <div className="flex items-center gap-2 px-4 py-5 text-[12px] text-muted-foreground">
             <Loader2 size={13} className="animate-spin" />
             Chargement des emails...
           </div>
         ) : data.length === 0 ? (
-          <p className="px-4 py-5 text-[12px] text-neutral-500">Aucun email enregistre.</p>
+          <p className="px-4 py-5 text-[12px] text-muted-foreground">Aucun email enregistre.</p>
         ) : (
           data.slice(0, 5).map((item) => <MailOutboxRow key={item.id} item={item} />)
         )}
@@ -574,29 +574,29 @@ function MailOutboxRow({
 }) {
   const tone =
     item.status === "sent"
-      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+      ? "border-success-border bg-success-bg text-success-text"
       : item.status === "failed"
-        ? "border-red-100 bg-red-50 text-red-700"
-        : "border-amber-100 bg-amber-50 text-amber-700";
+        ? "border-danger-border bg-danger-bg text-danger-text"
+        : "border-warning-border bg-warning-bg text-warning-text";
   const label = item.status === "sent" ? "Envoye" : item.status === "failed" ? "Echec" : "En attente";
 
   return (
     <div className="grid gap-2 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <p className="truncate text-[12px] font-semibold text-neutral-900">{item.subject}</p>
+          <p className="truncate text-[12px] font-semibold text-foreground">{item.subject}</p>
           <span className={cn("rounded border px-2 py-0.5 text-[10.5px] font-semibold", tone)}>
             {label}
           </span>
         </div>
-        <p className="mt-1 truncate text-[11px] text-neutral-500">
+        <p className="mt-1 truncate text-[11px] text-muted-foreground">
           {item.recipient} - {item.templateKey}
         </p>
         {item.errorMessage && (
-          <p className="mt-1 truncate text-[11px] text-red-600">{item.errorMessage}</p>
+          <p className="mt-1 truncate text-[11px] text-danger-text">{item.errorMessage}</p>
         )}
       </div>
-      <p className="text-[10.5px] text-neutral-400">{formatDateTime(item.createdAt)}</p>
+      <p className="text-[10.5px] text-subtle">{formatDateTime(item.createdAt)}</p>
     </div>
   );
 }
@@ -616,20 +616,20 @@ function NotificationKpi({
 }) {
   const toneClasses = {
     gold: "border-brand-gold-dark/25 bg-brand-gold-light/35 text-brand-gold-dark",
-    danger: "border-red-100 bg-red-50 text-red-700",
-    warning: "border-amber-100 bg-amber-50 text-amber-700",
-    neutral: "border-neutral-200 bg-white text-neutral-500",
+    danger: "border-danger-border bg-danger-bg text-danger-text",
+    warning: "border-warning-border bg-warning-bg text-warning-text",
+    neutral: "border-border bg-card text-muted-foreground",
   }[tone];
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-neutral-950">{value}</p>
-          <p className="mt-1 text-[11px] text-neutral-500">{detail}</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
         </div>
         <div className={cn("rounded-full border p-2", toneClasses)}>
           <Icon size={15} />
@@ -656,7 +656,7 @@ function NotificationRow({
   return (
     <div
       className={cn(
-        "grid gap-3 px-4 py-3 transition-colors hover:bg-neutral-50 md:grid-cols-[minmax(0,1fr)_auto]",
+        "grid gap-3 px-4 py-3 transition-colors hover:bg-surface-muted md:grid-cols-[minmax(0,1fr)_auto]",
         unread && "bg-brand-gold-light/15",
       )}
     >
@@ -667,14 +667,14 @@ function NotificationRow({
       >
         <span className="flex items-center gap-2 sm:justify-center">
           {unread && <span className="h-2 w-2 rounded-full bg-brand-gold-dark" />}
-          <CategoryIcon size={15} className="text-neutral-400" />
+          <CategoryIcon size={15} className="text-subtle" />
         </span>
 
         <span className="min-w-0">
-          <span className="block text-[11px] font-medium text-neutral-500">
+          <span className="block text-[11px] font-medium text-muted-foreground">
             {CATEGORY_LABELS[item.category]}
           </span>
-          <span className="block text-[10.5px] text-neutral-400">
+          <span className="block text-[10.5px] text-subtle">
             {formatDateTime(item.createdAt)}
           </span>
         </span>
@@ -683,7 +683,7 @@ function NotificationRow({
           <span className="flex min-w-0 flex-wrap items-center gap-2">
             <span
               className={cn(
-                "truncate text-[13px] text-neutral-900",
+                "truncate text-[13px] text-foreground",
                 unread ? "font-bold" : "font-semibold",
               )}
             >
@@ -691,7 +691,7 @@ function NotificationRow({
             </span>
             {severityBadge(item.severity)}
           </span>
-          <span className="mt-1 block truncate text-[12px] text-neutral-500">{item.body}</span>
+          <span className="mt-1 block truncate text-[12px] text-muted-foreground">{item.body}</span>
         </span>
       </button>
 
@@ -727,16 +727,16 @@ function NotificationDetailDialog({
 }) {
   return (
     <Dialog open={Boolean(notification)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-2xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-2xl">
         {notification && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     {notification.title}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {CATEGORY_LABELS[notification.category]} -{" "}
                     {formatDateTime(notification.createdAt)}
                   </DialogDescription>
@@ -745,8 +745,8 @@ function NotificationDetailDialog({
               </div>
             </DialogHeader>
 
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-              <p className="text-[12.5px] leading-relaxed text-neutral-800">
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+              <p className="text-[12.5px] leading-relaxed text-body">
                 {notification.body}
               </p>
             </div>
@@ -768,15 +768,15 @@ function NotificationDetailDialog({
             </div>
 
             {notification.metadata && Object.keys(notification.metadata).length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-neutral-200">
+              <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-left">
                   <tbody>
                     {Object.entries(notification.metadata).map(([key, value]) => (
-                      <tr key={key} className="border-b border-neutral-100 last:border-0">
-                        <td className="w-36 bg-neutral-50 px-4 py-2 text-[11px] font-medium text-neutral-500">
+                      <tr key={key} className="border-b border-border last:border-0">
+                        <td className="w-36 bg-surface-muted px-4 py-2 text-[11px] font-medium text-muted-foreground">
                           {key}
                         </td>
-                        <td className="px-4 py-2 text-[12px] text-neutral-800">{String(value)}</td>
+                        <td className="px-4 py-2 text-[12px] text-body">{String(value)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -804,11 +804,11 @@ function NotificationDetailDialog({
 
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }

@@ -9,9 +9,9 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 const ROLE_STYLES: Record<Role, string> = {
-  agent: "bg-neutral-100 text-neutral-700",
-  manager: "bg-blue-50 text-blue-700",
-  admin: "bg-amber-50 text-amber-700",
+  agent: "bg-surface-subtle text-body",
+  manager: "bg-info-bg text-info-text",
+  admin: "bg-warning-bg text-warning-text",
   super_admin: "bg-brand-gold-dark/10 text-brand-gold-dark",
 };
 

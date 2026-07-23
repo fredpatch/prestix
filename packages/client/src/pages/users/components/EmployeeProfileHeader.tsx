@@ -36,17 +36,17 @@ export function EmployeeProfileHeader({ employee }: EmployeeProfileHeaderProps) 
   ];
 
   return (
-    <section className="mb-6 rounded-lg border border-neutral-200 bg-white px-5 py-5">
+    <section className="mb-6 rounded-lg border border-border bg-card px-5 py-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(260px,1fr)_minmax(420px,1.7fr)] lg:items-start">
         <div className="flex gap-4">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-[22px] font-bold text-neutral-700">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-muted text-[22px] font-bold text-body">
             {initials(employee.fullName)}
           </div>
           <div className="min-w-0">
-            <p className="text-[22px] font-semibold leading-tight text-neutral-900">
+            <p className="text-[22px] font-semibold leading-tight text-foreground">
               {employee.fullName}
             </p>
-            <p className="mt-1 text-[11.5px] text-neutral-500">#{employee.id}</p>
+            <p className="mt-1 text-[11.5px] text-muted-foreground">#{employee.id}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <RolesBadge role={employee.role} />
               <AccountStatusBadge active={employee.active} firstLogin={employee.firstLogin} />
@@ -58,12 +58,12 @@ export function EmployeeProfileHeader({ employee }: EmployeeProfileHeaderProps) 
           {infoItems.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="min-w-0 border-l border-neutral-200 pl-3">
-                <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+              <div key={item.label} className="min-w-0 border-l border-border pl-3">
+                <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
                   <Icon size={11} />
                   {item.label}
                 </p>
-                <p className="mt-1 truncate text-[12.5px] text-neutral-800">{item.value}</p>
+                <p className="mt-1 truncate text-[12.5px] text-body">{item.value}</p>
               </div>
             );
           })}

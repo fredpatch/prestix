@@ -14,7 +14,7 @@ export function EmployeesTab({ from, to, basis }: EmployeesTabProps) {
 
   if (isLoading) {
     return (
-      <div className="text-center py-16 text-neutral-400">
+      <div className="text-center py-16 text-subtle">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
       </div>
     );
@@ -24,15 +24,15 @@ export function EmployeesTab({ from, to, basis }: EmployeesTabProps) {
 
   return (
     <div>
-      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+      <div className="bg-card border border-border rounded-lg p-4 mb-6">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">
           Comparaison — valeur générée par employé
         </p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Factures créées + commissions enregistrées, sur la période sélectionnée.
         </p>
         {top.length === 0 ? (
-          <p className="text-[11.5px] text-neutral-500 text-center py-12">Aucune donnée sur cette période.</p>
+          <p className="text-[11.5px] text-muted-foreground text-center py-12">Aucune donnée sur cette période.</p>
         ) : (
           <ChartCanvas
             label="Comparaison valeur par employé"

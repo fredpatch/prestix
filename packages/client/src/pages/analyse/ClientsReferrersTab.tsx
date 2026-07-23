@@ -14,7 +14,7 @@ interface ClientsReferrersTabProps {
 function ComparisonChart({ label, rows, color }: { label: string; rows: KpiRow[]; color: string }) {
   const top = rows.slice(0, 10);
   if (top.length === 0) {
-    return <p className="text-[11.5px] text-neutral-500 text-center py-12">Aucune donnée sur cette période.</p>;
+    return <p className="text-[11.5px] text-muted-foreground text-center py-12">Aucune donnée sur cette période.</p>;
   }
   return (
     <ChartCanvas
@@ -51,7 +51,7 @@ export function ClientsReferrersTab({ from, to, basis }: ClientsReferrersTabProp
 
   if (loading) {
     return (
-      <div className="text-center py-16 text-neutral-400">
+      <div className="text-center py-16 text-subtle">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
       </div>
     );
@@ -59,18 +59,18 @@ export function ClientsReferrersTab({ from, to, basis }: ClientsReferrersTabProp
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Comparaison — valeur par client</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">Comparaison — valeur par client</p>
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Total facturé (factures émises), sur la période sélectionnée.
         </p>
         <ComparisonChart label="Comparaison valeur par client" rows={clients} color={CHART_COLORS.primary} />
       </div>
       <KpiTable title="Clients" rows={clients} linkTo={(id) => `/parties/${id}`} />
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Comparaison — valeur par référent</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">Comparaison — valeur par référent</p>
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Factures référées + commissions apportées, sur la période sélectionnée.
         </p>
         <ComparisonChart label="Comparaison valeur par référent" rows={referrers} color={CHART_COLORS.success} />

@@ -32,7 +32,7 @@ interface UserGridProps {
 export function UserGrid({ users, busyId, onEdit, onResetOtp, onToggleActivation }: UserGridProps) {
   if (users.length === 0) {
     return (
-      <div className="bg-white border border-neutral-200 rounded-lg px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="bg-card border border-border rounded-lg px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucun utilisateur trouvé.
       </div>
     );
@@ -41,12 +41,12 @@ export function UserGrid({ users, busyId, onEdit, onResetOtp, onToggleActivation
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {users.map((user) => (
-        <div key={user.id} className="bg-white border border-neutral-200 rounded-lg p-4">
+        <div key={user.id} className="bg-card border border-border rounded-lg p-4">
           <div className="flex items-start gap-3">
             <button
               type="button"
               onClick={() => onEdit(user)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-[13px] font-bold text-neutral-700"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-muted text-[13px] font-bold text-body"
               title="Modifier l'utilisateur"
             >
               {initials(user.fullName)}
@@ -57,12 +57,12 @@ export function UserGrid({ users, busyId, onEdit, onResetOtp, onToggleActivation
                   <button
                     type="button"
                     onClick={() => onEdit(user)}
-                    className="truncate text-left text-[13px] font-semibold text-neutral-900 hover:text-brand-gold-dark"
+                    className="truncate text-left text-[13px] font-semibold text-foreground hover:text-brand-gold-dark"
                   >
                     {user.fullName}
                   </button>
-                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] text-neutral-500">
-                    <Mail size={11} className="shrink-0 text-neutral-400" />
+                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] text-muted-foreground">
+                    <Mail size={11} className="shrink-0 text-subtle" />
                     {user.email}
                   </p>
                 </div>
@@ -74,7 +74,7 @@ export function UserGrid({ users, busyId, onEdit, onResetOtp, onToggleActivation
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
             <Link
               to={employeeDetailUrl(user.id)}
               className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-[11.5px] font-medium text-brand-gold-dark hover:bg-brand-gold-light/30"
@@ -100,8 +100,8 @@ export function UserGrid({ users, busyId, onEdit, onResetOtp, onToggleActivation
                 onClick={() => onToggleActivation(user)}
                 className={
                   user.active
-                    ? "text-red-500 hover:bg-red-50"
-                    : "text-emerald-600 hover:bg-emerald-50"
+                    ? "text-danger-text hover:bg-danger-bg"
+                    : "text-success-text hover:bg-success-bg"
                 }
               >
                 <Power size={13} />

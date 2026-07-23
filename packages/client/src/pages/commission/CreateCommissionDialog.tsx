@@ -220,7 +220,7 @@ export function CreateCommissionDialog({ onCreated }: CreateCommissionDialogProp
               {...register("note")}
               rows={2}
               placeholder="Précision libre — nature de la transaction, destination, contexte..."
-              className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
+              className="flex w-full rounded border border-border bg-card px-3 py-2 text-sm resize-none"
             />
           </div>
 

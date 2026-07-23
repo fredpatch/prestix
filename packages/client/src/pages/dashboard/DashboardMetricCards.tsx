@@ -9,11 +9,11 @@ interface DashboardMetricCardsProps {
 }
 
 const toneClasses = {
-  neutral: "text-neutral-800 bg-neutral-50 border-neutral-200",
+  neutral: "text-body bg-surface-muted border-border",
   gold: "text-brand-gold-dark bg-brand-gold-light/25 border-brand-gold-light/60",
-  danger: "text-red-700 bg-red-50 border-red-100",
-  success: "text-emerald-700 bg-emerald-50 border-emerald-100",
-  warning: "text-amber-700 bg-amber-50 border-amber-100",
+  danger: "text-danger-text bg-danger-bg border-danger-border",
+  success: "text-success-text bg-success-bg border-success-border",
+  warning: "text-warning-text bg-warning-bg border-warning-border",
 };
 
 function MetricCard({
@@ -32,16 +32,16 @@ function MetricCard({
   to?: string;
 }) {
   const content = (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-4 py-3 transition-colors hover:border-brand-gold-dark">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-brand-gold-dark">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="mt-1 break-words text-[clamp(16px,5vw,19px)] font-bold leading-tight tabular-nums text-neutral-900">
+          <p className="mt-1 break-words text-[clamp(16px,5vw,19px)] font-bold leading-tight tabular-nums text-foreground">
             {value}
           </p>
-          <p className="mt-1 truncate text-[10.5px] text-neutral-500">{detail}</p>
+          <p className="mt-1 truncate text-[10.5px] text-muted-foreground">{detail}</p>
         </div>
         <span
           className={cn(

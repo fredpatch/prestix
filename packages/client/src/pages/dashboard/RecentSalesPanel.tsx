@@ -16,8 +16,8 @@ const KIND_LABELS: Record<RecentSaleRow["kind"], string> = {
 
 const KIND_STYLES: Record<RecentSaleRow["kind"], string> = {
   invoice: "bg-brand-gold-light/25 text-brand-gold-dark border-brand-gold-light/60",
-  payment: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  commission: "bg-neutral-50 text-neutral-700 border-neutral-200",
+  payment: "bg-success-bg text-success-text border-success-border",
+  commission: "bg-surface-muted text-body border-border",
 };
 
 function iconFor(kind: RecentSaleRow["kind"]) {
@@ -28,17 +28,17 @@ function iconFor(kind: RecentSaleRow["kind"]) {
 
 export function RecentSalesPanel({ sales }: RecentSalesPanelProps) {
   return (
-    <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 px-4 py-3">
-        <p className="text-[13px] font-semibold text-neutral-900">Ventes récentes</p>
-        <p className="mt-0.5 text-[11px] text-neutral-500">
+    <section className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-[13px] font-semibold text-foreground">Ventes récentes</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
           5 dernières transactions commerciales.
         </p>
       </div>
       <div className="divide-y divide-neutral-100">
         {sales.map((sale) => {
           const row = (
-            <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-neutral-50">
+            <div className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-surface-muted">
               <div className="flex min-w-0 gap-3">
                 <span
                   className={cn(
@@ -49,18 +49,18 @@ export function RecentSalesPanel({ sales }: RecentSalesPanelProps) {
                   {iconFor(sale.kind)}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[12px] font-semibold text-neutral-800">
+                  <p className="truncate text-[12px] font-semibold text-body">
                     {sale.title}
                   </p>
-                  <p className="mt-0.5 truncate text-[10.5px] text-neutral-500">
+                  <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
                     {sale.partyName ?? sale.subtitle ?? KIND_LABELS[sale.kind]}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-neutral-400">
+                  <p className="mt-0.5 text-[10px] text-subtle">
                     {new Date(sale.occurredAt).toLocaleString("fr-FR")}
                   </p>
                 </div>
               </div>
-              <p className="shrink-0 text-right text-[12px] font-bold tabular-nums text-neutral-900">
+              <p className="shrink-0 text-right text-[12px] font-bold tabular-nums text-foreground">
                 {fmt(sale.amount)}
               </p>
             </div>
@@ -74,7 +74,7 @@ export function RecentSalesPanel({ sales }: RecentSalesPanelProps) {
           );
         })}
         {sales.length === 0 && (
-          <p className="px-4 py-8 text-center text-[12px] text-neutral-500">
+          <p className="px-4 py-8 text-center text-[12px] text-muted-foreground">
             Aucune vente récente.
           </p>
         )}

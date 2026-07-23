@@ -34,8 +34,8 @@ export function EmployeeKpiTable({ rows, from, to, basis }: EmployeeKpiTableProp
       header: "Nom",
       cell: ({ row }) => (
         <>
-          <p className="text-[12px] text-neutral-800">{row.original.name}</p>
-          <p className="text-[10px] text-neutral-500">{breakdownSummary(row.original.breakdown)}</p>
+          <p className="text-[12px] text-body">{row.original.name}</p>
+          <p className="text-[10px] text-muted-foreground">{breakdownSummary(row.original.breakdown)}</p>
         </>
       ),
     },
@@ -44,7 +44,7 @@ export function EmployeeKpiTable({ rows, from, to, basis }: EmployeeKpiTableProp
       header: "Valeur (XAF)",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="font-medium text-neutral-800 align-top">{fmt(row.original.value)}</span>
+        <span className="font-medium text-body align-top">{fmt(row.original.value)}</span>
       ),
     },
     {
@@ -54,7 +54,7 @@ export function EmployeeKpiTable({ rows, from, to, basis }: EmployeeKpiTableProp
       cell: ({ row }) => (
         <Link
           to={`/reporting/employees/${row.original.id}?from=${from}&to=${to}&basis=${basis}`}
-          className="inline-flex items-center text-neutral-400 hover:text-brand-gold-dark align-top"
+          className="inline-flex items-center text-subtle hover:text-brand-gold-dark align-top"
           title="Voir détail"
         >
           <ChevronRight size={14} />

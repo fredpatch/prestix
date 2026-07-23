@@ -47,7 +47,7 @@ const creanceColumns: ColumnDef<CreanceByParty, any>[] = [
     header: "Total dû",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="font-medium text-neutral-800">{fmt(row.original.totalDue)}</span>
+      <span className="font-medium text-body">{fmt(row.original.totalDue)}</span>
     ),
   },
   {
@@ -55,7 +55,7 @@ const creanceColumns: ColumnDef<CreanceByParty, any>[] = [
     header: "",
     cell: ({ row }) =>
       row.original.overdueCount > 0 && (
-        <span className="inline-flex items-center gap-1 text-[10px] text-red-600">
+        <span className="inline-flex items-center gap-1 text-[10px] text-danger-text">
           <AlertTriangle size={10} /> {row.original.overdueCount} en retard
         </span>
       ),
@@ -73,7 +73,7 @@ export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps
 
   if (loading || !comparison || !engagements) {
     return (
-      <div className="text-center py-16 text-neutral-400">
+      <div className="text-center py-16 text-subtle">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
       </div>
     );
@@ -85,43 +85,43 @@ export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps
           toggle used everywhere else, per Lucrèce's own framing: "combien on
           gagne" vs "combien on gagne réellement" are two different questions
           worth seeing at once, not one you switch between. */}
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">
           Ce qu'on gagne vs. ce qu'on encaisse réellement
         </p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Engagement (facturé) et Encaissement (payé) pour la même période, côte à côte.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="border border-neutral-200 rounded-lg p-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <div className="border border-border rounded-lg p-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Engagement
             </p>
-            <p className="text-[18px] font-bold text-neutral-800 mt-1">
+            <p className="text-[18px] font-bold text-body mt-1">
               {fmt(comparison.accrual.totalGross)} XAF
             </p>
-            <p className="text-[10px] text-neutral-500">CA brut facturé</p>
+            <p className="text-[10px] text-muted-foreground">CA brut facturé</p>
             <p className="text-[13px] font-semibold text-brand-gold-dark mt-1">
               {fmt(comparison.accrual.totalGain)} XAF{" "}
-              <span className="text-[10px] font-normal text-neutral-500">gain</span>
+              <span className="text-[10px] font-normal text-muted-foreground">gain</span>
             </p>
           </div>
-          <div className="border border-neutral-200 rounded-lg p-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <div className="border border-border rounded-lg p-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Encaissement
             </p>
-            <p className="text-[18px] font-bold text-emerald-700 mt-1">
+            <p className="text-[18px] font-bold text-success-text mt-1">
               {fmt(comparison.cash.totalGross)} XAF
             </p>
-            <p className="text-[10px] text-neutral-500">Argent réellement reçu</p>
-            <p className="text-[13px] font-semibold text-emerald-700 mt-1">
+            <p className="text-[10px] text-muted-foreground">Argent réellement reçu</p>
+            <p className="text-[13px] font-semibold text-success-text mt-1">
               {fmt(comparison.cash.totalGain)} XAF{" "}
-              <span className="text-[10px] font-normal text-neutral-500">gain</span>
+              <span className="text-[10px] font-normal text-muted-foreground">gain</span>
             </p>
           </div>
         </div>
         {comparison.accrual.totalGross > comparison.cash.totalGross && (
-          <p className="text-[10.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-3">
+          <p className="text-[10.5px] text-warning-text bg-warning-bg border border-warning-border rounded px-2.5 py-1.5 mt-3">
             L'écart entre les deux (
             {fmt(comparison.accrual.totalGross - comparison.cash.totalGross)} XAF) représente ce qui
             est facturé mais pas encore encaissé.
@@ -130,33 +130,33 @@ export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps
       </div>
 
       {/* Engagements non clôturés */}
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">
           Engagements non clôturés
         </p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Affaires pas encore commises — indépendant de la période sélectionnée.
         </p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="border border-neutral-200 rounded-lg p-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <div className="border border-border rounded-lg p-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Factures en brouillon
             </p>
-            <p className="text-[18px] font-bold text-neutral-800 mt-1">
+            <p className="text-[18px] font-bold text-body mt-1">
               {engagements.draftInvoiceCount}
             </p>
-            <p className="text-[10px] text-neutral-500">
+            <p className="text-[10px] text-muted-foreground">
               {fmt(engagements.draftInvoiceValue)} XAF potentiel
             </p>
           </div>
-          <div className="border border-neutral-200 rounded-lg p-3">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+          <div className="border border-border rounded-lg p-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
               Proformas ouverts
             </p>
-            <p className="text-[18px] font-bold text-neutral-800 mt-1">
+            <p className="text-[18px] font-bold text-body mt-1">
               {engagements.openProformaCount}
             </p>
-            <p className="text-[10px] text-neutral-500">
+            <p className="text-[10px] text-muted-foreground">
               {fmt(engagements.openProformaValue)} XAF potentiel
             </p>
           </div>
@@ -164,22 +164,22 @@ export function CreancesEngagementsTab({ from, to }: CreancesEngagementsTabProps
       </div>
 
       {/* Qui doit — comparaison par partie */}
-      <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-neutral-200">
-          <p className="text-[11.5px] font-semibold text-neutral-800">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border">
+          <p className="text-[11.5px] font-semibold text-body">
             Qui doit — créances par partie
           </p>
-          <p className="text-[10.5px] text-neutral-500">
+          <p className="text-[10.5px] text-muted-foreground">
             Toutes créances non réglées, indépendant de la période — situation actuelle.
           </p>
         </div>
         {creances.length === 0 ? (
-          <p className="px-4 py-8 text-center text-[11.5px] text-neutral-500">
+          <p className="px-4 py-8 text-center text-[11.5px] text-muted-foreground">
             Aucune créance en cours.
           </p>
         ) : (
           <>
-            <div className="p-4 border-b border-neutral-200">
+            <div className="p-4 border-b border-border">
               <ChartCanvas
                 label="Créances par partie"
                 height={Math.max(180, Math.min(creances.length, 10) * 34)}

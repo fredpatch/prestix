@@ -56,7 +56,7 @@ function statusBadge(row: CreanceRow) {
     <span
       className={cn(
         "inline-block rounded px-2 py-0.5 text-[10.5px] font-semibold",
-        row.isOverdue ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700",
+        row.isOverdue ? "bg-danger-bg text-danger-text" : "bg-warning-bg text-warning-text",
       )}
     >
       {row.isOverdue ? "En retard" : "Impayée"}
@@ -136,14 +136,14 @@ export default function CreancesPage() {
       accessorKey: "partyName",
       header: "Client",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">{row.original.partyName}</span>
+        <span className="text-[12px] text-body">{row.original.partyName}</span>
       ),
     },
     {
       id: "installment",
       header: "Échéance",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           #{row.original.sequence} - {fmtDate(row.original.expectedDate)}
         </span>
       ),
@@ -153,7 +153,7 @@ export default function CreancesPage() {
       header: "Principal dû",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">
+        <span className="text-[12px] text-body">
           {money(amount(row.original.principalDue))}
         </span>
       ),
@@ -165,9 +165,9 @@ export default function CreancesPage() {
       cell: ({ row }) => {
         const penalty = amount(row.original.penaltyDue);
         return penalty > 0 ? (
-          <span className="text-[12px] font-medium text-red-600">{money(penalty)}</span>
+          <span className="text-[12px] font-medium text-danger-text">{money(penalty)}</span>
         ) : (
-          <span className="text-[12px] text-neutral-500">-</span>
+          <span className="text-[12px] text-muted-foreground">-</span>
         );
       },
     },
@@ -211,10 +211,10 @@ export default function CreancesPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Échéances avec solde dû, pénalités associées et suivi des retards par client.
         </p>
-        <p className="text-[11px] text-neutral-400">
+        <p className="text-[11px] text-subtle">
           {filteredRows.length} résultat{filteredRows.length !== 1 ? "s" : ""} affiché
           {filteredRows.length !== 1 ? "s" : ""}
         </p>
@@ -235,7 +235,7 @@ export default function CreancesPage() {
             )}
             Déclencher l'accumulation maintenant
           </Button>
-          {accrueResult && <span className="text-[11.5px] text-neutral-500">{accrueResult}</span>}
+          {accrueResult && <span className="text-[11.5px] text-muted-foreground">{accrueResult}</span>}
         </div>
       )}
 
@@ -270,12 +270,12 @@ export default function CreancesPage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative max-w-xs flex-1">
             <Search
               size={13}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
             />
             <Input
               value={search}
@@ -284,7 +284,7 @@ export default function CreancesPage() {
               className="pl-8"
             />
           </div>
-          <label className="flex h-10 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-[12px] text-neutral-800">
+          <label className="flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[12px] text-body">
             <input
               type="checkbox"
               checked={onlyOverdue}
@@ -296,10 +296,10 @@ export default function CreancesPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {rows.length} échéance{rows.length !== 1 ? "s" : ""} avec solde dû
           </p>
-          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -307,7 +307,7 @@ export default function CreancesPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+                viewMode === "table" && "bg-surface-subtle text-foreground",
               )}
             >
               <Table2 size={13} />
@@ -320,7 +320,7 @@ export default function CreancesPage() {
               onClick={() => setViewMode("grid")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+                viewMode === "grid" && "bg-surface-subtle text-foreground",
               )}
             >
               <LayoutGrid size={13} />
@@ -339,7 +339,7 @@ export default function CreancesPage() {
           onRowClick={setSelected}
         />
       ) : isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-subtle" size={18} />
       ) : (
         <CreanceGrid rows={filteredRows} onSelect={setSelected} />
       )}
@@ -358,7 +358,7 @@ function CreanceGrid({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucune créance.
       </div>
     );
@@ -367,33 +367,33 @@ function CreanceGrid({
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       {rows.map((row) => (
-        <div key={row.installmentId} className="rounded-lg border border-neutral-200 bg-white p-4">
+        <div key={row.installmentId} className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-neutral-900">{row.partyName}</p>
-              <p className="mt-0.5 text-[10.5px] text-neutral-500">
+              <p className="truncate text-[13px] font-semibold text-foreground">{row.partyName}</p>
+              <p className="mt-0.5 text-[10.5px] text-muted-foreground">
                 {row.invoiceNumber ?? `Facture #${row.invoiceId}`} - échéance #{row.sequence}
               </p>
             </div>
             {statusBadge(row)}
           </div>
 
-          <p className="mt-3 text-[20px] font-bold tabular-nums text-neutral-900">
+          <p className="mt-3 text-[20px] font-bold tabular-nums text-foreground">
             {money(totalDue(row))}
           </p>
 
-          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-3 text-[11px]">
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 text-[11px]">
             <div>
-              <p className="text-neutral-400">Date prévue</p>
-              <p className="mt-0.5 font-medium text-neutral-800">{fmtDate(row.expectedDate)}</p>
+              <p className="text-subtle">Date prévue</p>
+              <p className="mt-0.5 font-medium text-body">{fmtDate(row.expectedDate)}</p>
             </div>
             <div>
-              <p className="text-neutral-400">Pénalité</p>
-              <p className="mt-0.5 font-medium text-neutral-800">{money(amount(row.penaltyDue))}</p>
+              <p className="text-subtle">Pénalité</p>
+              <p className="mt-0.5 font-medium text-body">{money(amount(row.penaltyDue))}</p>
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
             <Link
               to={`/invoices/${row.invoiceId}`}
               className="text-[11.5px] font-medium text-brand-gold-dark hover:underline"
@@ -419,16 +419,16 @@ function CreanceDetailDialog({
 }) {
   return (
     <Dialog open={Boolean(creance)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-3xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-3xl">
         {creance && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     Créance - échéance #{creance.sequence}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {creance.partyName} - {creance.invoiceNumber ?? `facture #${creance.invoiceId}`}
                   </DialogDescription>
                 </div>
@@ -444,9 +444,9 @@ function CreanceDetailDialog({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="overflow-hidden rounded-lg border border-neutral-200">
-                <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+              <div className="overflow-hidden rounded-lg border border-border">
+                <div className="border-b border-border bg-surface-muted px-4 py-2">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Principal
                   </p>
                 </div>
@@ -459,9 +459,9 @@ function CreanceDetailDialog({
                 />
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-neutral-200">
-                <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+              <div className="overflow-hidden rounded-lg border border-border">
+                <div className="border-b border-border bg-surface-muted px-4 py-2">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Pénalités
                   </p>
                 </div>
@@ -475,8 +475,8 @@ function CreanceDetailDialog({
               </div>
             </div>
 
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Facture
               </p>
               <Link
@@ -504,11 +504,11 @@ function CreanceDetailDialog({
 
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }
@@ -518,9 +518,9 @@ function DetailRows({ rows }: { rows: Array<[string, string]> }) {
     <table className="w-full text-left">
       <tbody>
         {rows.map(([label, value]) => (
-          <tr key={label} className="border-b border-neutral-100 last:border-0">
-            <td className="px-4 py-2 text-[12px] text-neutral-500">{label}</td>
-            <td className="px-4 py-2 text-right text-[12px] font-medium text-neutral-800">
+          <tr key={label} className="border-b border-border last:border-0">
+            <td className="px-4 py-2 text-[12px] text-muted-foreground">{label}</td>
+            <td className="px-4 py-2 text-right text-[12px] font-medium text-body">
               {value}
             </td>
           </tr>

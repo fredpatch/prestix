@@ -114,7 +114,7 @@ export default function UsersPage() {
       header: "Nom",
       cell: ({ row }) => (
         <span
-          className="text-[12px] text-neutral-800 cursor-pointer"
+          className="text-[12px] text-body cursor-pointer"
           onClick={() => setEditing(row.original)}
         >
           {row.original.fullName}
@@ -124,7 +124,7 @@ export default function UsersPage() {
     {
       accessorKey: "email",
       header: "Email",
-      cell: ({ row }) => <span className="text-[12px] text-neutral-500">{row.original.email}</span>,
+      cell: ({ row }) => <span className="text-[12px] text-muted-foreground">{row.original.email}</span>,
     },
     {
       accessorKey: "role",
@@ -173,7 +173,7 @@ export default function UsersPage() {
               disabled={busyId === u.id}
               onClick={() => handleToggleActivation(u)}
               className={
-                u.active ? "text-red-500 hover:bg-red-50" : "text-emerald-600 hover:bg-emerald-50"
+                u.active ? "text-danger-text hover:bg-danger-bg" : "text-success-text hover:bg-success-bg"
               }
             >
               <Power size={13} />
@@ -187,7 +187,7 @@ export default function UsersPage() {
   return (
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Comptes internes de l'agence, rôles d'accès et suivi d'activité par employé.
         </p>
         <CreateUserDialog onCreated={handleReload} />
@@ -224,7 +224,7 @@ export default function UsersPage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Rechercher par nom ou email..."
@@ -250,10 +250,10 @@ export default function UsersPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {total} résultat{total !== 1 ? "s" : ""}
           </p>
-          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -261,7 +261,7 @@ export default function UsersPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+                viewMode === "table" && "bg-surface-subtle text-foreground",
               )}
             >
               <Table2 size={13} />
@@ -274,7 +274,7 @@ export default function UsersPage() {
               onClick={() => setViewMode("grid")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+                viewMode === "grid" && "bg-surface-subtle text-foreground",
               )}
             >
               <LayoutGrid size={13} />
@@ -285,7 +285,7 @@ export default function UsersPage() {
       </div>
 
       {isLoading ? (
-        <Loader2 className="animate-spin text-neutral-400" size={18} />
+        <Loader2 className="animate-spin text-subtle" size={18} />
       ) : viewMode === "grid" ? (
         <UserGrid
           users={users}

@@ -28,7 +28,7 @@ export function CaCompositionTable({ composition, className, showVolume = false 
       accessorKey: "gain",
       header: "Gain (XAF)",
       meta: { align: "right" },
-      cell: ({ row }) => <span className="font-medium text-emerald-700">{fmt(row.original.gain)}</span>,
+      cell: ({ row }) => <span className="font-medium text-success-text">{fmt(row.original.gain)}</span>,
     },
   ];
 
@@ -38,7 +38,7 @@ export function CaCompositionTable({ composition, className, showVolume = false 
         title={
           <div className="flex items-center justify-between">
             <span>Composition du CA</span>
-            <span className="text-[10.5px] font-normal text-neutral-500">
+            <span className="text-[10.5px] font-normal text-muted-foreground">
               Factures émises uniquement - brouillons et annulées exclues
             </span>
           </div>
@@ -47,9 +47,9 @@ export function CaCompositionTable({ composition, className, showVolume = false 
         data={composition.buckets}
         footer={
           <TableRow className="hover:bg-transparent">
-            <TableCell className="px-4 py-2 text-[12px] font-semibold text-neutral-800">TOTAL</TableCell>
+            <TableCell className="px-4 py-2 text-[12px] font-semibold text-body">TOTAL</TableCell>
             {showVolume && <TableCell className="px-4 py-2" />}
-            <TableCell className="px-4 py-2 text-[13px] font-bold text-neutral-800 text-right">
+            <TableCell className="px-4 py-2 text-[13px] font-bold text-body text-right">
               {fmt(composition.totalGross)}
             </TableCell>
             <TableCell className="px-4 py-2 text-[13px] font-bold text-brand-gold-dark text-right">

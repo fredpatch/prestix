@@ -122,14 +122,14 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
                 <Plus size={12} /> Ajouter un champ
               </Button>
             </div>
-            <p className="text-[10.5px] text-neutral-500 mb-2">
+            <p className="text-[10.5px] text-muted-foreground mb-2">
               Note, date, montant, client et référent existent déjà pour tous les types — inutile de les
               rajouter ici.
             </p>
 
             <div className="space-y-2">
               {rows.map((row, i) => (
-                <div key={i} className="bg-neutral-50 rounded-lg p-2.5 space-y-2">
+                <div key={i} className="bg-surface-muted rounded-lg p-2.5 space-y-2">
                   <div className="grid grid-cols-12 gap-2 items-center">
                     <Input
                       placeholder="nom_du_champ"
@@ -152,7 +152,7 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
                       variant="ghost"
                       size="icon"
                       onClick={() => removeRow(i)}
-                      className="col-span-2 text-red-500 hover:bg-red-50"
+                      className="col-span-2 text-danger-text hover:bg-danger-bg"
                     >
                       <Trash2 size={13} />
                     </Button>
@@ -168,7 +168,7 @@ export function EditCommissionTypeDialog({ type, onUpdated }: EditCommissionType
                 </div>
               ))}
               {rows.length === 0 && (
-                <p className="text-[11px] text-neutral-400 italic">Aucun champ spécifique pour ce type.</p>
+                <p className="text-[11px] text-subtle italic">Aucun champ spécifique pour ce type.</p>
               )}
             </div>
           </div>

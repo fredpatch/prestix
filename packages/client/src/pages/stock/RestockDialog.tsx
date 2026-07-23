@@ -55,27 +55,27 @@ export function RestockDialog({ article, onDone }: RestockDialogProps) {
           <DialogTitle>Réapprovisionner — {article.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             Stock actuel : {article.onHand} {article.unit}
           </p>
-          <div className="grid grid-cols-2 rounded-lg border border-neutral-200 overflow-hidden">
+          <div className="grid grid-cols-2 rounded-lg border border-border overflow-hidden">
             <button
               type="button"
               onClick={() => setType("IN")}
-              className={`px-3 py-2 text-[12px] font-medium ${type === "IN" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+              className={`px-3 py-2 text-[12px] font-medium ${type === "IN" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             >
               Entrée (réappro)
             </button>
             <button
               type="button"
               onClick={() => setType("ADJUST")}
-              className={`px-3 py-2 text-[12px] font-medium ${type === "ADJUST" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+              className={`px-3 py-2 text-[12px] font-medium ${type === "ADJUST" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             >
               Ajustement
             </button>
           </div>
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">
               {type === "IN" ? "Quantité reçue" : "Ajustement (+/-)"}
             </label>
             <Input
@@ -84,7 +84,7 @@ export function RestockDialog({ article, onDone }: RestockDialogProps) {
               onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
             />
             {type === "ADJUST" && (
-              <p className="text-[10.5px] text-neutral-500 mt-1">
+              <p className="text-[10.5px] text-muted-foreground mt-1">
                 Négatif pour retirer, positif pour ajouter.
               </p>
             )}

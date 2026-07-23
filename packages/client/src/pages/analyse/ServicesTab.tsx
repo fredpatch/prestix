@@ -43,7 +43,7 @@ export function ServicesTab({ from, to, basis }: ServicesTabProps) {
 
   if (loadingComposition || !composition) {
     return (
-      <div className="text-center py-16 text-neutral-400">
+      <div className="text-center py-16 text-subtle">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
       </div>
     );
@@ -59,39 +59,39 @@ export function ServicesTab({ from, to, basis }: ServicesTabProps) {
   return (
     <div>
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="bg-white border border-neutral-200 rounded-lg p-4">
-          <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-[11.5px] font-semibold text-body mb-0.5">
             Service le plus utilisé
           </p>
-          <p className="text-[10.5px] text-neutral-500 mb-3">
+          <p className="text-[10.5px] text-muted-foreground mb-3">
             Par volume de transactions, pas par valeur.
           </p>
           {byVolume.length === 0 || byVolume[0].volume === 0 ? (
-            <p className="text-[11.5px] text-neutral-500 text-center py-8">
+            <p className="text-[11.5px] text-muted-foreground text-center py-8">
               Aucune donnée sur cette période.
             </p>
           ) : (
-            <p className="text-[20px] font-bold text-neutral-800">
+            <p className="text-[20px] font-bold text-body">
               {byVolume[0].label}
-              <span className="text-[12px] font-normal text-neutral-500 ml-2">
+              <span className="text-[12px] font-normal text-muted-foreground ml-2">
                 {byVolume[0].volume} transaction{byVolume[0].volume !== 1 ? "s" : ""}
               </span>
             </p>
           )}
         </div>
-        <div className="bg-white border border-neutral-200 rounded-lg p-4">
-          <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-[11.5px] font-semibold text-body mb-0.5">
             Service générant le plus de gain
           </p>
-          <p className="text-[10.5px] text-neutral-500 mb-3">Par valeur (gain), pas par volume.</p>
+          <p className="text-[10.5px] text-muted-foreground mb-3">Par valeur (gain), pas par volume.</p>
           {byGain.length === 0 || byGain[0].gain === 0 ? (
-            <p className="text-[11.5px] text-neutral-500 text-center py-8">
+            <p className="text-[11.5px] text-muted-foreground text-center py-8">
               Aucune donnée sur cette période.
             </p>
           ) : (
             <p className="text-[20px] font-bold text-brand-gold-dark">
               {byGain[0].label}
-              <span className="text-[12px] font-normal text-neutral-500 ml-2">
+              <span className="text-[12px] font-normal text-muted-foreground ml-2">
                 {byGain[0].gain.toLocaleString("fr-FR")} XAF
               </span>
             </p>
@@ -99,13 +99,13 @@ export function ServicesTab({ from, to, basis }: ServicesTabProps) {
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Évolution par service</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+      <div className="bg-card border border-border rounded-lg p-4 mb-6">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">Évolution par service</p>
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           CA brut par catégorie, granularité adaptée à la période sélectionnée.
         </p>
         {trend.length === 0 ? (
-          <p className="text-[11.5px] text-neutral-500 text-center py-12">
+          <p className="text-[11.5px] text-muted-foreground text-center py-12">
             Aucune donnée sur cette période.
           </p>
         ) : (

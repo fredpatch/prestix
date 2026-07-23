@@ -28,7 +28,7 @@ export function GlobalTab({ from, to, basis }: GlobalTabProps) {
 
   if (loading || !summary || !composition) {
     return (
-      <div className="text-center py-16 text-neutral-400">
+      <div className="text-center py-16 text-subtle">
         <Loader2 size={18} className="animate-spin inline mr-2" /> Chargement...
       </div>
     );
@@ -38,13 +38,13 @@ export function GlobalTab({ from, to, basis }: GlobalTabProps) {
     <div>
       <SummaryCards summary={summary} />
 
-      <div className="bg-white border border-neutral-200 rounded-lg p-4 mb-6">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Évolution du CA et du gain</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+      <div className="bg-card border border-border rounded-lg p-4 mb-6">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">Évolution du CA et du gain</p>
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Granularité adaptée à la période sélectionnée (jour, semaine ou mois).
         </p>
         {trend.length === 0 ? (
-          <p className="text-[11.5px] text-neutral-500 text-center py-12">Aucune donnée sur cette période.</p>
+          <p className="text-[11.5px] text-muted-foreground text-center py-12">Aucune donnée sur cette période.</p>
         ) : (
           <ChartCanvas
             label="Évolution du CA et du gain"

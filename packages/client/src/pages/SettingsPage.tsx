@@ -179,26 +179,26 @@ const SETTING_COPY: Record<
 const IMPACT_STYLES = {
   critical: {
     label: "Impact élevé",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-danger-border bg-danger-bg text-danger-text",
     cardClassName:
-      "border-red-200 bg-[repeating-linear-gradient(135deg,#fef2f2_0,#fef2f2_10px,#fff_10px,#fff_22px)]",
-    ruleClassName: "border-red-300",
+      "border-danger-border bg-[repeating-linear-gradient(135deg,#fef2f2_0,#fef2f2_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-danger-border",
     icon: AlertTriangle,
   },
   warning: {
     label: "Impact moyen",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning-border bg-warning-bg text-warning-text",
     cardClassName:
-      "border-amber-200 bg-[repeating-linear-gradient(135deg,#fffbeb_0,#fffbeb_10px,#fff_10px,#fff_22px)]",
-    ruleClassName: "border-amber-300",
+      "border-warning-border bg-[repeating-linear-gradient(135deg,#fffbeb_0,#fffbeb_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-warning-border",
     icon: SlidersHorizontal,
   },
   normal: {
     label: "Impact faible",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-success-border bg-success-bg text-success-text",
     cardClassName:
-      "border-emerald-200 bg-[repeating-linear-gradient(135deg,#ecfdf5_0,#ecfdf5_10px,#fff_10px,#fff_22px)]",
-    ruleClassName: "border-emerald-300",
+      "border-success-border bg-[repeating-linear-gradient(135deg,#ecfdf5_0,#ecfdf5_10px,#fff_10px,#fff_22px)]",
+    ruleClassName: "border-success-border",
     icon: ShieldCheck,
   },
 };
@@ -217,10 +217,10 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="border border-neutral-200 bg-white px-4 py-4">
+      <div className="border border-border bg-card px-4 py-4">
         <p className="text-[11px] font-semibold uppercase text-brand-gold-dark">Administration</p>
-        <h2 className="mt-1 text-lg font-semibold text-neutral-950">Règles de fonctionnement</h2>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-500">
+        <h2 className="mt-1 text-lg font-semibold text-foreground">Règles de fonctionnement</h2>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           Ajustez les paramètres financiers, la visibilité des modules et le catalogue des
           commissions. Les actions sensibles sont signalées avant modification.
         </p>
@@ -306,23 +306,23 @@ function FinancialSettingsTab() {
       </div>
 
       {dirtyCount > 0 && (
-        <div className="border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="border border-warning-border bg-warning-bg px-4 py-3 text-sm text-warning-text">
           {dirtyCount} modification{dirtyCount > 1 ? "s" : ""} en attente d'enregistrement.
         </div>
       )}
 
       {Object.entries(grouped).map(([module, items]) => (
-        <section key={module} className="border border-neutral-200 bg-white">
-          <div className="grid gap-2 border-b border-neutral-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+        <section key={module} className="border border-border bg-card">
+          <div className="grid gap-2 border-b border-border px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <div>
-              <h3 className="text-sm font-semibold text-neutral-950">
+              <h3 className="text-sm font-semibold text-foreground">
                 {MODULE_LABELS[module] ?? module}
               </h3>
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {MODULE_DESCRIPTIONS[module] ?? "Paramètres opérationnels du module."}
               </p>
             </div>
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-muted-foreground">
               {items.length} option{items.length > 1 ? "s" : ""}
             </span>
           </div>
@@ -372,10 +372,10 @@ function SettingControl({
   const ImpactIcon = impact.icon;
 
   return (
-    <div className={`flex min-h-full flex-col border bg-white p-3 ${impact.cardClassName}`}>
+    <div className={`flex min-h-full flex-col border bg-card p-3 ${impact.cardClassName}`}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium text-neutral-900">{copy.label}</p>
+          <p className="text-sm font-medium text-foreground">{copy.label}</p>
           <span
             className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] ${impact.className}`}
           >
@@ -383,16 +383,16 @@ function SettingControl({
             {impact.label}
           </span>
         </div>
-        <p className="mt-1 text-xs leading-5 text-neutral-500">{copy.helper}</p>
-        <p className="mt-1 text-[11px] text-neutral-400">Clé technique: {setting.key}</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.helper}</p>
+        <p className="mt-1 text-[11px] text-subtle">Clé technique: {setting.key}</p>
       </div>
 
       <div className={`my-3 border-t border-dashed ${impact.ruleClassName}`} />
 
       <div className="mt-auto space-y-3">
         {setting.type === "boolean" ? (
-          <div className="flex items-center justify-between border border-neutral-200 bg-white px-3 py-2">
-            <span className="text-xs text-neutral-600">
+          <div className="flex items-center justify-between border border-border bg-card px-3 py-2">
+            <span className="text-xs text-body">
               {value === "true" ? "Activé" : "Désactivé"}
             </span>
             <Switch
@@ -402,7 +402,7 @@ function SettingControl({
           </div>
         ) : copy.options ? (
           <Select value={value} onValueChange={onChange}>
-            <SelectTrigger className="h-10 bg-white">
+            <SelectTrigger className="h-10 bg-card">
               <SelectValue placeholder="Choisir une règle" />
             </SelectTrigger>
             <SelectContent>
@@ -419,13 +419,13 @@ function SettingControl({
               type={setting.type === "integer" ? "number" : "text"}
               value={value}
               onChange={(event) => onChange(event.target.value)}
-              className="h-10 bg-white"
+              className="h-10 bg-card"
             />
-            {copy.unit && <span className="w-20 text-xs text-neutral-500">{copy.unit}</span>}
+            {copy.unit && <span className="w-20 text-xs text-muted-foreground">{copy.unit}</span>}
           </div>
         )}
         {copy.options && (
-          <p className="mt-1 text-[11px] text-neutral-500">
+          <p className="mt-1 text-[11px] text-muted-foreground">
             {copy.options.find((option) => option.value === value)?.detail}
           </p>
         )}
@@ -471,20 +471,20 @@ function CreditConversionTool() {
   }
 
   return (
-    <section className="border border-red-200 bg-red-50">
+    <section className="border border-danger-border bg-danger-bg">
       <div className="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-red-700" />
-            <h3 className="text-sm font-semibold text-red-900">
+            <AlertTriangle size={16} className="text-danger-text" />
+            <h3 className="text-sm font-semibold text-danger-text">
               Conversion manuelle des crédits expirés
             </h3>
           </div>
-          <p className="mt-1 text-xs leading-5 text-red-700">
+          <p className="mt-1 text-xs leading-5 text-danger-text">
             Lance immédiatement la conversion des crédits dont la fenêtre de décision est expirée.
             Cette action peut créer de vrais mouvements financiers.
           </p>
-          {result && <p className="mt-2 text-xs text-red-800">{result}</p>}
+          {result && <p className="mt-2 text-xs text-danger-text">{result}</p>}
         </div>
         <Button size="sm" variant="destructive" onClick={handleTrigger} disabled={running}>
           {running ? <Loader2 size={13} className="animate-spin" /> : "Déclencher"}
@@ -529,10 +529,10 @@ function ModulesTab() {
         />
       </div>
 
-      <section className="border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 px-4 py-3">
-          <h3 className="text-sm font-semibold text-neutral-950">Visibilité des modules</h3>
-          <p className="mt-1 text-xs text-neutral-500">
+      <section className="border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <h3 className="text-sm font-semibold text-foreground">Visibilité des modules</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             Désactiver un module le retire de la navigation. Les données existantes ne sont pas
             supprimées.
           </p>
@@ -543,22 +543,22 @@ function ModulesTab() {
               key={flag.moduleCode}
               className={`flex min-h-full flex-col justify-between border p-3 ${
                 flag.enabled
-                  ? "border-emerald-200 bg-emerald-50/40"
-                  : "border-neutral-200 bg-neutral-50"
+                  ? "border-success-border bg-success-bg/40"
+                  : "border-border bg-surface-muted"
               }`}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-900">
+                <p className="text-sm font-medium text-foreground">
                   {MODULE_LABELS[flag.moduleCode] ?? humanizeKey(flag.moduleCode)}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {flag.enabled
                     ? "Visible dans la navigation des utilisateurs autorisés."
                     : "Masqué dans la navigation, réactivation possible."}
                 </p>
               </div>
-              <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
-                <span className="text-[11px] font-medium text-neutral-500">
+              <div className="mt-3 flex items-center justify-between border-t border-dashed border-border pt-3">
+                <span className="text-[11px] font-medium text-muted-foreground">
                   {flag.enabled ? "Visible" : "Masqué"}
                 </span>
                 <Switch
@@ -628,10 +628,10 @@ function NotificationsTab() {
         <SettingsKpi icon={Mail} label="Emails activés" value={String(emailCount)} tone={emailCount > 0 ? undefined : "warning"} />
       </div>
 
-      <section className="border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 px-4 py-3">
-          <h3 className="text-sm font-semibold text-neutral-950">Préférences par événement</h3>
-          <p className="mt-1 text-xs text-neutral-500">
+      <section className="border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <h3 className="text-sm font-semibold text-foreground">Préférences par événement</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             Contrôle, pour chaque événement système, s'il crée une notification dans
             l'application et/ou envoie un email. Ne concerne pas les emails de documents
             (factures, proformas, bons de livraison), gérés séparément dans l'onglet Règles
@@ -642,14 +642,14 @@ function NotificationsTab() {
           {prefs.map((pref) => (
             <div key={pref.eventCode} className="flex items-center justify-between gap-4 px-4 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-900">{pref.label}</p>
+                <p className="text-sm font-medium text-foreground">{pref.label}</p>
                 {pref.description && (
-                  <p className="mt-0.5 text-xs text-neutral-500">{pref.description}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{pref.description}</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-neutral-500">In-app</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">In-app</span>
                   <Switch
                     checked={pref.inAppEnabled}
                     disabled={pendingKey === `${pref.eventCode}:inAppEnabled`}
@@ -657,7 +657,7 @@ function NotificationsTab() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-neutral-500">Email</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">Email</span>
                   <Switch
                     checked={pref.emailEnabled}
                     disabled={pendingKey === `${pref.eventCode}:emailEnabled`}
@@ -732,11 +732,11 @@ function CatalogTab() {
         />
       </div>
 
-      <section className="border border-neutral-200 bg-white">
-        <div className="grid gap-3 border-b border-neutral-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <section className="border border-border bg-card">
+        <div className="grid gap-3 border-b border-border px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-950">Catalogue des commissions</h3>
-            <p className="mt-1 text-xs text-neutral-500">
+            <h3 className="text-sm font-semibold text-foreground">Catalogue des commissions</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
               Ces types structurent la saisie, les filtres et les graphiques de commissions.
             </p>
           </div>
@@ -752,7 +752,7 @@ function CatalogTab() {
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-[11.5px] font-medium text-neutral-800">
+                  <label className="mb-1.5 block text-[11.5px] font-medium text-body">
                     Code technique
                   </label>
                   <Input
@@ -760,12 +760,12 @@ function CatalogTab() {
                     onChange={(event) => setNewCode(event.target.value)}
                     placeholder="partenariat_hotel"
                   />
-                  <p className="mt-1 text-[11px] text-neutral-500">
+                  <p className="mt-1 text-[11px] text-muted-foreground">
                     Utilisé par l'API et les rapports. Préférez minuscules, chiffres et tirets bas.
                   </p>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[11.5px] font-medium text-neutral-800">
+                  <label className="mb-1.5 block text-[11.5px] font-medium text-body">
                     Nom affiché
                   </label>
                   <Input
@@ -774,7 +774,7 @@ function CatalogTab() {
                     placeholder="Partenariat hôtel"
                   />
                 </div>
-                {createError && <p className="text-[11px] text-red-600">{createError}</p>}
+                {createError && <p className="text-[11px] text-danger-text">{createError}</p>}
               </div>
               <DialogFooter>
                 <Button variant="secondary" onClick={() => setDialogOpen(false)}>
@@ -794,22 +794,22 @@ function CatalogTab() {
               key={type.code}
               className={`flex min-h-full flex-col justify-between border p-3 ${
                 type.active
-                  ? "border-emerald-200 bg-emerald-50/40"
-                  : "border-neutral-200 bg-neutral-50"
+                  ? "border-success-border bg-success-bg/40"
+                  : "border-border bg-surface-muted"
               }`}
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-neutral-900">{type.label}</p>
+                  <p className="text-sm font-medium text-foreground">{type.label}</p>
                   <span
-                    className={`border px-2 py-0.5 text-[11px] ${type.active ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-neutral-50 text-neutral-500"}`}
+                    className={`border px-2 py-0.5 text-[11px] ${type.active ? "border-success-border bg-success-bg text-success-text" : "border-border bg-surface-muted text-muted-foreground"}`}
                   >
                     {type.active ? "Actif" : "Désactivé"}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-neutral-500">Code technique: {type.code}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Code technique: {type.code}</p>
               </div>
-              <div className="mt-3 flex items-center justify-between border-t border-dashed border-neutral-200 pt-3">
+              <div className="mt-3 flex items-center justify-between border-t border-dashed border-border pt-3">
                 <EditCommissionTypeDialog type={type} onUpdated={reload} />
                 <Switch
                   checked={type.active}
@@ -837,25 +837,25 @@ function SettingsKpi({
 }) {
   const toneClass =
     tone === "danger"
-      ? "border-red-200 text-red-700"
+      ? "border-danger-border text-danger-text"
       : tone === "warning"
-        ? "border-amber-200 text-amber-700"
-        : "border-neutral-200 text-brand-gold-dark";
+        ? "border-warning-border text-warning-text"
+        : "border-border text-brand-gold-dark";
 
   return (
-    <div className={`border bg-white px-4 py-3 ${toneClass}`}>
+    <div className={`border bg-card px-4 py-3 ${toneClass}`}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-neutral-500">{label}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
         <Icon size={16} />
       </div>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-neutral-950">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
 
 function LoadingLine({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+    <div className="flex items-center gap-2 border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
       <Loader2 size={16} className="animate-spin" />
       {label}
     </div>

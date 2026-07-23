@@ -162,7 +162,7 @@ export default function CommissionsPage() {
       accessorKey: "type",
       header: "Type",
       cell: ({ row }) => (
-        <span className="text-[12px] font-medium text-neutral-800">
+        <span className="text-[12px] font-medium text-body">
           {typeLabel(row.original.type)}
         </span>
       ),
@@ -171,7 +171,7 @@ export default function CommissionsPage() {
       accessorKey: "date",
       header: "Date",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {new Date(row.original.date).toLocaleDateString("fr-FR")}
         </span>
       ),
@@ -181,7 +181,7 @@ export default function CommissionsPage() {
       header: "Note",
       cell: ({ row }) => (
         <span
-          className="text-[12px] text-neutral-500 max-w-[220px] truncate block"
+          className="text-[12px] text-muted-foreground max-w-[220px] truncate block"
           title={row.original.note}
         >
           {row.original.note || "—"}
@@ -192,7 +192,7 @@ export default function CommissionsPage() {
       id: "client",
       header: "Client",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {row.original.clientPartyId
             ? (parties[row.original.clientPartyId]?.fullName ?? "...")
             : "-"}
@@ -203,7 +203,7 @@ export default function CommissionsPage() {
       id: "referrer",
       header: "Référent",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {row.original.referrerPartyId
             ? (parties[row.original.referrerPartyId]?.fullName ?? "...")
             : "-"}
@@ -215,7 +215,7 @@ export default function CommissionsPage() {
       header: "Montant",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] font-medium text-neutral-800">
+        <span className="text-[12px] font-medium text-body">
           {parseFloat(row.original.commissionAmount).toLocaleString("fr-FR")}
         </span>
       ),
@@ -226,7 +226,7 @@ export default function CommissionsPage() {
       meta: { align: "right" },
       cell: ({ row }) =>
         row.original.pendingEditRequestId ? (
-          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
+          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-warning-bg text-warning-text whitespace-nowrap">
             Modif. en attente
           </span>
         ) : (
@@ -267,7 +267,7 @@ export default function CommissionsPage() {
                   event.stopPropagation();
                   handleDelete(row.original.id);
                 }}
-                className="text-red-500 hover:bg-red-50"
+                className="text-danger-text hover:bg-danger-bg"
                 title="Supprimer"
                 disabled={deleteMutation.isPending && deleteMutation.variables === row.original.id}
               >
@@ -286,7 +286,7 @@ export default function CommissionsPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Commissions enregistrées, montants associés et demandes de correction en cours.
         </p>
         <CreateCommissionDialog onCreated={handleReload} />
@@ -323,12 +323,12 @@ export default function CommissionsPage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row">
           <div className="relative max-w-xs flex-1">
             <Search
               size={13}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
             />
             <Input
               value={search}
@@ -356,10 +356,10 @@ export default function CommissionsPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[11.5px] text-neutral-500">
+          <p className="text-[11.5px] text-muted-foreground">
             {filteredCommissions.length} résultat{filteredCommissions.length !== 1 ? "s" : ""}
           </p>
-          <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-0.5">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -367,7 +367,7 @@ export default function CommissionsPage() {
               onClick={() => setViewMode("table")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "table" && "bg-neutral-100 text-neutral-900",
+                viewMode === "table" && "bg-surface-subtle text-foreground",
               )}
             >
               <Table2 size={13} />
@@ -380,7 +380,7 @@ export default function CommissionsPage() {
               onClick={() => setViewMode("grid")}
               className={cn(
                 "h-8 gap-1.5",
-                viewMode === "grid" && "bg-neutral-100 text-neutral-900",
+                viewMode === "grid" && "bg-surface-subtle text-foreground",
               )}
             >
               <LayoutGrid size={13} />
@@ -446,7 +446,7 @@ function CommissionGrid({
 }) {
   if (commissions.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucune commission.
       </div>
     );
@@ -462,51 +462,51 @@ function CommissionGrid({
           ? parties[commission.referrerPartyId]?.fullName
           : undefined;
         return (
-          <div key={commission.id} className="rounded-lg border border-neutral-200 bg-white p-4">
+          <div key={commission.id} className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-neutral-900">
+                <p className="truncate text-[13px] font-semibold text-foreground">
                   {typeLabel(commission.type)}
                 </p>
-                <p className="mt-0.5 text-[10.5px] text-neutral-500">
+                <p className="mt-0.5 text-[10.5px] text-muted-foreground">
                   #{commission.id} - {formatDate(commission.date)}
                 </p>
               </div>
               {commission.pendingEditRequestId && (
-                <span className="rounded border border-amber-100 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                <span className="rounded border border-warning-border bg-warning-bg px-2 py-0.5 text-[10px] font-semibold text-warning-text">
                   Modif. en attente
                 </span>
               )}
             </div>
 
-            <p className="mt-3 text-[20px] font-bold tabular-nums text-neutral-900">
+            <p className="mt-3 text-[20px] font-bold tabular-nums text-foreground">
               {money(parseFloat(commission.commissionAmount))}
             </p>
 
-            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-3 text-[11px]">
+            <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 text-[11px]">
               <div className="min-w-0">
-                <p className="text-neutral-400">Client</p>
-                <p className="mt-0.5 truncate font-medium text-neutral-800">{client ?? "-"}</p>
+                <p className="text-subtle">Client</p>
+                <p className="mt-0.5 truncate font-medium text-body">{client ?? "-"}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-neutral-400">Référent</p>
-                <p className="mt-0.5 truncate font-medium text-neutral-800">{referrer ?? "-"}</p>
+                <p className="text-subtle">Référent</p>
+                <p className="mt-0.5 truncate font-medium text-body">{referrer ?? "-"}</p>
               </div>
             </div>
 
             {commission.note && (
-              <p className="mt-3 truncate rounded border border-neutral-100 bg-neutral-50 px-3 py-2 text-[11.5px] text-neutral-600">
+              <p className="mt-3 truncate rounded border border-border bg-surface-muted px-3 py-2 text-[11.5px] text-body">
                 {commission.note}
               </p>
             )}
 
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
               <Button size="sm" variant="ghost" onClick={() => onSelect(commission)}>
                 <Eye size={13} /> Détail
               </Button>
               <div className="flex items-center gap-1">
                 {commission.pendingEditRequestId ? (
-                  <span className="px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                  <span className="px-2 py-0.5 text-[10px] font-semibold text-warning-text">
                     En attente
                   </span>
                 ) : (
@@ -517,7 +517,7 @@ function CommissionGrid({
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(commission.id)}
-                    className="text-red-500 hover:bg-red-50"
+                    className="text-danger-text hover:bg-danger-bg"
                     title="Supprimer"
                     disabled={deletingId === commission.id}
                   >
@@ -566,21 +566,21 @@ function CommissionDetailDialog({
 
   return (
     <Dialog open={Boolean(commission)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-3xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-3xl">
         {commission && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     Commission #{commission.id}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {typeLabel(commission.type)} - agent #{commission.agentId}
                   </DialogDescription>
                 </div>
                 {commission.pendingEditRequestId && (
-                  <span className="w-fit rounded border border-amber-100 bg-amber-50 px-2 py-0.5 text-[10.5px] font-semibold text-amber-700">
+                  <span className="w-fit rounded border border-warning-border bg-warning-bg px-2 py-0.5 text-[10.5px] font-semibold text-warning-text">
                     Modification en attente
                   </span>
                 )}
@@ -595,35 +595,35 @@ function CommissionDetailDialog({
             </div>
 
             {commission.note && (
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+              <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Note
                 </p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-neutral-800">
+                <p className="mt-1 text-[12.5px] leading-relaxed text-body">
                   {commission.note}
                 </p>
               </div>
             )}
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="border-b border-border bg-surface-muted px-4 py-2">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Détails spécifiques
                 </p>
               </div>
               {detailEntries.length === 0 ? (
-                <p className="px-4 py-5 text-center text-[12px] text-neutral-500">
+                <p className="px-4 py-5 text-center text-[12px] text-muted-foreground">
                   Aucun détail spécifique.
                 </p>
               ) : (
                 <table className="w-full text-left">
                   <tbody>
                     {detailEntries.map(([key, value]) => (
-                      <tr key={key} className="border-b border-neutral-100 last:border-0">
-                        <td className="w-1/3 px-4 py-2 text-[12px] font-medium text-neutral-700">
+                      <tr key={key} className="border-b border-border last:border-0">
+                        <td className="w-1/3 px-4 py-2 text-[12px] font-medium text-body">
                           {key}
                         </td>
-                        <td className="px-4 py-2 text-[12px] text-neutral-500">
+                        <td className="px-4 py-2 text-[12px] text-muted-foreground">
                           {formatDetailValue(value)}
                         </td>
                       </tr>
@@ -677,11 +677,11 @@ function CommissionDetailDialog({
 
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }

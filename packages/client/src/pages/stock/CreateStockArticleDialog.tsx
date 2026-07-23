@@ -91,18 +91,18 @@ export function CreateStockArticleDialog({ onCreated }: CreateStockArticleDialog
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div>
-            <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">Nom</label>
+            <label className="block text-[11.5px] font-medium text-body mb-1.5">Nom</label>
             <Input {...register("name")} autoFocus />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Unité
               </label>
               <Input {...register("unit")} placeholder="unit, boîte, ramette..." />
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Seuil bas
               </label>
               <Input type="number" {...register("minLevel", { valueAsNumber: true })} />
@@ -110,13 +110,13 @@ export function CreateStockArticleDialog({ onCreated }: CreateStockArticleDialog
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Prix de vente par défaut
               </label>
               <Input type="number" {...register("sellingPrice", { valueAsNumber: true })} />
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Prix fournisseur par défaut
               </label>
               <Input type="number" {...register("supplierPrice", { valueAsNumber: true })} />

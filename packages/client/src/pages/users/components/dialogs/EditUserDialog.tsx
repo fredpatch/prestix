@@ -77,13 +77,13 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
         {targetUser && (
           <div className="space-y-3">
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Email
               </label>
               <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
             </div>
             <div>
-              <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+              <label className="block text-[11.5px] font-medium text-body mb-1.5">
                 Rôle
               </label>
               <Select
@@ -103,7 +103,7 @@ export function EditUserDialog({ targetUser, onClose, onUpdated }: EditUserDialo
                 </SelectContent>
               </Select>
               {!canEditRole && (
-                <p className="text-[10.5px] text-neutral-500 mt-1">
+                <p className="text-[10.5px] text-muted-foreground mt-1">
                   Seul un Super Admin peut modifier un compte Admin.
                 </p>
               )}

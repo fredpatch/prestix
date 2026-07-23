@@ -62,9 +62,9 @@ const STATUS_LABELS: Record<CommissionEditRequest["status"], string> = {
 };
 
 const STATUS_CLASSES: Record<CommissionEditRequest["status"], string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-100",
-  approved: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  rejected: "bg-red-50 text-red-700 border-red-100",
+  pending: "bg-warning-bg text-warning-text border-warning-border",
+  approved: "bg-success-bg text-success-text border-success-border",
+  rejected: "bg-danger-bg text-danger-text border-danger-border",
 };
 
 type ViewMode = "table" | "grid";
@@ -229,11 +229,11 @@ export default function CommissionEditQueuePage() {
         const ctx = row.original;
         return (
           <div>
-            <p className="text-[12px] font-semibold text-neutral-900">
+            <p className="text-[12px] font-semibold text-foreground">
               {ctx.typeLabel ?? ctx.transaction?.type ?? "Commission"} #
               {ctx.request.commissionTransactionId}
             </p>
-            <p className="mt-0.5 text-[10.5px] text-neutral-500">
+            <p className="mt-0.5 text-[10.5px] text-muted-foreground">
               Demandée le {formatDateTime(ctx.request.createdAt)}
             </p>
           </div>
@@ -244,7 +244,7 @@ export default function CommissionEditQueuePage() {
       id: "requester",
       header: "Demandeur",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-700">
+        <span className="text-[12px] text-body">
           {row.original.requester?.fullName ?? `Agent #${row.original.request.requestedBy}`}
         </span>
       ),
@@ -259,7 +259,7 @@ export default function CommissionEditQueuePage() {
       header: "Champs",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] tabular-nums text-neutral-700">
+        <span className="text-[12px] tabular-nums text-body">
           {Object.keys(row.original.request.proposedChanges).length}
         </span>
       ),
@@ -268,7 +268,7 @@ export default function CommissionEditQueuePage() {
       id: "reviewedAt",
       header: "Révision",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {row.original.request.status === "pending"
             ? "Non révisée"
             : formatDateTime(row.original.request.reviewedAt)}
@@ -294,16 +294,16 @@ export default function CommissionEditQueuePage() {
     },
   ];
 
-  if (loadingRequests) return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+  if (loadingRequests) return <Loader2 className="animate-spin text-subtle" size={18} />;
 
   return (
     <div>
       <div className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Suivi des corrections demandées sur les commissions, avec historique des décisions et
           comparaison des valeurs proposées.
         </p>
-        <p className="text-[11px] text-neutral-400">
+        <p className="text-[11px] text-subtle">
           {filtered.length} résultat{filtered.length !== 1 ? "s" : ""} affiché
           {filtered.length !== 1 ? "s" : ""}
         </p>
@@ -340,12 +340,12 @@ export default function CommissionEditQueuePage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="grid flex-1 gap-2 sm:grid-cols-[minmax(220px,320px)_180px_220px]">
           <div className="relative">
             <Search
               size={13}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle"
             />
             <Input
               value={search}
@@ -385,13 +385,13 @@ export default function CommissionEditQueuePage() {
           </Select>
         </div>
 
-        <div className="inline-flex w-fit rounded-lg border border-neutral-200 bg-white p-0.5">
+        <div className="inline-flex w-fit rounded-lg border border-border bg-card p-0.5">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("table")}
-            className={cn("h-8 gap-1.5", viewMode === "table" && "bg-neutral-100 text-neutral-900")}
+            className={cn("h-8 gap-1.5", viewMode === "table" && "bg-surface-subtle text-foreground")}
           >
             <Table2 size={13} />
             Table
@@ -401,7 +401,7 @@ export default function CommissionEditQueuePage() {
             variant="ghost"
             size="sm"
             onClick={() => setViewMode("grid")}
-            className={cn("h-8 gap-1.5", viewMode === "grid" && "bg-neutral-100 text-neutral-900")}
+            className={cn("h-8 gap-1.5", viewMode === "grid" && "bg-surface-subtle text-foreground")}
           >
             <LayoutGrid size={13} />
             Grille
@@ -474,7 +474,7 @@ function RequestGrid({
 }) {
   if (requests.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucune demande ne correspond aux filtres.
       </div>
     );
@@ -483,41 +483,41 @@ function RequestGrid({
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
       {requests.map((ctx) => (
-        <div key={ctx.request.id} className="rounded-lg border border-neutral-200 bg-white p-4">
+        <div key={ctx.request.id} className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-neutral-900">
+              <p className="truncate text-[13px] font-semibold text-foreground">
                 {ctx.typeLabel ?? ctx.transaction?.type ?? "Commission"} #
                 {ctx.request.commissionTransactionId}
               </p>
-              <p className="mt-1 text-[10.5px] text-neutral-500">
+              <p className="mt-1 text-[10.5px] text-muted-foreground">
                 {ctx.requester?.fullName ?? `Agent #${ctx.request.requestedBy}`}
               </p>
             </div>
             {statusBadge(ctx.request.status)}
           </div>
 
-          <p className="mt-3 line-clamp-2 min-h-[34px] rounded border border-neutral-100 bg-neutral-50 px-3 py-2 text-[11.5px] leading-relaxed text-neutral-700">
+          <p className="mt-3 line-clamp-2 min-h-[34px] rounded border border-border bg-surface-muted px-3 py-2 text-[11.5px] leading-relaxed text-body">
             {ctx.request.reason}
           </p>
 
-          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-neutral-100 pt-3 text-[11px]">
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 text-[11px]">
             <div>
-              <p className="text-neutral-400">Demandée</p>
-              <p className="mt-0.5 font-medium text-neutral-800">
+              <p className="text-subtle">Demandée</p>
+              <p className="mt-0.5 font-medium text-body">
                 {formatDate(ctx.request.createdAt)}
               </p>
             </div>
             <div>
-              <p className="text-neutral-400">Champs</p>
-              <p className="mt-0.5 font-medium tabular-nums text-neutral-800">
+              <p className="text-subtle">Champs</p>
+              <p className="mt-0.5 font-medium tabular-nums text-body">
                 {Object.keys(ctx.request.proposedChanges).length}
               </p>
             </div>
           </div>
 
           {rejectingId === ctx.request.id ? (
-            <div className="mt-3 flex flex-col gap-2 border-t border-neutral-100 pt-3">
+            <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
               <Input
                 placeholder="Motif du refus (optionnel)"
                 value={rejectNote}
@@ -539,7 +539,7 @@ function RequestGrid({
               </div>
             </div>
           ) : (
-            <div className="mt-3 flex items-center justify-between gap-2 border-t border-neutral-100 pt-3">
+            <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
               <Button size="sm" variant="ghost" onClick={() => onSelect(ctx)}>
                 <Eye size={13} /> Détail
               </Button>
@@ -602,16 +602,16 @@ function RequestDetailDialog({
 
   return (
     <Dialog open={Boolean(context)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-3xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-3xl">
         {context && request && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     Demande #{request.id}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {context.typeLabel ?? transaction?.type ?? "Commission"} #
                     {request.commissionTransactionId} - demandée par{" "}
                     {context.requester?.fullName ?? `Agent #${request.requestedBy}`}
@@ -639,26 +639,26 @@ function RequestDetailDialog({
               />
             </div>
 
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Raison
               </p>
-              <p className="mt-1 text-[12.5px] leading-relaxed text-neutral-800">
+              <p className="mt-1 text-[12.5px] leading-relaxed text-body">
                 {request.reason}
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
+            <div className="overflow-hidden rounded-lg border border-border">
               <table className="w-full text-left">
-                <thead className="bg-neutral-50">
+                <thead className="bg-surface-muted">
                   <tr>
-                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Champ
                     </th>
-                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Valeur avant révision
                     </th>
-                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Proposition
                     </th>
                   </tr>
@@ -669,14 +669,14 @@ function RequestDetailDialog({
                       ? (transaction as unknown as Record<string, unknown>)[key]
                       : undefined;
                     return (
-                      <tr key={key} className="border-t border-neutral-100">
-                        <td className="px-4 py-2 text-[12px] text-neutral-700">
+                      <tr key={key} className="border-t border-border">
+                        <td className="px-4 py-2 text-[12px] text-body">
                           {FIELD_LABELS[key] ?? key}
                         </td>
-                        <td className="px-4 py-2 text-[12px] text-neutral-500">
+                        <td className="px-4 py-2 text-[12px] text-muted-foreground">
                           {formatValue(key, currentValue)}
                         </td>
-                        <td className="px-4 py-2 text-[12px] font-medium text-emerald-700">
+                        <td className="px-4 py-2 text-[12px] font-medium text-success-text">
                           {formatValue(key, newValue)}
                         </td>
                       </tr>
@@ -687,18 +687,18 @@ function RequestDetailDialog({
             </div>
 
             {request.reviewNote && (
-              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-red-700">
+              <div className="rounded-lg border border-danger-border bg-danger-bg px-4 py-3">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-danger-text">
                   Note de révision
                 </p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-red-800">
+                <p className="mt-1 text-[12.5px] leading-relaxed text-danger-text">
                   {request.reviewNote}
                 </p>
               </div>
             )}
 
             {request.status === "pending" && rejectingId === request.id && (
-              <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
+              <div className="rounded-lg border border-border bg-surface-muted px-4 py-3">
                 <Input
                   placeholder="Motif du refus (optionnel)"
                   value={rejectNote}
@@ -756,11 +756,11 @@ function RequestDetailDialog({
 
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
-      <p className="mt-1 truncate text-[12px] font-medium text-neutral-800">{value}</p>
+      <p className="mt-1 truncate text-[12px] font-medium text-body">{value}</p>
     </div>
   );
 }

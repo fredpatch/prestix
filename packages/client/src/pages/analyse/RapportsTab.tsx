@@ -37,9 +37,9 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white border border-neutral-200 rounded-lg p-4">
-        <p className="text-[11.5px] font-semibold text-neutral-800 mb-0.5">Générer un rapport</p>
-        <p className="text-[10.5px] text-neutral-500 mb-3">
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-[11.5px] font-semibold text-body mb-0.5">Générer un rapport</p>
+        <p className="text-[10.5px] text-muted-foreground mb-3">
           Choisissez les sections à inclure — pour la période et la base sélectionnées en haut de
           page. Chaque section devient une feuille en Excel, ou une partie du document en PDF.
         </p>
@@ -48,7 +48,7 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
           {MODULES.map((m) => (
             <label
               key={m.key}
-              className="flex items-center gap-1.5 text-[12px] text-neutral-800 cursor-pointer"
+              className="flex items-center gap-1.5 text-[12px] text-body cursor-pointer"
             >
               <input
                 type="checkbox"
@@ -67,7 +67,7 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
             className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-[12px] font-medium ${
               selectedModules.length > 0
                 ? "bg-brand-gold-dark text-white hover:opacity-90"
-                : "bg-neutral-200 text-neutral-400 cursor-not-allowed pointer-events-none"
+                : "bg-surface-subtle text-subtle cursor-not-allowed pointer-events-none"
             }`}
           >
             <FileDown size={13} /> Générer Excel
@@ -78,19 +78,19 @@ export function RapportsTab({ from, to, basis }: RapportsTabProps) {
             rel="noreferrer"
             className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg border text-[12px] font-medium ${
               selectedModules.length > 0
-                ? "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
-                : "border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed pointer-events-none"
+                ? "border-border bg-card text-body hover:bg-surface-muted"
+                : "border-border bg-surface-subtle text-subtle cursor-not-allowed pointer-events-none"
             }`}
           >
             <FileText size={13} /> Générer PDF
           </a>
         </div>
         {selectedModules.length === 0 && (
-          <p className="text-[10.5px] text-red-600 mt-1.5">Sélectionnez au moins une section.</p>
+          <p className="text-[10.5px] text-danger-text mt-1.5">Sélectionnez au moins une section.</p>
         )}
       </div>
 
-      <p className="text-[10.5px] text-neutral-400">
+      <p className="text-[10.5px] text-subtle">
         Historique des rapports générés et génération automatique périodique : prévus pour une passe
         ultérieure (module de gestion documentaire nécessaire) — V2.
       </p>

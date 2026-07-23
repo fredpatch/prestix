@@ -34,7 +34,7 @@ export function KpiTable({ title, rows, linkTo, limit = 10 }: KpiTableProps) {
       accessorKey: "value",
       header: "Valeur (XAF)",
       meta: { align: "right" },
-      cell: ({ row }) => <span className="font-medium text-neutral-800">{fmt(row.original.value)}</span>,
+      cell: ({ row }) => <span className="font-medium text-body">{fmt(row.original.value)}</span>,
     },
   ];
 

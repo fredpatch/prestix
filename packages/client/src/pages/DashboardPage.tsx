@@ -67,7 +67,7 @@ export default function DashboardPage() {
       />
 
       {loading || !summary || !composition ? (
-        <Loader2 className="animate-spin text-neutral-400 mx-auto" size={18} />
+        <Loader2 className="animate-spin text-subtle mx-auto" size={18} />
       ) : (
         <>
           <DashboardMetricCards summary={summary} />

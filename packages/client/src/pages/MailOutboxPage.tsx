@@ -52,9 +52,9 @@ function humanizeTemplateKey(key: string): string {
 }
 
 function statusTone(status: string): string {
-  if (status === "sent") return "border-emerald-100 bg-emerald-50 text-emerald-700";
-  if (status === "failed") return "border-red-100 bg-red-50 text-red-700";
-  return "border-amber-100 bg-amber-50 text-amber-700";
+  if (status === "sent") return "border-success-border bg-success-bg text-success-text";
+  if (status === "failed") return "border-danger-border bg-danger-bg text-danger-text";
+  return "border-warning-border bg-warning-bg text-warning-text";
 }
 
 export default function MailOutboxPage() {
@@ -117,21 +117,21 @@ export default function MailOutboxPage() {
       accessorKey: "createdAt",
       header: "Date / heure",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-600">{formatDateTime(row.original.createdAt)}</span>
+        <span className="text-[12px] text-body">{formatDateTime(row.original.createdAt)}</span>
       ),
     },
     {
       accessorKey: "recipient",
       header: "Destinataire",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">{row.original.recipient}</span>
+        <span className="text-[12px] text-body">{row.original.recipient}</span>
       ),
     },
     {
       accessorKey: "subject",
       header: "Sujet",
       cell: ({ row }) => (
-        <span className="max-w-[280px] truncate text-[12px] text-neutral-800" title={row.original.subject}>
+        <span className="max-w-[280px] truncate text-[12px] text-body" title={row.original.subject}>
           {row.original.subject}
         </span>
       ),
@@ -140,7 +140,7 @@ export default function MailOutboxPage() {
       accessorKey: "templateKey",
       header: "Modèle",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">{humanizeTemplateKey(row.original.templateKey)}</span>
+        <span className="text-[12px] text-muted-foreground">{humanizeTemplateKey(row.original.templateKey)}</span>
       ),
     },
     {
@@ -157,9 +157,9 @@ export default function MailOutboxPage() {
       header: "Source",
       cell: ({ row }) => {
         const { label, href } = sourceLink(row.original);
-        if (!href) return <span className="text-[12px] text-neutral-400">{label}</span>;
+        if (!href) return <span className="text-[12px] text-subtle">{label}</span>;
         return (
-          <Link to={href} className="inline-flex items-center gap-1 text-[12px] text-blue-600 hover:underline">
+          <Link to={href} className="inline-flex items-center gap-1 text-[12px] text-info-text hover:underline">
             {label}
             <ExternalLink size={11} />
           </Link>
@@ -174,7 +174,7 @@ export default function MailOutboxPage() {
           <button
             type="button"
             onClick={() => setDetailItem(row.original)}
-            className="text-neutral-400 hover:text-neutral-600"
+            className="text-subtle hover:text-body"
             title="Détails"
           >
             <Info size={14} />
@@ -203,7 +203,7 @@ export default function MailOutboxPage() {
 
   return (
     <div>
-      <p className="text-neutral-500 text-sm mb-6">
+      <p className="text-muted-foreground text-sm mb-6">
         Historique complet des emails envoyés par l'application (factures, proformas, bons de
         livraison, rappels).
       </p>
@@ -281,7 +281,7 @@ export default function MailOutboxPage() {
         </Button>
 
         {isFetching && (
-          <span className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+          <span className="flex items-center gap-1.5 text-[11px] text-subtle">
             <Loader2 size={12} className="animate-spin" />
             Recherche...
           </span>
@@ -291,7 +291,7 @@ export default function MailOutboxPage() {
       <DataTable columns={columns} data={rows} loading={isLoading} emptyMessage="Aucun email trouvé." />
 
       <div className="flex items-center justify-between mt-3">
-        <p className="text-[11px] text-neutral-500">
+        <p className="text-[11px] text-muted-foreground">
           {total} email{total !== 1 ? "s" : ""}
         </p>
         <div className="flex items-center gap-2">
@@ -303,7 +303,7 @@ export default function MailOutboxPage() {
           >
             <ChevronLeft size={13} />
           </Button>
-          <span className="text-[11px] text-neutral-500">
+          <span className="text-[11px] text-muted-foreground">
             Page {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
           </span>
           <Button
@@ -324,9 +324,9 @@ export default function MailOutboxPage() {
 
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-      <p className="text-[10.5px] font-medium uppercase tracking-wide text-neutral-400">{label}</p>
-      <p className="mt-0.5 text-[12.5px] text-neutral-800">{value}</p>
+    <div className="rounded-lg border border-border bg-surface-muted px-3 py-2">
+      <p className="text-[10.5px] font-medium uppercase tracking-wide text-subtle">{label}</p>
+      <p className="mt-0.5 text-[12.5px] text-body">{value}</p>
     </div>
   );
 }
@@ -340,12 +340,12 @@ function MailOutboxDetailDialog({
 }) {
   return (
     <Dialog open={Boolean(item)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-lg">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-lg">
         {item && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-[17px] font-bold text-neutral-950">{item.subject}</DialogTitle>
-              <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+              <DialogTitle className="text-[17px] font-bold text-foreground">{item.subject}</DialogTitle>
+              <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                 {formatDateTime(item.createdAt)}
               </DialogDescription>
             </DialogHeader>
@@ -360,22 +360,22 @@ function MailOutboxDetailDialog({
             </div>
 
             {item.errorMessage && (
-              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-red-400">Erreur</p>
-                <p className="mt-1 text-[12.5px] text-red-700">{item.errorMessage}</p>
+              <div className="rounded-lg border border-danger-border bg-danger-bg px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-danger-text">Erreur</p>
+                <p className="mt-1 text-[12.5px] text-danger-text">{item.errorMessage}</p>
               </div>
             )}
 
             {item.metadata && Object.keys(item.metadata).length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-neutral-200">
+              <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-left">
                   <tbody>
                     {Object.entries(item.metadata).map(([key, value]) => (
-                      <tr key={key} className="border-b border-neutral-100 last:border-0">
-                        <td className="w-36 bg-neutral-50 px-4 py-2 text-[11px] font-medium text-neutral-500">
+                      <tr key={key} className="border-b border-border last:border-0">
+                        <td className="w-36 bg-surface-muted px-4 py-2 text-[11px] font-medium text-muted-foreground">
                           {key}
                         </td>
-                        <td className="px-4 py-2 text-[12px] text-neutral-800 break-all">{String(value)}</td>
+                        <td className="px-4 py-2 text-[12px] text-body break-all">{String(value)}</td>
                       </tr>
                     ))}
                   </tbody>

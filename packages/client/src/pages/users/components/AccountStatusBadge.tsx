@@ -19,7 +19,7 @@ export function AccountStatusBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-red-50 text-red-700",
+          "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-danger-bg text-danger-text",
           classNameDeactivated,
         )}
       >
@@ -31,7 +31,7 @@ export function AccountStatusBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-amber-50 text-amber-700",
+          "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-warning-bg text-warning-text",
           classNameFirstLogin,
         )}
       >
@@ -42,7 +42,7 @@ export function AccountStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-emerald-50 text-emerald-700",
+        "inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold bg-success-bg text-success-text",
         classNameActive,
       )}
     >

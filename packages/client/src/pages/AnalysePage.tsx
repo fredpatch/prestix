@@ -43,7 +43,7 @@ export default function AnalysePage() {
     <div>
       <div className="flex items-center gap-2 mb-1">
         <BarChart3 size={16} className="text-brand-gold-dark" />
-        <p className="text-neutral-500 text-sm">
+        <p className="text-muted-foreground text-sm">
           Analyse détaillée pour la prise de décision — évolution, comparaison, tendances.
         </p>
       </div>

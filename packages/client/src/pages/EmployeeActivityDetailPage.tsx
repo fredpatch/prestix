@@ -58,7 +58,7 @@ const invoiceColumns: ColumnDef<InvoiceRow, any>[] = [
     header: "Montant (XAF)",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+      <span className="font-medium text-body">{fmt(row.original.amount)}</span>
     ),
   },
 ];
@@ -80,7 +80,7 @@ const paymentColumns: ColumnDef<PaymentRow, any>[] = [
     header: "Montant (XAF)",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+      <span className="font-medium text-body">{fmt(row.original.amount)}</span>
     ),
   },
 ];
@@ -93,7 +93,7 @@ const commissionColumns: ColumnDef<CommissionRow, any>[] = [
     header: "Montant (XAF)",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+      <span className="font-medium text-body">{fmt(row.original.amount)}</span>
     ),
   },
 ];
@@ -126,7 +126,7 @@ const savingsColumns: ColumnDef<SavingsRow, any>[] = [
     header: "Montant (XAF)",
     meta: { align: "right" },
     cell: ({ row }) => (
-      <span className="font-medium text-neutral-800">{fmt(row.original.amount)}</span>
+      <span className="font-medium text-body">{fmt(row.original.amount)}</span>
     ),
   },
 ];
@@ -166,7 +166,7 @@ export default function EmployeeActivityDetailPage() {
   });
 
   if (isLoading || (canReadEmployeeProfile && isEmployeeLoading) || !detail) {
-    return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+    return <Loader2 className="animate-spin text-subtle" size={18} />;
   }
 
   const invoiceValue = detail.invoices.reduce((sum, row) => sum + row.amount, 0);
@@ -242,7 +242,7 @@ export default function EmployeeActivityDetailPage() {
       {employee ? (
         <EmployeeProfileHeader employee={employee} />
       ) : (
-        <p className="mb-6 text-sm text-neutral-500">
+        <p className="mb-6 text-sm text-muted-foreground">
           Détail des transactions pour l'employé #{numericAgentId ?? "-"} sur la période
           sélectionnée.
         </p>
@@ -280,10 +280,10 @@ export default function EmployeeActivityDetailPage() {
       </div>
 
       <div className="grid gap-4 mb-6 lg:grid-cols-[0.85fr_1.15fr]">
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-          <div className="flex items-center justify-between border-b border-neutral-200 pb-2 mb-3">
-            <p className="text-[12px] font-semibold text-neutral-900">Répartition des actions</p>
-            <CircleDollarSign size={15} className="text-neutral-400" />
+        <div className="bg-card border border-border rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+            <p className="text-[12px] font-semibold text-foreground">Répartition des actions</p>
+            <CircleDollarSign size={15} className="text-subtle" />
           </div>
           <ChartCanvas
             config={activityChart}
@@ -291,10 +291,10 @@ export default function EmployeeActivityDetailPage() {
             label="Répartition des actions employé"
           />
         </div>
-        <div className="bg-white border border-neutral-200 rounded-lg px-4 py-3">
-          <div className="flex items-center justify-between border-b border-neutral-200 pb-2 mb-3">
-            <p className="text-[12px] font-semibold text-neutral-900">Valeur par activité</p>
-            <BarChart3 size={15} className="text-neutral-400" />
+        <div className="bg-card border border-border rounded-lg px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+            <p className="text-[12px] font-semibold text-foreground">Valeur par activité</p>
+            <BarChart3 size={15} className="text-subtle" />
           </div>
           <ChartCanvas
             config={valueChart}

@@ -49,10 +49,10 @@ export default function AidePage() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[260px_1fr] items-start">
-      <aside className="bg-white border border-neutral-200 rounded-lg p-3 lg:sticky lg:top-4">
+      <aside className="bg-card border border-border rounded-lg p-3 lg:sticky lg:top-4">
         {groups.map((group) => (
           <div key={group.moduleGroup} className="mb-3 last:mb-0">
-            <p className="px-2 mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+            <p className="px-2 mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
               {group.moduleGroup}
             </p>
             <nav className="space-y-0.5">
@@ -64,13 +64,13 @@ export default function AidePage() {
                     "w-full flex items-center gap-2 rounded px-2 py-1.5 text-left text-[12px] transition-colors",
                     topic.slug === active?.slug
                       ? "bg-brand-gold-dark/10 text-brand-gold-dark font-medium"
-                      : "text-neutral-700 hover:bg-neutral-50",
+                      : "text-body hover:bg-surface-muted",
                   )}
                 >
                   {topic.content ? (
                     <BookOpen size={13} className="shrink-0" />
                   ) : (
-                    <CircleDashed size={13} className="shrink-0 text-neutral-300" />
+                    <CircleDashed size={13} className="shrink-0 text-subtle" />
                   )}
                   <span className="truncate">{topic.title}</span>
                 </button>
@@ -80,7 +80,7 @@ export default function AidePage() {
         ))}
       </aside>
 
-      <section className="bg-white border border-neutral-200 rounded-lg px-6 py-6 min-h-[400px]">
+      <section className="bg-card border border-border rounded-lg px-6 py-6 min-h-[400px]">
         <AideMarkdownView content={active?.content ?? null} />
       </section>
     </div>

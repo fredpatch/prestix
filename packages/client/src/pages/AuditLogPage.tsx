@@ -94,7 +94,7 @@ export default function AuditLogPage() {
       accessorKey: "createdAt",
       header: "Date / heure",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-600">
+        <span className="text-[12px] text-body">
           {format(parseISO(row.original.createdAt), "dd MMM yyyy HH:mm", { locale: fr })}
         </span>
       ),
@@ -103,14 +103,14 @@ export default function AuditLogPage() {
       accessorKey: "actorName",
       header: "Utilisateur",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">{row.original.actorName ?? "Système"}</span>
+        <span className="text-[12px] text-body">{row.original.actorName ?? "Système"}</span>
       ),
     },
     {
       accessorKey: "action",
       header: "Action",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800" title={row.original.action}>
+        <span className="text-[12px] text-body" title={row.original.action}>
           {humanizeAction(row.original.action)}
         </span>
       ),
@@ -119,7 +119,7 @@ export default function AuditLogPage() {
       accessorKey: "entityType",
       header: "Entité",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {row.original.entityType}
           {row.original.entityId ? ` #${row.original.entityId}` : ""}
         </span>
@@ -131,18 +131,18 @@ export default function AuditLogPage() {
       cell: ({ row }) => {
         const metadata = row.original.metadata;
         if (!metadata || Object.keys(metadata).length === 0) {
-          return <span className="text-[12px] text-neutral-300">—</span>;
+          return <span className="text-[12px] text-subtle">—</span>;
         }
         return (
           <Popover>
-            <PopoverTrigger type="button" className="text-neutral-400 hover:text-neutral-600">
+            <PopoverTrigger type="button" className="text-subtle hover:text-body">
               <Info size={14} />
             </PopoverTrigger>
             <PopoverContent className="w-72 text-[11px] space-y-1">
               {Object.entries(metadata).map(([key, value]) => (
                 <div key={key} className="flex justify-between gap-2">
-                  <span className="text-neutral-500">{key}</span>
-                  <span className="text-neutral-800 text-right break-all">{String(value)}</span>
+                  <span className="text-muted-foreground">{key}</span>
+                  <span className="text-body text-right break-all">{String(value)}</span>
                 </div>
               ))}
             </PopoverContent>
@@ -154,7 +154,7 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      <p className="text-neutral-500 text-sm mb-6">
+      <p className="text-muted-foreground text-sm mb-6">
         Historique complet des actions effectuées dans l'application.
       </p>
 
@@ -243,7 +243,7 @@ export default function AuditLogPage() {
         </Button>
 
         {isFetching && (
-          <span className="flex items-center gap-1.5 text-[11px] text-neutral-400">
+          <span className="flex items-center gap-1.5 text-[11px] text-subtle">
             <Loader2 size={12} className="animate-spin" />
             Recherche...
           </span>
@@ -258,7 +258,7 @@ export default function AuditLogPage() {
       />
 
       <div className="flex items-center justify-between mt-3">
-        <p className="text-[11px] text-neutral-500">
+        <p className="text-[11px] text-muted-foreground">
           {total} entrée{total !== 1 ? "s" : ""}
         </p>
         <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export default function AuditLogPage() {
           >
             <ChevronLeft size={13} />
           </Button>
-          <span className="text-[11px] text-neutral-500">
+          <span className="text-[11px] text-muted-foreground">
             Page {page} / {Math.max(1, Math.ceil(total / PAGE_SIZE))}
           </span>
           <Button

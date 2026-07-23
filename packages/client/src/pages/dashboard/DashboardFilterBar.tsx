@@ -45,22 +45,22 @@ export function DashboardFilterBar({
             type="date"
             value={from}
             onChange={(e) => onFromChange(e.target.value)}
-            className="h-9 min-w-0 rounded border border-neutral-200 bg-white px-2 text-[12px]"
+            className="h-9 min-w-0 rounded border border-border bg-card px-2 text-[12px]"
           />
-          <span className="text-[11px] text-neutral-400">→</span>
+          <span className="text-[11px] text-subtle">→</span>
           <input
             type="date"
             value={to}
             onChange={(e) => onToChange(e.target.value)}
-            className="h-9 min-w-0 rounded border border-neutral-200 bg-white px-2 text-[12px]"
+            className="h-9 min-w-0 rounded border border-border bg-card px-2 text-[12px]"
           />
         </div>
 
-        <div className="grid w-full grid-cols-2 overflow-hidden rounded-lg border border-neutral-200 sm:w-auto">
+        <div className="grid w-full grid-cols-2 overflow-hidden rounded-lg border border-border sm:w-auto">
           <button
             type="button"
             onClick={() => onBasisChange("accrual")}
-            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "accrual" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "accrual" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             title="Compte les ventes au moment où elles sont conclues (facture émise, commission enregistrée)"
           >
             Engagement
@@ -68,7 +68,7 @@ export function DashboardFilterBar({
           <button
             type="button"
             onClick={() => onBasisChange("cash")}
-            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "cash" ? "bg-brand-gold-dark text-white" : "bg-white text-neutral-500"}`}
+            className={`px-3 py-1.5 text-[11.5px] font-medium ${basis === "cash" ? "bg-brand-gold-dark text-white" : "bg-card text-muted-foreground"}`}
             title="Compte l'argent au moment où il est réellement reçu"
           >
             Encaissement
@@ -82,13 +82,13 @@ export function DashboardFilterBar({
             href={reportingApi.exportPdfUrl({ from, to, basis })}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-center text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-center text-[12px] font-medium text-body hover:bg-surface-muted"
           >
             <FileText size={13} /> Rapport rapide (PDF)
           </a>
           <a
             href={reportingApi.exportExcelUrl({ from, to, basis })}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-center text-[12px] font-medium text-neutral-700 hover:bg-neutral-50"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 text-center text-[12px] font-medium text-body hover:bg-surface-muted"
           >
             <Download size={13} /> Export Excel
           </a>

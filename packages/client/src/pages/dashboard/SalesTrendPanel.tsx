@@ -186,16 +186,16 @@ export function SalesTrendPanel({
   };
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="flex flex-col gap-3 border-b border-neutral-200 px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
+    <section className="rounded-lg border border-border bg-card">
+      <div className="flex flex-col gap-3 border-b border-border px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[13px] font-semibold text-neutral-900">Évolution des ventes</p>
-          <p className="mt-0.5 text-[11px] text-neutral-500">
+          <p className="text-[13px] font-semibold text-foreground">Évolution des ventes</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
             Services, types de commissions ou CA/gain sur la période.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:items-end">
-          <div className="grid grid-cols-3 rounded-lg border border-neutral-200 bg-white p-0.5 sm:inline-flex">
+          <div className="grid grid-cols-3 rounded-lg border border-border bg-card p-0.5 sm:inline-flex">
             {[
               ["services", "Services"],
               ["commissions", "Commissions"],
@@ -209,7 +209,7 @@ export function SalesTrendPanel({
                 onClick={() => setMode(value as "services" | "commissions" | "ca")}
                 className={cn(
                   "h-8 px-2 text-[11px] sm:px-3 sm:text-xs",
-                  mode === value && "bg-neutral-100 text-neutral-900",
+                  mode === value && "bg-surface-subtle text-foreground",
                 )}
               >
                 {label}
@@ -218,13 +218,13 @@ export function SalesTrendPanel({
           </div>
           <div className="grid w-full grid-cols-2 gap-3 text-left sm:w-auto sm:text-right">
             <div>
-              <p className="text-[10.5px] uppercase tracking-wide text-neutral-400">CA brut</p>
-              <p className="text-[13px] font-bold tabular-nums text-neutral-900">
+              <p className="text-[10.5px] uppercase tracking-wide text-subtle">CA brut</p>
+              <p className="text-[13px] font-bold tabular-nums text-foreground">
                 {fmt(composition.totalGross)} XAF
               </p>
             </div>
             <div>
-              <p className="text-[10.5px] uppercase tracking-wide text-neutral-400">Gain</p>
+              <p className="text-[10.5px] uppercase tracking-wide text-subtle">Gain</p>
               <p className="text-[13px] font-bold tabular-nums text-brand-gold-dark">
                 {fmt(composition.totalGain)} XAF
               </p>
@@ -234,9 +234,9 @@ export function SalesTrendPanel({
       </div>
 
       {loading ? (
-        <div className="px-4 py-12 text-center text-[12px] text-neutral-500">Chargement...</div>
+        <div className="px-4 py-12 text-center text-[12px] text-muted-foreground">Chargement...</div>
       ) : serviceTrend.length === 0 && caTrend.length === 0 && commissionTypeTrend.length === 0 ? (
-        <div className="px-4 py-12 text-center text-[12px] text-neutral-500">
+        <div className="px-4 py-12 text-center text-[12px] text-muted-foreground">
           Aucune donnée sur la période.
         </div>
       ) : (
@@ -250,7 +250,7 @@ export function SalesTrendPanel({
           )}
           {mode === "commissions" &&
             (commissionSeries.length === 0 ? (
-              <div className="py-12 text-center text-[12px] text-neutral-500">
+              <div className="py-12 text-center text-[12px] text-muted-foreground">
                 Aucune commission sur la période.
               </div>
             ) : (
@@ -270,13 +270,13 @@ export function SalesTrendPanel({
         </div>
       )}
 
-      <div className="grid border-t border-neutral-200 sm:grid-cols-5">
+      <div className="grid border-t border-border sm:grid-cols-5">
         {SERVICE_LABELS.map((label) => (
           <div
             key={label}
-            className="border-t border-neutral-100 px-4 py-2 sm:border-l sm:border-t-0 first:sm:border-l-0"
+            className="border-t border-border px-4 py-2 sm:border-l sm:border-t-0 first:sm:border-l-0"
           >
-            <p className="text-[10.5px] font-semibold text-neutral-500">{label}</p>
+            <p className="text-[10.5px] font-semibold text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>

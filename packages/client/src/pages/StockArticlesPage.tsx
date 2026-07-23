@@ -50,9 +50,9 @@ const MOVEMENT_LABELS: Record<StockMovement["type"], string> = {
 };
 
 const MOVEMENT_TONES: Record<StockMovement["type"], string> = {
-  IN: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  OUT: "bg-red-50 text-red-700 border-red-100",
-  ADJUST: "bg-amber-50 text-amber-700 border-amber-100",
+  IN: "bg-success-bg text-success-text border-success-border",
+  OUT: "bg-danger-bg text-danger-text border-danger-border",
+  ADJUST: "bg-warning-bg text-warning-text border-warning-border",
 };
 
 function money(value: string | number): string {
@@ -144,8 +144,8 @@ export default function StockArticlesPage() {
       accessorKey: "name",
       header: "Article",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-800">
-          {row.original.name} <span className="text-neutral-400">({row.original.unit})</span>
+        <span className="text-[12px] text-body">
+          {row.original.name} <span className="text-subtle">({row.original.unit})</span>
         </span>
       ),
     },
@@ -157,7 +157,7 @@ export default function StockArticlesPage() {
         <span
           className={cn(
             "text-[12px] font-medium tabular-nums",
-            row.original.onHand < row.original.minLevel ? "text-amber-600" : "text-neutral-800",
+            row.original.onHand < row.original.minLevel ? "text-warning-text" : "text-body",
           )}
         >
           {row.original.onHand}
@@ -169,7 +169,7 @@ export default function StockArticlesPage() {
       header: "Seuil bas",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] tabular-nums text-neutral-500">{row.original.minLevel}</span>
+        <span className="text-[12px] tabular-nums text-muted-foreground">{row.original.minLevel}</span>
       ),
     },
     {
@@ -177,7 +177,7 @@ export default function StockArticlesPage() {
       header: "Prix vente",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {money(row.original.defaultSellingPrice)}
         </span>
       ),
@@ -189,7 +189,7 @@ export default function StockArticlesPage() {
         <span
           className={cn(
             "inline-block rounded px-2 py-0.5 text-[10.5px] font-semibold",
-            row.original.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700",
+            row.original.active ? "bg-success-bg text-success-text" : "bg-danger-bg text-danger-text",
           )}
         >
           {row.original.active ? "Actif" : "Désactivé"}
@@ -230,10 +230,10 @@ export default function StockArticlesPage() {
       header: "Article",
       cell: ({ row }) => (
         <div>
-          <p className="text-[12px] font-medium text-neutral-800">
+          <p className="text-[12px] font-medium text-body">
             {row.original.article?.name ?? `Article #${row.original.articleId}`}
           </p>
-          <p className="text-[10.5px] text-neutral-500">
+          <p className="text-[10.5px] text-muted-foreground">
             Mouvement #{row.original.id} - agent #{row.original.agentId}
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function StockArticlesPage() {
       header: "Quantité",
       meta: { align: "right" },
       cell: ({ row }) => (
-        <span className="text-[12px] font-medium tabular-nums text-neutral-800">
+        <span className="text-[12px] font-medium tabular-nums text-body">
           {row.original.quantity} {row.original.article?.unit ?? ""}
         </span>
       ),
@@ -258,7 +258,7 @@ export default function StockArticlesPage() {
       id: "reference",
       header: "Référence",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">
+        <span className="text-[12px] text-muted-foreground">
           {row.original.refType ? `${row.original.refType} #${row.original.refId ?? "-"}` : "-"}
         </span>
       ),
@@ -267,7 +267,7 @@ export default function StockArticlesPage() {
       accessorKey: "createdAt",
       header: "Date",
       cell: ({ row }) => (
-        <span className="text-[12px] text-neutral-500">{fmtDateTime(row.original.createdAt)}</span>
+        <span className="text-[12px] text-muted-foreground">{fmtDateTime(row.original.createdAt)}</span>
       ),
     },
     {
@@ -293,7 +293,7 @@ export default function StockArticlesPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <p className="max-w-2xl text-sm text-neutral-500">
+        <p className="max-w-2xl text-sm text-muted-foreground">
           Articles disponibles, mouvements de stock et alertes de seuil pour les opérations de
           vente.
         </p>
@@ -346,13 +346,13 @@ export default function StockArticlesPage() {
       </div>
 
       <Tabs defaultValue="articles">
-        <div className="mb-4 flex flex-col gap-3 border-y border-neutral-200 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-4 flex flex-col gap-3 border-y border-border py-3 lg:flex-row lg:items-center lg:justify-between">
           <TabsList className="w-fit border-b-0">
             <TabsTrigger value="articles">Articles</TabsTrigger>
             <TabsTrigger value="movements">Mouvements</TabsTrigger>
           </TabsList>
 
-          <label className="flex h-10 w-fit items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-[12px] text-neutral-800">
+          <label className="flex h-10 w-fit items-center gap-2 rounded-lg border border-border bg-card px-3 text-[12px] text-body">
             <input
               type="checkbox"
               checked={includeInactive}
@@ -366,7 +366,7 @@ export default function StockArticlesPage() {
         <TabsContent value="articles">
           {isMobile ? (
             isLoading ? (
-              <Loader2 className="animate-spin text-neutral-400" size={18} />
+              <Loader2 className="animate-spin text-subtle" size={18} />
             ) : (
               <StockArticleGrid
                 articles={articles}
@@ -391,7 +391,7 @@ export default function StockArticlesPage() {
         <TabsContent value="movements">
           {isMobile ? (
             loadingMovements ? (
-              <Loader2 className="animate-spin text-neutral-400" size={18} />
+              <Loader2 className="animate-spin text-subtle" size={18} />
             ) : (
               <StockMovementGrid movements={movements} onSelect={setSelectedMovement} />
             )
@@ -441,7 +441,7 @@ function StockArticleGrid({
 }) {
   if (articles.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucun article.
       </div>
     );
@@ -455,13 +455,13 @@ function StockArticleGrid({
         const sellingPrice = parseFloat(article.defaultSellingPrice);
 
         return (
-          <div key={article.id} className="rounded-lg border border-neutral-200 bg-white p-3">
+          <div key={article.id} className="rounded-lg border border-border bg-card p-3">
             <div className="flex items-start justify-between gap-3">
               <button type="button" className="min-w-0 text-left" onClick={() => onSelect(article)}>
-                <p className="truncate text-[13px] font-semibold text-neutral-900">
+                <p className="truncate text-[13px] font-semibold text-foreground">
                   {article.name}
                 </p>
-                <p className="mt-0.5 text-[11px] text-neutral-500">
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Article #{article.id} - unité {article.unit}
                 </p>
               </button>
@@ -469,15 +469,15 @@ function StockArticleGrid({
                 className={cn(
                   "shrink-0 rounded border px-2 py-0.5 text-[10.5px] font-semibold",
                   article.active
-                    ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                    : "border-red-100 bg-red-50 text-red-700",
+                    ? "border-success-border bg-success-bg text-success-text"
+                    : "border-danger-border bg-danger-bg text-danger-text",
                 )}
               >
                 {article.active ? "Actif" : "Désactivé"}
               </span>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 text-[11px]">
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-[11px]">
               <MobileFact
                 label="En stock"
                 value={`${article.onHand} ${article.unit}`}
@@ -518,7 +518,7 @@ function StockMovementGrid({
 }) {
   if (movements.length === 0) {
     return (
-      <div className="rounded-lg border border-neutral-200 bg-white px-4 py-8 text-center text-[12px] text-neutral-500">
+      <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
         Aucun mouvement de stock.
       </div>
     );
@@ -530,21 +530,21 @@ function StockMovementGrid({
         <button
           key={movement.id}
           type="button"
-          className="rounded-lg border border-neutral-200 bg-white p-3 text-left"
+          className="rounded-lg border border-border bg-card p-3 text-left"
           onClick={() => onSelect(movement)}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-neutral-900">
+              <p className="truncate text-[13px] font-semibold text-foreground">
                 {movement.article?.name ?? `Article #${movement.articleId}`}
               </p>
-              <p className="mt-0.5 text-[11px] text-neutral-500">
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Mouvement #{movement.id} - {fmtDateTime(movement.createdAt)}
               </p>
             </div>
             {movementBadge(movement.type)}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 text-[11px]">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3 text-[11px]">
             <MobileFact
               label="Quantité"
               value={`${movement.quantity} ${movement.article?.unit ?? ""}`}
@@ -590,16 +590,16 @@ function ArticleDetailDialog({
 
   return (
     <Dialog open={Boolean(article)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-2xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-2xl">
         {article && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     {article.name}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     Article #{article.id} - unité {article.unit}
                   </DialogDescription>
                 </div>
@@ -607,8 +607,8 @@ function ArticleDetailDialog({
                   className={cn(
                     "w-fit rounded border px-2 py-0.5 text-[10.5px] font-semibold",
                     article.active
-                      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                      : "border-red-100 bg-red-50 text-red-700",
+                      ? "border-success-border bg-success-bg text-success-text"
+                      : "border-danger-border bg-danger-bg text-danger-text",
                   )}
                 >
                   {article.active ? "Actif" : "Désactivé"}
@@ -627,9 +627,9 @@ function ArticleDetailDialog({
               <DetailStat label="Gain potentiel" value={money(potentialGain)} />
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2">
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="border-b border-border bg-surface-muted px-4 py-2">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Informations article
                 </p>
               </div>
@@ -646,8 +646,8 @@ function ArticleDetailDialog({
             </div>
 
             {lowStock && (
-              <div className="rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
-                <p className="flex items-center gap-2 text-[12px] font-medium text-amber-800">
+              <div className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3">
+                <p className="flex items-center gap-2 text-[12px] font-medium text-warning-text">
                   <AlertTriangle size={14} />
                   Cet article est sous son seuil bas.
                 </p>
@@ -688,16 +688,16 @@ function MovementDetailDialog({
 }) {
   return (
     <Dialog open={Boolean(movement)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-white sm:max-w-2xl">
+      <DialogContent className="max-h-[88dvh] overflow-y-auto bg-card sm:max-w-2xl">
         {movement && (
           <>
             <DialogHeader>
               <div className="flex flex-col gap-3 pr-8 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <DialogTitle className="text-[17px] font-bold text-neutral-950">
+                  <DialogTitle className="text-[17px] font-bold text-foreground">
                     Mouvement #{movement.id}
                   </DialogTitle>
-                  <DialogDescription className="mt-1 text-[12px] text-neutral-500">
+                  <DialogDescription className="mt-1 text-[12px] text-muted-foreground">
                     {movement.article?.name ?? `Article #${movement.articleId}`} -{" "}
                     {fmtDateTime(movement.createdAt)}
                   </DialogDescription>
@@ -719,10 +719,10 @@ function MovementDetailDialog({
               />
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-neutral-200">
-              <div className="flex items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2">
+            <div className="overflow-hidden rounded-lg border border-border">
+              <div className="flex items-center gap-2 border-b border-border bg-surface-muted px-4 py-2">
                 {movementIcon(movement.type)}
-                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Détail du mouvement
                 </p>
               </div>
@@ -744,8 +744,8 @@ function MovementDetailDialog({
             </div>
 
             {movement.isNegativeOverride && (
-              <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
-                <p className="flex items-center gap-2 text-[12px] font-medium text-red-800">
+              <div className="rounded-lg border border-danger-border bg-danger-bg px-4 py-3">
+                <p className="flex items-center gap-2 text-[12px] font-medium text-danger-text">
                   <ShieldAlert size={14} />
                   Ce mouvement contient une sortie forcée avec stock insuffisant.
                 </p>
@@ -774,14 +774,14 @@ function DetailStat({
   danger?: boolean;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+    <div className="min-w-0 rounded-lg border border-border bg-card px-3 py-2">
+      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">
         {label}
       </p>
       <p
         className={cn(
           "mt-1 truncate text-[12px] font-medium",
-          danger ? "text-red-700" : "text-neutral-800",
+          danger ? "text-danger-text" : "text-body",
         )}
       >
         {value}
@@ -800,12 +800,12 @@ function MobileFact({
   danger?: boolean;
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{label}</p>
+    <div className="min-w-0 rounded-lg border border-border bg-surface-muted px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-subtle">{label}</p>
       <p
         className={cn(
           "mt-1 break-words text-[12px] font-medium leading-tight",
-          danger ? "text-red-700" : "text-neutral-800",
+          danger ? "text-danger-text" : "text-body",
         )}
       >
         {value}
@@ -816,9 +816,9 @@ function MobileFact({
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <tr className="border-b border-neutral-100 last:border-0">
-      <td className="px-4 py-2 text-[12px] text-neutral-500">{label}</td>
-      <td className="px-4 py-2 text-right text-[12px] font-medium text-neutral-800">{value}</td>
+    <tr className="border-b border-border last:border-0">
+      <td className="px-4 py-2 text-[12px] text-muted-foreground">{label}</td>
+      <td className="px-4 py-2 text-right text-[12px] font-medium text-body">{value}</td>
     </tr>
   );
 }

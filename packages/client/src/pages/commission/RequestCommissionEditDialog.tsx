@@ -87,7 +87,7 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-[11px] text-neutral-500">
+          <p className="text-[11px] text-muted-foreground">
             Cette demande sera soumise à validation — la commission ne changera qu'après approbation
             par un administrateur.
           </p>
@@ -109,7 +109,7 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
+              className="flex w-full rounded border border-border bg-card px-3 py-2 text-sm resize-none"
             />
           </div>
 
@@ -120,7 +120,7 @@ export function RequestCommissionEditDialog({ commission, onRequested }: Request
               onChange={(e) => setReason(e.target.value)}
               rows={2}
               placeholder="Pourquoi ce changement est-il nécessaire ?"
-              className="flex w-full rounded border border-neutral-200 bg-white px-3 py-2 text-sm resize-none"
+              className="flex w-full rounded border border-border bg-card px-3 py-2 text-sm resize-none"
             />
           </div>
         </div>
