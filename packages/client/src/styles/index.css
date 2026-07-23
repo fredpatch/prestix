@@ -123,15 +123,15 @@ body {
   --popover-foreground: oklch(0.145 0 0);
   --primary: var(--color-brand-gold-dark);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --secondary: #f5f5f5;
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --muted: #f5f5f5;
+  --muted-foreground: var(--color-brand-gray);
+  --accent: #f5f5f5;
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: var(--color-brand-gray-light);
+  --input: var(--color-brand-gray-light);
   --ring: var(--color-brand-gold-dark);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -143,16 +143,21 @@ body {
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: var(--color-brand-gold-dark);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: #f5f5f5;
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: var(--color-brand-gray-light);
   --sidebar-ring: var(--color-brand-gold-dark);
 
-  /* New semantic tokens (light) — same physical colors as before, now named */
-  --surface-muted: var(--color-neutral-50);
-  --surface-subtle: var(--color-neutral-100);
-  --body-text: var(--color-neutral-800);
-  --subtle-text: var(--color-neutral-400);
+  /* New semantic tokens (light) — 2026-07-23: rebuilt from the agency's
+     actual brand guide (CMYK values converted, verified they already match
+     what's in the codebase: brand-gray N60=#666666, brand-gray-light
+     N15=#d9d9d9) instead of generic Tailwind neutral-NNN. Contrast-checked,
+     not eyeballed: body-text 12.6:1, subtle-text 3.6:1 vs white (an
+     improvement over the old neutral-400's ~2.3:1). */
+  --surface-muted: #f5f5f5;
+  --surface-subtle: #e8e8e8;
+  --body-text: #333333;
+  --subtle-text: #868686;
   --danger-bg: var(--color-red-50);
   --danger-border: var(--color-red-100);
   --danger-text: var(--color-red-700);
@@ -162,9 +167,12 @@ body {
   --success-bg: var(--color-emerald-50);
   --success-border: var(--color-emerald-100);
   --success-text: var(--color-emerald-700);
-  --info-bg: var(--color-blue-50);
-  --info-border: var(--color-blue-100);
-  --info-text: var(--color-blue-700);
+  /* Info derived from the actual brand blue (#4dd9ff, the color the brand
+     guide names as "associée à l'agence") instead of generic Tailwind blue
+     — the one status role with a natural, deliberate brand tie-in. */
+  --info-bg: #e0f6fe;
+  --info-border: #a2d8e9;
+  --info-text: #00648a;
 }
 
 .dark {
@@ -231,9 +239,11 @@ body {
   --success-bg: var(--color-emerald-950);
   --success-border: var(--color-emerald-900);
   --success-text: var(--color-emerald-400);
-  --info-bg: var(--color-blue-950);
-  --info-border: var(--color-blue-900);
-  --info-text: var(--color-blue-400);
+  /* Info derived from the brand blue (same hue as light mode's --info-*),
+     dark-mode convention: saturated dark bg + bright text. */
+  --info-bg: #001f2a;
+  --info-border: #003b4e;
+  --info-text: #59c8e8;
 }
 
 /* Alternate dark palettes — computed and contrast-checked alongside "teal"
