@@ -4,7 +4,11 @@ import { db } from "../../../db/index.js";
 import { savingsTransactions, savingsAccounts, parties, users } from "../../../db/schema.js";
 import { eq } from "drizzle-orm";
 import { generatePdf } from "../../../utils/pdf.js";
-import { renderInvoiceHtml, type PrintInvoiceData } from "../templates/invoice-print.template.js";
+import {
+  renderInvoiceHtml,
+  resolveBuyerLabel,
+  type PrintInvoiceData,
+} from "../templates/invoice-print.template.js";
 import { logAudit } from "../../auth/services/auth.service.js";
 
 function fmtDateShort(d: Date | string): string {
@@ -47,6 +51,7 @@ export async function generateWithdrawalReceiptPdf(
     : [undefined];
 
   const total = parseFloat(transaction.totalAmount);
+  const { buyerName, buyerPhone, buyerTaxId } = resolveBuyerLabel(party ?? {});
 
   const printData: PrintInvoiceData = {
     docType: "receipt",
@@ -54,12 +59,13 @@ export async function generateWithdrawalReceiptPdf(
     issueDate: fmtDateShort(transaction.recordedAt ?? transaction.createdAt),
     paymentMode: "-",
     agentName: agent?.fullName,
-    buyerName: party?.fullName ?? "—",
-    buyerPhone: party?.phone ?? undefined,
+    buyerName,
+    buyerPhone,
+    buyerTaxId,
     logoBase64: getLogoBase64(),
     items: [
       {
-        clientName: party?.fullName ?? "—",
+        clientName: buyerName,
         category: "Retrait Épargne Voyage",
         detail: `${transaction.quantity > 1 ? `${transaction.quantity} × ` : ""}${parseFloat(transaction.amount).toLocaleString("fr-FR")} XAF`,
         unitPrice: total,

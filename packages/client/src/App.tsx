@@ -27,6 +27,7 @@ import AnalysePage from "./pages/AnalysePage";
 import AuditLogPage from "./pages/AuditLogPage";
 import MailOutboxPage from "./pages/MailOutboxPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import AidePage from "./pages/AidePage";
 
 interface AuthUser {
   id: number;
@@ -142,6 +143,7 @@ export default function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/aide" element={<AidePage />} />
             <Route path="/reporting/employees/:agentId" element={<EmployeeActivityDetailPage />} />
             <Route path="/analyse" element={<AnalysePage />} />
             <Route path="/parties" element={<PartiesPage />} />

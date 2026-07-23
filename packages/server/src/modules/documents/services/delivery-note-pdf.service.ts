@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { generatePdf } from "../../../utils/pdf.js";
 import {
   renderInvoiceHtml,
+  resolveBuyerLabel,
   type PrintInvoiceData,
   type PrintLineItem,
 } from "../templates/invoice-print.template.js";
@@ -52,8 +53,15 @@ export async function generateDeliveryNotePdf(
   const [invRow] = await db.select().from(invoices).where(eq(invoices.id, invoiceId));
   const [agent] = await db.select().from(users).where(eq(users.id, invRow.createdBy));
 
-  const buyerName = (invoice.partySnapshot as { fullName?: string }).fullName ?? "—";
-  const buyerPhone = (invoice.partySnapshot as { phone?: string }).phone;
+  const { buyerName, buyerPhone, buyerTaxId } = resolveBuyerLabel(
+    invoice.partySnapshot as {
+      fullName?: string;
+      phone?: string;
+      partyType?: string;
+      tradeName?: string;
+      taxId?: string;
+    },
+  );
 
   const items: PrintLineItem[] = invoice.lines.map((l) => {
     if (l.ticketDetails) {
@@ -105,6 +113,7 @@ export async function generateDeliveryNotePdf(
     agentName: agent?.fullName,
     buyerName,
     buyerPhone,
+    buyerTaxId,
     logoBase64: getLogoBase64(),
     items,
     subtotal: parseFloat(invoice.totalAmount) + parseFloat(invoice.totalDiscount),

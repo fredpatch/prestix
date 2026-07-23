@@ -24,6 +24,7 @@ export interface PrintInvoiceData {
   agentName?: string;
   buyerName: string;
   buyerPhone?: string;
+  buyerTaxId?: string; // company parties only — RCCM/NIF or equivalent
   logoBase64: string; // data URI, e.g. "data:image/jpeg;base64,..."
   items: PrintLineItem[];
   subtotal: number;
@@ -39,6 +40,23 @@ export interface PrintInvoiceData {
     paidAmount: number;
     status: "unpaid" | "partial" | "paid";
   }>;
+}
+
+// Shared by all doc PDF services: a company party prints its raison sociale
+// (+ RCCM/NIF when present) instead of the individual contact's fullName.
+export function resolveBuyerLabel(source: {
+  fullName?: string | null;
+  phone?: string | null;
+  partyType?: string | null;
+  tradeName?: string | null;
+  taxId?: string | null;
+}): { buyerName: string; buyerPhone?: string; buyerTaxId?: string } {
+  const isCompany = source.partyType === "company" && !!source.tradeName;
+  return {
+    buyerName: (isCompany ? source.tradeName : source.fullName) ?? "—",
+    buyerPhone: source.phone ?? undefined,
+    buyerTaxId: isCompany ? (source.taxId ?? undefined) : undefined,
+  };
 }
 
 const DOCTYPE_LABELS: Record<string, string> = {
@@ -207,6 +225,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
   .p-to-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; margin-bottom: 6px; }
   .p-to-name { font-size: 17.5px; font-weight: 600; color: #111; margin-bottom: 3px; }
   .p-to-phone { font-size: 11.5px; color: #666; }
+  .p-to-taxid { font-size: 11.5px; color: #666; }
   .p-meta table { border-collapse: collapse; font-size: 11.5px; }
   .p-meta td { padding: 3px 5px; white-space: nowrap; }
   .p-meta td.mk { font-weight: 600; color: #555; padding-right: 10px; }
@@ -263,6 +282,7 @@ export function renderInvoiceHtml(doc: PrintInvoiceData): string {
       <div class="p-to">
         <div class="p-to-label">A</div>
         <div class="p-to-name">${esc(doc.buyerName)}</div>
+        ${doc.buyerTaxId ? `<div class="p-to-taxid">RCCM/NIF : ${esc(doc.buyerTaxId)}</div>` : ""}
         ${doc.buyerPhone ? `<div class="p-to-phone">Tél : ${esc(doc.buyerPhone)}</div>` : ""}
       </div>
       <div class="p-meta">

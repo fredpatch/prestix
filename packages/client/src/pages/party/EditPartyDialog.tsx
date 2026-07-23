@@ -47,6 +47,7 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
 
   const isClient = watch("isClient");
   const isReferrer = watch("isReferrer");
+  const partyType = watch("partyType");
 
   async function onSubmit(values: PartyFormValues) {
     if (!party) return;
@@ -56,6 +57,9 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
         data: {
           fullName: values.fullName,
           code: values.code || undefined,
+          partyType: values.partyType,
+          tradeName: values.partyType === "company" ? values.tradeName || undefined : undefined,
+          taxId: values.partyType === "company" ? values.taxId || undefined : undefined,
           phone: values.phone || undefined,
           email: values.email || undefined,
           address: values.address || undefined,
@@ -115,6 +119,44 @@ export function EditPartyDialog({ party, onClose, onUpdated }: EditPartyDialogPr
               </label>
               <Input {...register("fullName")} autoFocus />
             </div>
+
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+                <input
+                  type="radio"
+                  value="individual"
+                  {...register("partyType")}
+                  className="accent-brand-gold-dark"
+                />
+                Particulier
+              </label>
+              <label className="flex items-center gap-2 text-[12px] text-neutral-800 cursor-pointer">
+                <input
+                  type="radio"
+                  value="company"
+                  {...register("partyType")}
+                  className="accent-brand-gold-dark"
+                />
+                Société
+              </label>
+            </div>
+            {partyType === "company" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                    Raison sociale
+                  </label>
+                  <Input {...register("tradeName")} />
+                </div>
+                <div>
+                  <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">
+                    RCCM / NIF (optionnel)
+                  </label>
+                  <Input {...register("taxId")} />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11.5px] font-medium text-neutral-800 mb-1.5">

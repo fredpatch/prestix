@@ -185,7 +185,14 @@ export async function createDraftInvoice(params: CreateDraftInvoiceParams): Prom
       .values({
         partyId: params.partyId,
         referrerPartyId: params.referrerPartyId,
-        partySnapshot: { fullName: party.fullName, phone: party.phone, email: party.email },
+        partySnapshot: {
+          fullName: party.fullName,
+          phone: party.phone,
+          email: party.email,
+          partyType: party.partyType,
+          tradeName: party.tradeName,
+          taxId: party.taxId,
+        },
         createdBy: params.createdByUserId,
       })
       .returning();

@@ -25,6 +25,8 @@ export const settingTypeEnum = pgEnum("setting_type", ["integer", "boolean", "te
 export const roleEnum = pgEnum("role", ["agent", "manager", "admin", "super_admin"]);
 export const roleLevel = { agent: 1, manager: 2, admin: 3, super_admin: 4 } as const;
 
+export const partyTypeEnum = pgEnum("party_type", ["individual", "company"]);
+
 export const notificationSeverityEnum = pgEnum("notification_severity", [
   "info",
   "success",
@@ -374,6 +376,9 @@ export const parties = pgTable("parties", {
   id: serial("id").primaryKey(),
   code: varchar("code", { length: 30 }),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  partyType: partyTypeEnum("party_type").notNull().default("individual"),
+  tradeName: varchar("trade_name", { length: 255 }), // raison sociale — company only
+  taxId: varchar("tax_id", { length: 50 }), // RCCM/NIF or equivalent — company only
   isClient: boolean("is_client").notNull().default(false),
   isReferrer: boolean("is_referrer").notNull().default(false),
   phone: varchar("phone", { length: 30 }),

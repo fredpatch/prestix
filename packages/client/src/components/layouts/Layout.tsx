@@ -25,6 +25,7 @@ import {
   X,
   Bell,
   Send,
+  HelpCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/audit-log", label: "Journal d'audit", icon: History, roles: ["admin", "super_admin"] },
   { to: "/mail-outbox", label: "Historique emails", icon: Send, roles: ["admin", "super_admin"] },
   { to: "/settings", label: "Paramètres", icon: Settings2, roles: ["super_admin"] },
+  { to: "/aide", label: "Aide", icon: HelpCircle },
 ];
 
 interface LayoutProps {

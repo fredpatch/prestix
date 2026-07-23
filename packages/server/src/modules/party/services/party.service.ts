@@ -15,6 +15,9 @@ function toView(p: typeof parties.$inferSelect): PartyView {
     id: p.id,
     code: p.code ?? undefined,
     fullName: p.fullName,
+    partyType: p.partyType,
+    tradeName: p.tradeName ?? undefined,
+    taxId: p.taxId ?? undefined,
     isClient: p.isClient,
     isReferrer: p.isReferrer,
     phone: p.phone ?? undefined,
@@ -96,12 +99,18 @@ export async function createParty(params: CreatePartyParams): Promise<PartyView>
   if (!params.isClient && !params.isReferrer) {
     throw new Error("PARTY_NEEDS_A_ROLE"); // must be at least client or referrer (M3: can be both, never neither)
   }
+  if (params.partyType === "company" && !params.tradeName?.trim()) {
+    throw new Error("PARTY_COMPANY_NEEDS_TRADE_NAME");
+  }
 
   const [created] = await db
     .insert(parties)
     .values({
       code: params.code,
       fullName: params.fullName,
+      partyType: params.partyType ?? "individual",
+      tradeName: params.partyType === "company" ? params.tradeName : undefined,
+      taxId: params.partyType === "company" ? params.taxId : undefined,
       isClient: params.isClient ?? false,
       isReferrer: params.isReferrer ?? false,
       phone: params.phone,
@@ -131,6 +140,12 @@ export async function updateParty(id: number, params: UpdatePartyParams): Promis
     throw new Error("PARTY_NEEDS_A_ROLE");
   }
 
+  const nextPartyType = params.partyType ?? existing.partyType;
+  const nextTradeName = params.tradeName ?? existing.tradeName ?? undefined;
+  if (nextPartyType === "company" && !nextTradeName?.trim()) {
+    throw new Error("PARTY_COMPANY_NEEDS_TRADE_NAME");
+  }
+
   const updates: Partial<typeof parties.$inferInsert> = {
     updatedAt: new Date(),
   };
@@ -141,6 +156,16 @@ export async function updateParty(id: number, params: UpdatePartyParams): Promis
   if (params.phone !== undefined) updates.phone = params.phone;
   if (params.email !== undefined) updates.email = params.email;
   if (params.address !== undefined) updates.address = params.address;
+  if (params.partyType !== undefined) {
+    updates.partyType = params.partyType;
+    // Switching to individual clears company-only fields rather than leaving stale data.
+    if (params.partyType === "individual") {
+      updates.tradeName = null;
+      updates.taxId = null;
+    }
+  }
+  if (params.tradeName !== undefined && nextPartyType === "company") updates.tradeName = params.tradeName;
+  if (params.taxId !== undefined && nextPartyType === "company") updates.taxId = params.taxId;
 
   const [updated] = await db.update(parties).set(updates).where(eq(parties.id, id)).returning();
 

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { generatePdf } from "../../../utils/pdf.js";
 import {
   renderInvoiceHtml,
+  resolveBuyerLabel,
   type PrintInvoiceData,
   type PrintLineItem,
 } from "../templates/invoice-print.template.js";
@@ -50,8 +51,15 @@ export async function generateProformaPdf(
   const [row] = await db.select().from(proformas).where(eq(proformas.id, proformaId));
   const [agent] = await db.select().from(users).where(eq(users.id, row.createdBy));
 
-  const buyerName = (proforma.partySnapshot as { fullName?: string }).fullName ?? "—";
-  const buyerPhone = (proforma.partySnapshot as { phone?: string }).phone;
+  const { buyerName, buyerPhone, buyerTaxId } = resolveBuyerLabel(
+    proforma.partySnapshot as {
+      fullName?: string;
+      phone?: string;
+      partyType?: string;
+      tradeName?: string;
+      taxId?: string;
+    },
+  );
 
   const items: PrintLineItem[] = proforma.lines.map((l) => {
     if (l.ticketDetails) {
@@ -108,6 +116,7 @@ export async function generateProformaPdf(
     agentName: agent?.fullName,
     buyerName,
     buyerPhone,
+    buyerTaxId,
     logoBase64: getLogoBase64(),
     items,
     subtotal,

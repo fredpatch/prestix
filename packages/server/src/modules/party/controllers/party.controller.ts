@@ -6,10 +6,14 @@ function handleError(res: Response, error: unknown): void {
   const status: Record<string, number> = {
     PARTY_NOT_FOUND: 404,
     PARTY_NEEDS_A_ROLE: 400,
+    PARTY_COMPANY_NEEDS_TRADE_NAME: 400,
+  };
+  const translated: Record<string, string> = {
+    PARTY_COMPANY_NEEDS_TRADE_NAME: "La raison sociale est requise pour une partie de type société.",
   };
   const code = status[message] ?? 500;
   if (code === 500) console.error("[party]", error);
-  res.status(code).json({ message, code: message });
+  res.status(code).json({ message: translated[message] ?? message, code: message });
 }
 
 export async function list(req: Request, res: Response): Promise<void> {
@@ -48,7 +52,8 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const { code, fullName, isClient, isReferrer, phone, email, address } = req.body;
+    const { code, fullName, partyType, tradeName, taxId, isClient, isReferrer, phone, email, address } =
+      req.body;
     if (!fullName) {
       res.status(400).json({ message: "Le nom complet est requis." });
       return;
@@ -56,6 +61,9 @@ export async function create(req: Request, res: Response): Promise<void> {
     const party = await partyService.createParty({
       code,
       fullName,
+      partyType,
+      tradeName,
+      taxId,
       isClient,
       isReferrer,
       phone,
@@ -71,10 +79,14 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const { code, fullName, isClient, isReferrer, phone, email, address } = req.body;
+    const { code, fullName, partyType, tradeName, taxId, isClient, isReferrer, phone, email, address } =
+      req.body;
     const party = await partyService.updateParty(parseInt(req.params.id), {
       code,
       fullName,
+      partyType,
+      tradeName,
+      taxId,
       isClient,
       isReferrer,
       phone,

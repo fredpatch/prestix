@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { generatePdf } from "../../../utils/pdf.js";
 import {
   renderInvoiceHtml,
+  resolveBuyerLabel,
   type PrintInvoiceData,
   type PrintLineItem,
 } from "../templates/invoice-print.template.js";
@@ -68,8 +69,15 @@ export async function generateInvoicePdf(
     .filter((p) => p.allocationTarget !== "penalty")
     .reduce((sum, p) => sum + parseFloat(p.amountApplied), 0);
 
-  const buyerName = (invoice.partySnapshot as { fullName?: string }).fullName ?? "—";
-  const buyerPhone = (invoice.partySnapshot as { phone?: string }).phone;
+  const { buyerName, buyerPhone, buyerTaxId } = resolveBuyerLabel(
+    invoice.partySnapshot as {
+      fullName?: string;
+      phone?: string;
+      partyType?: string;
+      tradeName?: string;
+      taxId?: string;
+    },
+  );
 
   const items: PrintLineItem[] = invoice.lines.map((l) => {
     if (l.ticketDetails) {
@@ -124,6 +132,7 @@ export async function generateInvoicePdf(
     agentName: agent?.fullName,
     buyerName,
     buyerPhone,
+    buyerTaxId,
     logoBase64: getLogoBase64(),
     items,
     subtotal: parseFloat(invoice.totalAmount) + parseFloat(invoice.totalDiscount),

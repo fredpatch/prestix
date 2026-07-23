@@ -1,9 +1,14 @@
 import api from "./axios";
 
+export type PartyType = "individual" | "company";
+
 export interface Party {
   id: number;
   code?: string;
   fullName: string;
+  partyType: PartyType;
+  tradeName?: string;
+  taxId?: string;
   isClient: boolean;
   isReferrer: boolean;
   phone?: string;
@@ -35,6 +40,9 @@ export interface PartyStats {
 export interface CreatePartyData {
   code?: string;
   fullName: string;
+  partyType?: PartyType;
+  tradeName?: string;
+  taxId?: string;
   isClient?: boolean;
   isReferrer?: boolean;
   phone?: string;

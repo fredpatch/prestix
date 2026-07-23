@@ -146,7 +146,14 @@ export async function createProforma(params: CreateProformaParams): Promise<Prof
         number,
         partyId: params.partyId,
         referrerPartyId: params.referrerPartyId,
-        partySnapshot: { fullName: party.fullName, phone: party.phone, email: party.email },
+        partySnapshot: {
+          fullName: party.fullName,
+          phone: party.phone,
+          email: party.email,
+          partyType: party.partyType,
+          tradeName: party.tradeName,
+          taxId: party.taxId,
+        },
         expiresAt,
         createdBy: params.createdByUserId,
       })

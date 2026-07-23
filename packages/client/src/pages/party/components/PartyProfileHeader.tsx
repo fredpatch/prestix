@@ -40,6 +40,9 @@ export function PartyProfileHeader({
     { label: "Email", value: party.email ?? "Non renseigné", icon: Mail },
     { label: "Adresse", value: party.address ?? "Non renseignée", icon: MapPin },
     { label: "Type", value: roleLabel(party), icon: null },
+    ...(party.partyType === "company"
+      ? [{ label: "RCCM / NIF", value: party.taxId ?? "Non renseigné", icon: null }]
+      : []),
   ];
 
   return (
@@ -53,6 +56,9 @@ export function PartyProfileHeader({
             <p className="text-[22px] font-semibold leading-tight text-neutral-900">
               {party.fullName}
             </p>
+            {party.partyType === "company" && party.tradeName && (
+              <p className="mt-0.5 text-[12px] text-neutral-500">{party.tradeName}</p>
+            )}
             <p className="mt-1 text-[11.5px] text-neutral-500">{party.code ?? `#${party.id}`}</p>
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <PartyRoleBadges party={party} />

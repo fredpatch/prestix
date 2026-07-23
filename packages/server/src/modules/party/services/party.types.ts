@@ -1,7 +1,12 @@
+export type PartyType = "individual" | "company";
+
 export interface PartyView {
   id: number;
   code?: string;
   fullName: string;
+  partyType: PartyType;
+  tradeName?: string;
+  taxId?: string;
   isClient: boolean;
   isReferrer: boolean;
   phone?: string;
@@ -33,6 +38,9 @@ export interface PartyStats {
 export interface CreatePartyParams {
   code?: string;
   fullName: string;
+  partyType?: PartyType;
+  tradeName?: string;
+  taxId?: string;
   isClient?: boolean;
   isReferrer?: boolean;
   phone?: string;
@@ -44,6 +52,9 @@ export interface CreatePartyParams {
 export interface UpdatePartyParams {
   code?: string;
   fullName?: string;
+  partyType?: PartyType;
+  tradeName?: string;
+  taxId?: string;
   isClient?: boolean;
   isReferrer?: boolean;
   phone?: string;
