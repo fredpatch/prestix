@@ -58,7 +58,17 @@ function statusTone(status: string): string {
 }
 
 export default function MailOutboxPage() {
-  usePageHeader({ title: "Historique des emails" });
+  usePageHeader({
+    title: "Historique des emails",
+    helpTopic: "mail-outbox",
+    guide: {
+      steps: [
+        "Filtrez par statut, modèle, document source, destinataire ou date.",
+        "« Réessayer » n'apparaît que sur les envois en échec.",
+      ],
+      tip: "Un réessai régénère le contenu depuis l'état actuel du document, pas depuis le contenu du premier envoi.",
+    },
+  });
 
   const [status, setStatus] = useState<"pending" | "sent" | "failed" | undefined>(undefined);
   const [templateKey, setTemplateKey] = useState<string | undefined>(undefined);

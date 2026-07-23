@@ -14,6 +14,9 @@ import epargneContent from "./epargne.md?raw";
 import dashboardContent from "./dashboard.md?raw";
 import parametresContent from "./parametres.md?raw";
 import utilisateursContent from "./utilisateurs.md?raw";
+import notificationsContent from "./notifications.md?raw";
+import auditLogContent from "./audit-log.md?raw";
+import mailOutboxContent from "./mail-outbox.md?raw";
 import errorCodesContent from "./error-codes.md?raw";
 
 export type AideRole = "agent" | "manager" | "admin" | "super_admin";
@@ -39,6 +42,21 @@ export const AIDE_TOPICS: AideTopic[] = [
   { slug: "dashboard", title: "Tableau de bord & Analyse", moduleGroup: "Reporting", content: dashboardContent },
   { slug: "parametres", title: "Paramètres", moduleGroup: "Administration", content: parametresContent },
   { slug: "utilisateurs", title: "Utilisateurs & rôles", moduleGroup: "Administration", content: utilisateursContent },
+  { slug: "notifications", title: "Notifications", moduleGroup: "Notifications", content: notificationsContent },
+  {
+    slug: "audit-log",
+    title: "Journal d'audit",
+    moduleGroup: "Développeur / Super Admin",
+    content: auditLogContent,
+    roles: ["admin", "super_admin"],
+  },
+  {
+    slug: "mail-outbox",
+    title: "Historique emails",
+    moduleGroup: "Développeur / Super Admin",
+    content: mailOutboxContent,
+    roles: ["admin", "super_admin"],
+  },
   {
     slug: "codes-erreur",
     title: "Codes d'erreur (référence technique)",

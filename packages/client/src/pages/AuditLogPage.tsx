@@ -42,7 +42,17 @@ function humanizeAction(action: string): string {
 }
 
 export default function AuditLogPage() {
-  usePageHeader({ title: "Journal d'audit" });
+  usePageHeader({
+    title: "Journal d'audit",
+    helpTopic: "audit-log",
+    guide: {
+      steps: [
+        "Filtrez par utilisateur, action, type d'entité ou plage de dates.",
+        "Cliquez sur une entrée pour voir le détail des métadonnées.",
+      ],
+      tip: "Page en lecture seule — pour corriger une action, utilisez la fonction de correction propre au module concerné.",
+    },
+  });
 
   const [userId, setUserId] = useState<number | undefined>(undefined);
   const [action, setAction] = useState<string | undefined>(undefined);

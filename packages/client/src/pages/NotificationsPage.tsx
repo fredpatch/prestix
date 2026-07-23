@@ -127,7 +127,16 @@ function severityBadge(severity: NotificationSeverity) {
 }
 
 export default function NotificationsPage() {
-  usePageHeader({ title: "Notifications" });
+  usePageHeader({
+    title: "Notifications",
+    helpTopic: "notifications",
+    guide: {
+      steps: [
+        "Cliquez sur une notification pour ouvrir le document ou l'enregistrement concerné.",
+        "Les préférences par événement (in-app/email) se règlent dans Paramètres, pas ici.",
+      ],
+    },
+  });
 
   const { user } = useAuth();
   const navigate = useNavigate();
