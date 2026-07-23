@@ -53,7 +53,7 @@ export function DatePicker({
         className={cn(
           buttonVariants({ variant: "outline" }),
           "w-full justify-start text-left font-normal h-10",
-          !selected && "text-neutral-400",
+          !selected && "text-subtle",
           className,
         )}
       >

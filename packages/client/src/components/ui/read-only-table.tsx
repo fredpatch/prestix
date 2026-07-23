@@ -43,13 +43,13 @@ export function ReadOnlyTable<T>({
 
   const tableElement = (
     <Table>
-      <TableHeader className="bg-neutral-50 border-b border-neutral-200">
+      <TableHeader className="bg-surface-muted border-b border-border">
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id} className="border-b-0 hover:bg-transparent">
             {headerGroup.headers.map((header) => (
               <TableHead
                 key={header.id}
-                className={`h-auto px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 whitespace-normal ${alignClass(header.column.columnDef.meta?.align)}`}
+                className={`h-auto px-4 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-normal ${alignClass(header.column.columnDef.meta?.align)}`}
               >
                 {header.isPlaceholder
                   ? null
@@ -61,11 +61,11 @@ export function ReadOnlyTable<T>({
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50">
+          <TableRow key={row.id} className="border-b border-border last:border-0 hover:bg-surface-muted">
             {row.getVisibleCells().map((cell) => (
               <TableCell
                 key={cell.id}
-                className={`px-4 py-2 text-[12px] text-neutral-800 whitespace-normal ${alignClass(cell.column.columnDef.meta?.align)}`}
+                className={`px-4 py-2 text-[12px] text-body whitespace-normal ${alignClass(cell.column.columnDef.meta?.align)}`}
               >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
@@ -76,24 +76,24 @@ export function ReadOnlyTable<T>({
           <TableRow className="hover:bg-transparent">
             <TableCell
               colSpan={columns.length}
-              className="px-4 py-6 text-center text-[11.5px] text-neutral-500 whitespace-normal"
+              className="px-4 py-6 text-center text-[11.5px] text-muted-foreground whitespace-normal"
             >
               {emptyMessage}
             </TableCell>
           </TableRow>
         )}
       </TableBody>
-      {footer && rows.length > 0 && <TableFooter className="bg-neutral-50">{footer}</TableFooter>}
+      {footer && rows.length > 0 && <TableFooter className="bg-surface-muted">{footer}</TableFooter>}
     </Table>
   );
 
   if (bare) return tableElement;
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       {title && (
-        <div className="px-4 py-2.5 border-b border-neutral-200">
-          <div className="text-[11.5px] font-semibold text-neutral-800">{title}</div>
+        <div className="px-4 py-2.5 border-b border-border">
+          <div className="text-[11.5px] font-semibold text-body">{title}</div>
         </div>
       )}
       {tableElement}

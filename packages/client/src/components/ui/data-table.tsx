@@ -69,13 +69,13 @@ export function DataTable<T>({
   });
 
   if (loading) {
-    return <Loader2 className="animate-spin text-neutral-400" size={18} />;
+    return <Loader2 className="animate-spin text-subtle" size={18} />;
   }
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       <Table>
-        <TableHeader className="bg-neutral-50 border-b border-neutral-200">
+        <TableHeader className="bg-surface-muted border-b border-border">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="border-b-0 hover:bg-transparent">
               {headerGroup.headers.map((header) => {
@@ -85,7 +85,7 @@ export function DataTable<T>({
                   <TableHead
                     key={header.id}
                     onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
-                    className={`h-auto px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-500 whitespace-normal ${alignClass(header.column.columnDef.meta?.align)} ${sortable ? "cursor-pointer select-none" : ""}`}
+                    className={`h-auto px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground whitespace-normal ${alignClass(header.column.columnDef.meta?.align)} ${sortable ? "cursor-pointer select-none" : ""}`}
                   >
                     <span className="inline-flex items-center gap-1">
                       {header.isPlaceholder
@@ -97,7 +97,7 @@ export function DataTable<T>({
                         ) : sorted === "desc" ? (
                           <ChevronDown size={11} />
                         ) : (
-                          <ChevronsUpDown size={11} className="text-neutral-300" />
+                          <ChevronsUpDown size={11} className="text-subtle" />
                         ))}
                     </span>
                   </TableHead>
@@ -111,7 +111,7 @@ export function DataTable<T>({
             <TableRow
               key={row.id}
               onClick={onRowClick ? () => onRowClick(row.original) : undefined}
-              className={`border-b border-neutral-100 last:border-0 hover:bg-neutral-50 ${onRowClick ? "cursor-pointer" : ""}`}
+              className={`border-b border-border last:border-0 hover:bg-surface-muted ${onRowClick ? "cursor-pointer" : ""}`}
             >
               {row.getVisibleCells().map((cell) => (
                 <TableCell
@@ -127,7 +127,7 @@ export function DataTable<T>({
             <TableRow className="hover:bg-transparent">
               <TableCell
                 colSpan={columns.length}
-                className="px-4 py-8 text-center text-[12px] text-neutral-500 whitespace-normal"
+                className="px-4 py-8 text-center text-[12px] text-muted-foreground whitespace-normal"
               >
                 {emptyMessage}
               </TableCell>
@@ -136,8 +136,8 @@ export function DataTable<T>({
         </TableBody>
       </Table>
       {data.length > pageSize && (
-        <div className="flex flex-col gap-2 border-t border-neutral-200 bg-neutral-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] text-neutral-500">
+        <div className="flex flex-col gap-2 border-t border-border bg-surface-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[11px] text-muted-foreground">
             {pagination.pageIndex * pagination.pageSize + 1}-
             {Math.min((pagination.pageIndex + 1) * pagination.pageSize, data.length)} sur{" "}
             {data.length}
@@ -153,7 +153,7 @@ export function DataTable<T>({
               <ChevronLeft size={13} />
               Précédent
             </Button>
-            <span className="text-[11px] text-neutral-500">
+            <span className="text-[11px] text-muted-foreground">
               Page {pagination.pageIndex + 1} / {table.getPageCount()}
             </span>
             <Button
