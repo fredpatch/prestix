@@ -90,6 +90,28 @@ body {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Dark-mode retrofit (2026-07-23) — small set of app-specific semantic
+     tokens filling the gaps shadcn's default 2-tier foreground/muted-foreground
+     doesn't cover. Mapped from the real usage-frequency audit of the app's
+     existing raw neutral-NNN/status-color classes (see TASKS.md), not
+     invented from scratch — these replace >1000 raw-color usages 1:1. */
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-body: var(--body-text);
+  --color-subtle: var(--subtle-text);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-danger-text: var(--danger-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-success-text: var(--success-text);
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+  --color-info-text: var(--info-text);
 }
 
 :root {
@@ -99,7 +121,7 @@ body {
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: var(--color-brand-gold-dark);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -110,7 +132,7 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: var(--color-brand-gold-dark);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -119,23 +141,48 @@ body {
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: var(--color-brand-gold-dark);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--color-brand-gold-dark);
+
+  /* New semantic tokens (light) — same physical colors as before, now named */
+  --surface-muted: var(--color-neutral-50);
+  --surface-subtle: var(--color-neutral-100);
+  --body-text: var(--color-neutral-800);
+  --subtle-text: var(--color-neutral-400);
+  --danger-bg: var(--color-red-50);
+  --danger-border: var(--color-red-100);
+  --danger-text: var(--color-red-700);
+  --warning-bg: var(--color-amber-50);
+  --warning-border: var(--color-amber-100);
+  --warning-text: var(--color-amber-700);
+  --success-bg: var(--color-emerald-50);
+  --success-border: var(--color-emerald-100);
+  --success-text: var(--color-emerald-700);
+  --info-bg: var(--color-blue-50);
+  --info-border: var(--color-blue-100);
+  --info-text: var(--color-blue-700);
 }
 
 .dark {
+  /* Dark-mode-tuned brand gold: same hue/chroma as the light-mode
+     --color-brand-gold-dark (#a77800), lightened (oklch L 0.60→0.72) for
+     contrast against dark surfaces. 7.9:1 vs page bg, 7.2:1 vs card —
+     comfortably AAA, still reads as "the same gold" rather than a
+     different color. Computed and contrast-checked 2026-07-23, not eyeballed. */
+  --color-brand-gold-dark: #cc9c3c;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: var(--color-brand-gold-dark);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -145,7 +192,7 @@ body {
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: var(--color-brand-gold-dark);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -153,12 +200,34 @@ body {
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--color-brand-gold-dark);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--color-brand-gold-dark);
+
+  /* New semantic tokens (dark) — surfaces get progressively LIGHTER as they
+     get more "elevated" (opposite of light mode), matching how --card is
+     already lighter than --background. Status pairs use the standard
+     dark-mode convention: saturated-950 bg + bright-400 text, not a washed
+     light-mode-50 bg that would be unreadable here. */
+  --surface-muted: var(--color-neutral-800);
+  --surface-subtle: var(--color-neutral-700);
+  --body-text: var(--color-neutral-200);
+  --subtle-text: var(--color-neutral-500);
+  --danger-bg: var(--color-red-950);
+  --danger-border: var(--color-red-900);
+  --danger-text: var(--color-red-400);
+  --warning-bg: var(--color-amber-950);
+  --warning-border: var(--color-amber-900);
+  --warning-text: var(--color-amber-400);
+  --success-bg: var(--color-emerald-950);
+  --success-border: var(--color-emerald-900);
+  --success-text: var(--color-emerald-400);
+  --info-bg: var(--color-blue-950);
+  --info-border: var(--color-blue-900);
+  --info-text: var(--color-blue-400);
 }
 
 @layer base {
