@@ -24,6 +24,12 @@ Latest pushed commits:
 - `2219bab feat: update application` - shared UI primitive token pass
 - `a8947e6 feat: update application` - remaining operational pages token pass
 - `c3b3430 feat: update application` - Settings impact-card polish
+- `d1e0106 feat: update application` - Settings appearance selector and theme
+  provider expansion
+- `1095f4c feat: update application` - CSS palette refinement
+- `1cf7a25 feat: update application` - independent light/dark palette
+  persistence and Settings swatches
+- `2acb419 feat: update application` - Login brand/layout polish
 
 ## What's In Scope Today
 
@@ -81,6 +87,20 @@ Dark mode/UI token state:
   classes toward semantic tokens and status groups.
 - Settings' sensitive impact-card dashed backgrounds now read from CSS custom
   properties, so they respond to dark mode.
+- Settings > Apparence now exposes the theme controls directly: light/dark
+  mode, dark variants Teal/Bleu ardoise/Violet profond, and light variants
+  Neutre/Chaleureux/Frais.
+- Theme preferences persist locally and independently through
+  `prestix_theme`, `prestix_dark_variant`, and `prestix_light_variant`, with
+  `data-theme` and `data-light-theme` kept separately on `documentElement`.
+
+Notion sync:
+
+- Project dashboard now says the theme selector is delivered and points next
+  toward Sprint 12 runtime/UAT.
+- Theme-selector backlog item is marked `Termine`.
+- Runtime UI smoke task now includes theme palette checks.
+- Older Settings backlog note was corrected to remove stale dark-mode wording.
 
 Parties/documents:
 
@@ -108,6 +128,8 @@ Dashboard/reporting:
   Windows `spawn EPERM`; existing client chunk-size warning remains.
 - Dark-mode retrofit noted in `TASKS.md` as visually confirmed by Fred on
   2026-07-23; still worth doing a final runtime smoke on dense mobile pages.
+- Theme selector is documented as shipped; runtime persistence/visual smoke is
+  still pending.
 
 ## Key Constraints Active Right Now
 

@@ -3,7 +3,7 @@
 - Client: Lucrece BOUTOMBA, agency Le Prestigieux
 - Repo: prestix
 - Stack: PostgreSQL + Drizzle, Node/Express, React/Vite/Tailwind, npm workspaces
-- Current phase: Dark-mode semantic-token retrofit landed; runtime smoke pending
+- Current phase: Settings theme selector landed; Sprint 12 runtime smoke pending
 - Ports: API 3000, client dev 5173
 - Blockers cleared: EPARGNE_INSCRIPTION_FEE = 5000 XAF, prm = Premium
 - API health endpoint: GET /api/health
@@ -14,6 +14,7 @@
   - `a57eb19` - document email delivery
   - `77cc7c5` - Aide/company-party docs sync
   - `c3b3430` - latest dark-mode semantic-token polish batch
+  - `2acb419` - Settings theme selector/Login polish batch
 - Aide/help:
   - `/aide` route contains static Markdown module guides bundled with Vite `?raw`.
   - Contextual page help uses `PageHeaderProvider.helpTopic`, `GuideTrigger`, and `HelpPanel`.
@@ -28,6 +29,15 @@
     hardcoded Tailwind palette classes to semantic tokens.
   - Settings impact cards use CSS custom properties for dark-aware dashed
     sensitive/critical backgrounds.
+- Theme selector:
+  - Settings > Apparence supports light/dark mode plus independent palette
+    variants.
+  - Dark variants: Teal, Bleu ardoise, Violet profond.
+  - Light variants: Neutre, Chaleureux, Frais.
+  - Preferences persist in localStorage as `prestix_theme`,
+    `prestix_dark_variant`, and `prestix_light_variant`.
+  - DOM attributes stay separate: `data-theme` for dark variants and
+    `data-light-theme` for light variants.
 - Notifications:
   - API: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/read-all`, `PATCH /api/notifications/:id/read`, `DELETE /api/notifications/:id`.
   - Client: `/notifications` page, sidebar entry, and header unread bell.
@@ -43,4 +53,4 @@
 - Reporting exports now include dashboard-aligned graph data:
   - PDF: inline SVG charts for CA/gain, service trend, commission-type trend, plus recent sales.
   - Excel: graph-oriented sheets with numeric data and static text-bar visual columns; no ExcelJS conditional-formatting data bars because Excel repaired/removed those.
-- Open: apply notification/mail + company-party migrations, smoke Aide/contextual help/company-party/PDF flows, mail template visual refinement, retry UX, runtime smoke for Sprint 11c/11e/11f UI flows, dark/light visual smoke on dense pages, full reporting/analyse API-runtime smoke, Sprint 9 credit-conversion fee-pair deep check.
+- Open: apply notification/mail + company-party migrations, smoke Aide/contextual help/company-party/PDF flows, mail template visual refinement, retry UX, runtime smoke for Sprint 11c/11e/11f UI flows, Settings theme selector persistence/visual smoke, dark/light visual smoke on dense pages, full reporting/analyse API-runtime smoke, Sprint 9 credit-conversion fee-pair deep check.

@@ -26,7 +26,10 @@
 11. Runtime visual smoke dark/light theme switching on shared form controls,
    tables, grids, charts, Settings impact cards, dense mobile pages, and modal
    surfaces.
-12. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
+12. Runtime smoke Settings > Apparence: light/dark mode, Teal/Bleu/Violet dark
+   variants, Neutre/Chaleureux/Frais light variants, reload persistence, and
+   switching modes without clobbering the other mode's saved palette.
+13. FLAGGED, not closed (Sprint 9): credit-conversion path's fee-visibility
    fix needs deeper independent testing.
-13. Open question from Sprint 6: should PNR/GDS/ticket-number appear on the
+14. Open question from Sprint 6: should PNR/GDS/ticket-number appear on the
    printed document itself, or stay internal-only?

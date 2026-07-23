@@ -1,5 +1,14 @@
 # Changelog
 
+## Settings Theme Selector (2026-07-23)
+
+- Added Settings > Apparence controls for light/dark mode and palette selection.
+- Added independent dark palettes (Teal, Bleu ardoise, Violet profond) and light palettes (Neutre, Chaleureux, Frais).
+- Persisted theme mode and palette preferences locally with separate DOM attributes so switching modes does not overwrite the other mode's saved palette.
+- Refined CSS palette blocks so light variants can adjust accent color while dark variants keep the brand-gold accent consistent.
+- Polished the Login page brand/logo layout after the theme work.
+- Updated the Notion project dashboard and backlog: theme selector marked complete, Sprint 12 smoke task extended with palette checks.
+
 ## Dark-Mode Semantic Token Retrofit (2026-07-23)
 
 - Added a fuller client design-token layer with brand-gold primary/ring/sidebar tokens, dark-mode variants, tinted dark surfaces, text tiers, and semantic status groups.
