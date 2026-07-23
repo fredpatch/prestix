@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
+  BellRing,
   Loader2,
+  Mail,
   Plus,
   Save,
   ShieldCheck,
@@ -31,6 +33,10 @@ import {
 } from "@/components/ui/dialog";
 import { settingsApi, type Setting } from "@/lib/settings.api";
 import { featureFlagsApi, type FeatureFlag } from "@/lib/feature-flags.api";
+import {
+  notificationPreferencesApi,
+  type NotificationPreference,
+} from "@/lib/notification-preferences.api";
 import { commissionCatalogApi, type CommissionType } from "@/lib/commission-catalog.api";
 import { EditCommissionTypeDialog } from "./commission/EditCommissionTypeDialog";
 import { usePageHeader } from "@/components/layouts/lib/page-header";
@@ -216,6 +222,7 @@ export default function SettingsPage() {
           <TabsTrigger value="financial">Règles financières</TabsTrigger>
           <TabsTrigger value="modules">Modules</TabsTrigger>
           <TabsTrigger value="catalog">Catalogue commissions</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="financial">
@@ -226,6 +233,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="catalog">
           <CatalogTab />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationsTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -546,6 +556,105 @@ function ModulesTab() {
                   checked={flag.enabled}
                   onCheckedChange={(value) => handleToggle(flag.moduleCode, value)}
                 />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// Pass 6 — one row per known event code (installment-due-soon,
+// proforma-expired, etc., seeded from the same set every notification
+// producer already uses as its dedupeKey prefix). Two independent
+// switches per row: in-app controls whether createNotification even
+// inserts a row; email is a net-new capability — sending a generic
+// email alongside the in-app notification for events that today only
+// ever create an in-app row.
+function NotificationsTab() {
+  const [prefs, setPrefs] = useState<NotificationPreference[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    notificationPreferencesApi.list().then((res) => {
+      setPrefs(res.data);
+      setLoading(false);
+    });
+  }, []);
+
+  async function handleToggle(
+    eventCode: string,
+    field: "inAppEnabled" | "emailEnabled",
+    value: boolean,
+  ) {
+    setPrefs((prev) =>
+      prev.map((p) => (p.eventCode === eventCode ? { ...p, [field]: value } : p)),
+    );
+    setPendingKey(`${eventCode}:${field}`);
+    try {
+      await notificationPreferencesApi.update(eventCode, { [field]: value });
+    } catch {
+      // Revert on failure — the row already shows the optimistic value,
+      // so roll it back rather than leaving the UI showing a state the
+      // server rejected.
+      setPrefs((prev) =>
+        prev.map((p) => (p.eventCode === eventCode ? { ...p, [field]: !value } : p)),
+      );
+    } finally {
+      setPendingKey(null);
+    }
+  }
+
+  if (loading) return <LoadingLine label="Chargement des préférences..." />;
+
+  const emailCount = prefs.filter((p) => p.emailEnabled).length;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-3">
+        <SettingsKpi icon={BellRing} label="Événements suivis" value={String(prefs.length)} />
+        <SettingsKpi icon={BadgeCheck} label="Notifications in-app actives" value={String(prefs.filter((p) => p.inAppEnabled).length)} />
+        <SettingsKpi icon={Mail} label="Emails activés" value={String(emailCount)} tone={emailCount > 0 ? undefined : "warning"} />
+      </div>
+
+      <section className="border border-neutral-200 bg-white">
+        <div className="border-b border-neutral-200 px-4 py-3">
+          <h3 className="text-sm font-semibold text-neutral-950">Préférences par événement</h3>
+          <p className="mt-1 text-xs text-neutral-500">
+            Contrôle, pour chaque événement système, s'il crée une notification dans
+            l'application et/ou envoie un email. Ne concerne pas les emails de documents
+            (factures, proformas, bons de livraison), gérés séparément dans l'onglet Règles
+            financières.
+          </p>
+        </div>
+        <div className="divide-y divide-neutral-100">
+          {prefs.map((pref) => (
+            <div key={pref.eventCode} className="flex items-center justify-between gap-4 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-900">{pref.label}</p>
+                {pref.description && (
+                  <p className="mt-0.5 text-xs text-neutral-500">{pref.description}</p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-neutral-500">In-app</span>
+                  <Switch
+                    checked={pref.inAppEnabled}
+                    disabled={pendingKey === `${pref.eventCode}:inAppEnabled`}
+                    onCheckedChange={(value) => handleToggle(pref.eventCode, "inAppEnabled", value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-neutral-500">Email</span>
+                  <Switch
+                    checked={pref.emailEnabled}
+                    disabled={pendingKey === `${pref.eventCode}:emailEnabled`}
+                    onCheckedChange={(value) => handleToggle(pref.eventCode, "emailEnabled", value)}
+                  />
+                </div>
               </div>
             </div>
           ))}
