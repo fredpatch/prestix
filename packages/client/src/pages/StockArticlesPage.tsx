@@ -91,7 +91,7 @@ export default function StockArticlesPage() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  usePageHeader({ title: "Stock" });
+  usePageHeader({ title: "Stock", helpTopic: "stock" });
 
   const canManage = user && ["manager", "admin", "super_admin"].includes(user.role);
 

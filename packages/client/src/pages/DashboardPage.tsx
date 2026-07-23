@@ -23,7 +23,7 @@ import { useCommissionTypeTrend } from "@/hooks/queries/useCommissionTypeTrend";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-  usePageHeader({ title: "Tableau de bord" });
+  usePageHeader({ title: "Tableau de bord", helpTopic: "dashboard" });
 
   const [from, setFrom] = useState(PRESETS[0].from);
   const [to, setTo] = useState(PRESETS[0].to);

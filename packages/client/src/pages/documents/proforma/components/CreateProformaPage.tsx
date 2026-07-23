@@ -202,6 +202,7 @@ export default function CreateProformaPage() {
     title: "Nouvelle proforma",
     backTo: "/proformas",
     badge: `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
+    helpTopic: "documents",
   });
 
   async function submit(formValues: ProformaFormValues) {

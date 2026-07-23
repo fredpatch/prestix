@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -35,6 +35,7 @@ import api from "@/lib/axios";
 import { useTheme } from "@/lib/theme";
 import { usePageHeaderValue } from "./lib/page-header";
 import { useNotificationUnreadCount } from "@/hooks/queries/useNotifications";
+import { HelpPanel } from "./HelpPanel";
 
 interface NavItem {
   to: string;
@@ -74,6 +75,7 @@ interface LayoutProps {
 
 export default function Layout({ userRole, userFullName }: LayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const pageHeader = usePageHeaderValue();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -82,6 +84,8 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [enabledModules, setEnabledModules] = useState<Set<string> | null>(null);
   const { data: unreadNotifications = 0 } = useNotificationUnreadCount();
+  const [helpPanelOpen, setHelpPanelOpen] = useState(false);
+  const [helpPanelTopic, setHelpPanelTopic] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 767px)");
@@ -265,6 +269,21 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
             )}
           </div>
           <div className="ml-2 flex flex-shrink-0 items-center gap-1 sm:ml-4">
+            {location.pathname !== "/aide" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setHelpPanelTopic(pageHeader?.helpTopic);
+                  setHelpPanelOpen(true);
+                }}
+                title="Aide"
+                className="text-muted-foreground hover:text-brand-gold-dark"
+              >
+                <HelpCircle size={14} />
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="icon"
@@ -325,6 +344,13 @@ export default function Layout({ userRole, userFullName }: LayoutProps) {
           <Outlet />
         </main>
       </div>
+
+      <HelpPanel
+        open={helpPanelOpen}
+        onOpenChange={setHelpPanelOpen}
+        topicSlug={helpPanelTopic}
+        onTopicChange={setHelpPanelTopic}
+      />
     </div>
   );
 }

@@ -118,7 +118,7 @@ export default function ProformasPage() {
   const [selected, setSelected] = useState<Proforma | null>(null);
   const isMobile = useIsMobile();
 
-  usePageHeader({ title: "Proformas" });
+  usePageHeader({ title: "Proformas", helpTopic: "documents" });
 
   useEffect(() => {
     if (isMobile) setViewMode("grid");

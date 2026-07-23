@@ -27,7 +27,7 @@ export default function AnalysePage() {
   const [to, setTo] = useState(PRESETS[0].to);
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
 
-  usePageHeader({ title: "Analyse" });
+  usePageHeader({ title: "Analyse", helpTopic: "dashboard" });
 
   return (
     <div>

@@ -127,6 +127,7 @@ export default function InvoiceDetailPage() {
   usePageHeader({
     title: invoice?.number ?? (invoice ? `Brouillon #${invoice.id}` : "Facture"),
     backTo: "/invoices",
+    helpTopic: "paiements",
   });
 
   useEffect(() => {

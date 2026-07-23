@@ -196,7 +196,7 @@ export default function CreancesPage() {
     },
   ];
 
-  usePageHeader({ title: "Créances" });
+  usePageHeader({ title: "Créances", helpTopic: "creances" });
 
   return (
     <div>

@@ -204,7 +204,7 @@ const IMPACT_STYLES = {
 };
 
 export default function SettingsPage() {
-  usePageHeader({ title: "Paramètres" });
+  usePageHeader({ title: "Paramètres", helpTopic: "parametres" });
 
   return (
     <div className="space-y-5">

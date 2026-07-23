@@ -150,6 +150,7 @@ export default function EmployeeActivityDetailPage() {
   usePageHeader({
     title: employee?.fullName ?? "Détail employé",
     backTo: fromUsers ? "/users" : "/dashboard",
+    helpTopic: "dashboard",
   });
 
   const { data: detail, isLoading } = useEmployeeActivityDetail(numericAgentId, {

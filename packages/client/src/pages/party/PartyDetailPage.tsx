@@ -66,7 +66,7 @@ export default function PartyDetailPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.savingsTransactions() });
   }
 
-  usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties" });
+  usePageHeader({ title: party?.fullName ?? "Partie", backTo: "/parties", helpTopic: "parties" });
 
   function handleToggleActivation() {
     if (!party) return;

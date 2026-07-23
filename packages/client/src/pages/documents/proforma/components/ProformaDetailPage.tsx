@@ -107,7 +107,11 @@ export default function ProformaDetailPage() {
     };
   }, [proforma?.referrerPartyId]);
 
-  usePageHeader({ title: proforma?.number ?? "Proforma", backTo: "/proformas" });
+  usePageHeader({
+    title: proforma?.number ?? "Proforma",
+    backTo: "/proformas",
+    helpTopic: "documents",
+  });
 
   function handlePromote() {
     if (!proforma) return;

@@ -93,7 +93,7 @@ export default function PartiesPage() {
   const parties = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  usePageHeader({ title: "Parties" });
+  usePageHeader({ title: "Parties", helpTopic: "parties" });
 
   return (
     <div>

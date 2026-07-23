@@ -4,6 +4,7 @@ export interface PageHeaderConfig {
   title: string;
   backTo?: string;
   badge?: string;
+  helpTopic?: string; // Aide slug (content/aide/index.ts) — drives the header "?" button
 }
 
 interface PageHeaderContextType {
@@ -31,11 +32,11 @@ export function usePageHeaderValue() {
 
 export function usePageHeader(config: PageHeaderConfig) {
   const { setHeader } = useContext(PageHeaderContext);
-  const { title, backTo, badge } = config;
+  const { title, backTo, badge, helpTopic } = config;
   const stableSetHeader = useCallback(setHeader, [setHeader]);
 
   useEffect(() => {
-    stableSetHeader({ title, backTo, badge });
+    stableSetHeader({ title, backTo, badge, helpTopic });
     return () => stableSetHeader(null);
-  }, [title, backTo, badge, stableSetHeader]);
+  }, [title, backTo, badge, helpTopic, stableSetHeader]);
 }

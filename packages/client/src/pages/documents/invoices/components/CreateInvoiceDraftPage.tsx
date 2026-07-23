@@ -203,6 +203,7 @@ export default function CreateInvoiceDraftPage() {
     title: "Nouvelle facture (brouillon)",
     backTo: "/invoices",
     badge: `${values.lines.length} ligne${values.lines.length > 1 ? "s" : ""}`,
+    helpTopic: "documents",
   });
 
   async function submit(formValues: InvoiceFormValues) {

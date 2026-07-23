@@ -101,7 +101,7 @@ function isOverdue(invoice: Invoice): boolean {
 }
 
 export default function InvoicesPage() {
-  usePageHeader({ title: "Factures" });
+  usePageHeader({ title: "Factures", helpTopic: "documents" });
   const { data: invoices = [], isLoading } = useInvoices();
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");

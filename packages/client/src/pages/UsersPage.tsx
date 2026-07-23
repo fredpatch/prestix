@@ -49,7 +49,7 @@ function employeeDetailUrl(userId: number): string {
 }
 
 export default function UsersPage() {
-  usePageHeader({ title: "Utilisateurs" });
+  usePageHeader({ title: "Utilisateurs", helpTopic: "utilisateurs" });
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<Role | "">("");
   const [editing, setEditing] = useState<User | null>(null);

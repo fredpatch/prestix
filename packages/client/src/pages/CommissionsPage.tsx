@@ -86,7 +86,7 @@ export default function CommissionsPage() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  usePageHeader({ title: "Commissions" });
+  usePageHeader({ title: "Commissions", helpTopic: "commissions" });
 
   const canDelete = user && ["admin", "super_admin"].includes(user.role);
 

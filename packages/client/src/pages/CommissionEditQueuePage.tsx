@@ -118,7 +118,7 @@ export default function CommissionEditQueuePage() {
   const [rejectNote, setRejectNote] = useState("");
   const isMobile = useIsMobile();
 
-  usePageHeader({ title: "Demandes de modification" });
+  usePageHeader({ title: "Demandes de modification", helpTopic: "commissions" });
 
   useEffect(() => {
     if (isMobile) setViewMode("grid");
