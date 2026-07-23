@@ -3,6 +3,12 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 export interface PageGuide {
   steps: string[]; // short, concise — "what do I do on THIS page", not exhaustive reference
   tip?: string;
+  // Optional live checklist reflecting actual page/form state (e.g. "party
+  // selected" ✓, "lines added" ✓). Only meaningful on pages that already
+  // track their own completion (creation flows) — most pages just use
+  // `steps` above. When present, the floating trigger shows this instead
+  // of the static step list.
+  progress?: Array<{ label: string; done: boolean }>;
 }
 
 export interface PageHeaderConfig {

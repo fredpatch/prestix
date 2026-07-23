@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { HelpCircle, ExternalLink } from "lucide-react";
+import { HelpCircle, ExternalLink, Check, Circle } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { usePageHeaderValue } from "./lib/page-header";
+import { cn } from "@/lib/utils";
 
 // Only renders when the current page registered a guide via
 // usePageHeader({ guide }). Deliberately separate from the header "?" button
@@ -13,7 +14,11 @@ export function GuideTrigger() {
   const pageHeader = usePageHeaderValue();
   const guide = pageHeader?.guide;
 
-  if (!guide || guide.steps.length === 0) return null;
+  if (!guide || (guide.steps.length === 0 && !guide.progress?.length)) return null;
+
+  const progress = guide.progress;
+  const doneCount = progress?.filter((s) => s.done).length ?? 0;
+  const firstNotDoneIndex = progress?.findIndex((s) => !s.done) ?? -1;
 
   return (
     <Popover>
@@ -27,12 +32,48 @@ export function GuideTrigger() {
         </button>
       </PopoverTrigger>
       <PopoverContent side="top" align="end" className="w-[300px] p-4">
-        <p className="mb-2 text-[12.5px] font-semibold text-neutral-900">Sur cette page</p>
-        <ol className="mb-2 space-y-1.5 pl-4 text-[12px] text-neutral-700 list-decimal">
-          {guide.steps.map((step, i) => (
-            <li key={i}>{step}</li>
-          ))}
-        </ol>
+        {progress && progress.length > 0 ? (
+          <>
+            <p className="mb-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-neutral-400">
+              Progression
+            </p>
+            <p className="mb-3 text-[12px] font-medium text-neutral-600">
+              {doneCount} / {progress.length} étapes
+            </p>
+            <ol className="mb-2 space-y-1.5">
+              {progress.map((step, i) => {
+                const isCurrent = i === firstNotDoneIndex;
+                return (
+                  <li
+                    key={i}
+                    className={cn(
+                      "flex items-center gap-2 rounded px-1.5 py-1 text-[12px]",
+                      isCurrent && "bg-brand-gold-dark/10 font-medium text-brand-gold-dark",
+                      !isCurrent && step.done && "text-neutral-400 line-through",
+                      !isCurrent && !step.done && "text-neutral-600",
+                    )}
+                  >
+                    {step.done ? (
+                      <Check size={13} className="shrink-0" />
+                    ) : (
+                      <Circle size={11} className="shrink-0" />
+                    )}
+                    {step.label}
+                  </li>
+                );
+              })}
+            </ol>
+          </>
+        ) : (
+          <>
+            <p className="mb-2 text-[12.5px] font-semibold text-neutral-900">Sur cette page</p>
+            <ol className="mb-2 space-y-1.5 pl-4 text-[12px] text-neutral-700 list-decimal">
+              {guide.steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+          </>
+        )}
         {guide.tip && <p className="mb-2 text-[11.5px] text-neutral-500 italic">{guide.tip}</p>}
         {pageHeader?.helpTopic && (
           <Link

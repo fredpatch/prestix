@@ -197,6 +197,9 @@ export default function CreateProformaPage() {
     formState: { errors, isSubmitting, isValid },
   } = methods;
   const values = watch();
+  const hasTicketReference = values.lines
+    .filter((line) => line.lineType === "ticket")
+    .every((line) => Boolean(line.ticketDetails?.references?.pnr));
 
   usePageHeader({
     title: "Nouvelle proforma",
@@ -210,6 +213,12 @@ export default function CreateProformaPage() {
         "Vérifiez le total puis émettez le document.",
       ],
       tip: "Tant que le document est en brouillon, les lignes restent librement modifiables.",
+      progress: [
+        { label: "Partie sélectionnée", done: Boolean(values.party) },
+        { label: "Au moins une ligne ajoutée", done: values.lines.length > 0 },
+        { label: "PNR renseigné pour chaque billet", done: hasTicketReference },
+        { label: "Formulaire prêt à créer", done: isValid },
+      ],
     },
   });
 
