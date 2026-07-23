@@ -245,26 +245,35 @@ export async function recordPayment(
     // that was already fully settled.
     const becamePaid = invoice.paymentStatus !== "paid" && paymentStatus === "paid";
 
+    // Sprint 12 hardening: credit-lot creation now happens INSIDE this same
+    // transaction (passing `tx`), not as a separate call after commit. If
+    // the overpayment can't be recorded as a credit lot, the whole payment
+    // rolls back too — no more window where a payment is recorded but its
+    // overpaid amount silently has no corresponding credit lot. `invoice`
+    // (selected with `.for("update")` above) already has `partyId`, so no
+    // extra query is needed here.
+    const overpaidToCredit =
+      remaining > 0.01 && params.overpaymentChoice === "credit" ? remaining : 0;
+    if (overpaidToCredit > 0) {
+      await createCreditLot(
+        {
+          partyId: invoice.partyId,
+          amount: overpaidToCredit,
+          sourceInvoiceId: params.invoiceId,
+          userId: params.agentId,
+        },
+        tx,
+      );
+    }
+
     return {
       inserted,
-      overpaidToCredit: remaining > 0.01 && params.overpaymentChoice === "credit" ? remaining : 0,
+      overpaidToCredit,
       becamePaid,
     };
     },
     isEpargnePayment ? { isolationLevel: "serializable" } : undefined,
   );
-
-  // Credit lot creation is its own transaction (Sprint 2's ledger) — called
-  // after the payment transaction commits, not nested inside it.
-  if (createdRows.overpaidToCredit > 0) {
-    await createCreditLot({
-      partyId: (await db.select().from(invoices).where(eq(invoices.id, params.invoiceId)))[0]
-        .partyId,
-      amount: createdRows.overpaidToCredit,
-      sourceInvoiceId: params.invoiceId,
-      userId: params.agentId,
-    });
-  }
 
   await logAudit({
     userId: params.agentId,

@@ -343,6 +343,14 @@ export default function PartyDetailPage() {
                           (contre-passation)
                         </span>
                       )}
+                      {!t.agentId && !t.reversalOfTransactionId && (
+                        <span
+                          className="text-[10.5px] text-blue-600 ml-2"
+                          title="Converti automatiquement depuis un lot de crédit expiré, pas un dépôt en espèces"
+                        >
+                          (converti)
+                        </span>
+                      )}
                     </p>
                     <p className="text-[10.5px] text-neutral-500">
                       {t.recordedAt ? new Date(t.recordedAt).toLocaleString("fr-FR") : "—"}

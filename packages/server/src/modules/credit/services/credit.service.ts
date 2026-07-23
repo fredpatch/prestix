@@ -39,15 +39,28 @@ function toEntryView(e: typeof creditLotEntries.$inferSelect): CreditLotEntryVie
 // Called from M5 (payment overpayment prompt) once payments land in Sprint 4.
 // One lot per overpayment event — M3: "multiple overpayments = multiple dated lots,
 // each with its own window."
-export async function createCreditLot(params: CreatePartyCreditParams): Promise<CreditLotView> {
-  const [party] = await db.select().from(parties).where(eq(parties.id, params.partyId));
+//
+// Sprint 12 hardening: accepts an optional transaction handle (dbOrTx).
+// payment.service.ts's recordPayment() was calling this as a SEPARATE
+// transaction after its own payment transaction had already committed — a
+// real gap: if this insert failed post-commit, the payment was recorded but
+// the overpaid amount's credit lot silently never existed, i.e. money lost
+// from the party's perspective. Passing the caller's own `tx` here makes
+// both writes atomic (payment + credit lot commit or roll back together)
+// without merging the two modules — every other caller keeps using the
+// plain `db` default, unchanged.
+export async function createCreditLot(
+  params: CreatePartyCreditParams,
+  dbOrTx: typeof db | any = db,
+): Promise<CreditLotView> {
+  const [party] = await dbOrTx.select().from(parties).where(eq(parties.id, params.partyId));
   if (!party) throw new Error("PARTY_NOT_FOUND");
   if (params.amount <= 0) throw new Error("INVALID_AMOUNT");
 
   const windowDays = await getIntValue("credit_decision_period_days", 30);
   const decisionWindowExpiresAt = new Date(Date.now() + windowDays * 24 * 60 * 60 * 1000);
 
-  const [lot] = await db
+  const [lot] = await dbOrTx
     .insert(creditLots)
     .values({
       partyId: params.partyId,
